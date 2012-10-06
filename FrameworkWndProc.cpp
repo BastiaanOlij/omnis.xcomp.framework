@@ -46,8 +46,7 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND hwnd, LPARAM Msg,WPARAM wPar
 		// ECM_GETCOMPLIBINFO - this is sent by OMNIS to find out the name of the library, and
 		// the number of components this library supports
 		case ECM_GETCOMPLIBINFO: {
-			// !BAS! Need to initilize our object array here
-			return ECOreturnCompInfo( gInstLib, eci, RES_LIBNAME, 1 );
+			return ECOreturnCompInfo( gInstLib, eci, RES_LIBNAME, gComponents.numberOfElements() );
 		}
 
 		// ECM_GETCOMPID - this message is sent by OMNIS to get information about each component in this library
@@ -84,9 +83,13 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND hwnd, LPARAM Msg,WPARAM wPar
 		// ECM_OBJCONSTRUCT - this is a message to create a new object.
 		case ECM_OBJCONSTRUCT: {
 			for (int i=0;i<gComponents.numberOfElements();i++) {
-				if (gComponents[i]->componentID == eci->mCompId) {
+				if (gComponents[i]->componentID == eci->mCompId) {					
 					// Allocate a new object
-					oBaseComponent* object = (oBaseComponent *) gComponents[i]->newObjectFunction(); // ( hwnd )
+					oBaseComponent* object = (oBaseComponent *) gComponents[i]->newObjectFunction(); 
+
+					// !BAS! Need to check if we're initializing a visual or non-visual object and react accordingly!
+					object->init(hwnd);
+					
 					// and insert into a chain of objects. The OMNIS library will maintain this chain
 					ECOinsertObject( eci, hwnd, (void*)object );
 					return qtrue;					

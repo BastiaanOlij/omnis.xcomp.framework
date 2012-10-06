@@ -25,12 +25,14 @@
 /* our base class for all component objects */
 class oBaseComponent {
 protected:
+	HWND						mHWnd;																// Our main window handle (not applicable for NV objects)
 	qProperties					*mProperties;														// Property definition for our object (lazy loading)
 	qMethods					*mMethods;															// Method definition for our object (lazy loading)
 	
 public:
 	oBaseComponent(void);																			// constructor
 	~oBaseComponent(void);																			// destructor
+	virtual	qbool				init(HWND pHWnd);													// Initialize component
 	
 /*** Properties ***/
 	virtual qint				propertyCount(void);												// return the number of properties supported by this component
@@ -49,17 +51,14 @@ public:
 /* baseclass for non visual components */
 class oBaseNVComponent : public oBaseComponent {
 public:
-	virtual	qbool				init(void);															// Initialize component
 	virtual void				copyObject(oBaseNVComponent *pCopy);								// create a copy of pCopy, this MUST be implemented in a subclass
 };
 
 /* baseclass for visual components */
 class oBaseVisComponent : public oBaseComponent {
 protected:
-	HWND						mHWnd;																// Our main window handle
 
 public:
-	virtual	qbool				init(HWND pHWnd);													// Initialize component
 	
 };
 

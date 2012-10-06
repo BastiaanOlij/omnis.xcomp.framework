@@ -33,6 +33,13 @@ oBaseComponent::~oBaseComponent(void) {
 	}
 };
 
+// Initialize component
+qbool oBaseComponent::init(HWND pHWnd) {
+	mHWnd = pHWnd;			// note, this is useless for non-visual components but it made my life easier to keep the inits the same.
+	
+	return true;
+};
+
 /*** Properties ***/
 // return the number of properties supported by this component
 qint oBaseComponent::propertyCount(void) {
@@ -93,13 +100,6 @@ int oBaseComponent::invokeMethod(qint pMethodId,EXTCompInfo* eci) {
  oBaseNVComponent
  ********************************************************************************************************************************************/
 
-// Initialize component
-qbool oBaseNVComponent::init(void) {
-	// nothing to do here by default
-	
-	return true;
-};
-
 // create a copy of pCopy, this MUST be implemented in a subclass
 void oBaseNVComponent::copyObject(oBaseNVComponent *pCopy) {
 	// nothing to copy...
@@ -110,11 +110,5 @@ void oBaseNVComponent::copyObject(oBaseNVComponent *pCopy) {
  oBaseVisComponent
  ********************************************************************************************************************************************/
 
-// Initialize component
-qbool oBaseVisComponent::init(HWND pHWnd) {
-	mHWnd = pHWnd;
-	
-	return true;
-};
 
 
