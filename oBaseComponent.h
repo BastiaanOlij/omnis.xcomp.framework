@@ -5,6 +5,10 @@
  *  oBaseComponent.h
  *  Base classes to subclass components from. These classes implement alot of the basics that each component shares
  *
+ *  Our framework will instantiate your objects when it needs to obtain meta data or when the component is actually used.
+ *  The init function is only called when the component is actualy used so put your heavy lifting stuff in here and keep your
+ *  constructors simple (or just rely on the default constructor).
+ *
  *  Bastiaan Olij
  *
  *  Todos:
@@ -20,6 +24,10 @@
 
 /* our base class for all component objects */
 class oBaseComponent {
+protected:
+	qProperties					*mProperties;														// Property definition for our object (lazy loading)
+	qMethods					*mMethods;															// Method definition for our object (lazy loading)
+	
 public:
 	oBaseComponent(void);																			// constructor
 	~oBaseComponent(void);																			// destructor
@@ -34,15 +42,15 @@ public:
 /*** Methods ***/
 	virtual qint				methodCount(void);													// return the number of methods supported by this component
 	virtual qMethods *			methods(void);														// return an array of method meta data
-	virtual int					invokeMethod(qint pMethodId,EXTCompInfo* eci);						// invoke a metho
+	virtual int					invokeMethod(qint pMethodId,EXTCompInfo* eci);						// invoke a method
 	
-}
+};
 
 /* baseclass for non visual components */
 class oBaseNVComponent : public oBaseComponent {
 public:
-	virtual void	copyObject(oBaseNVComponent *pCopy)=0;											// create a copy of our object, this MUST be implemented in a subclass
-
+	virtual	qbool				init(void);															// Initialize component
+	virtual void				copyObject(oBaseNVComponent *pCopy);								// create a copy of pCopy, this MUST be implemented in a subclass
 };
 
 /* baseclass for visual components */
@@ -51,8 +59,7 @@ protected:
 	HWND						mHWnd;																// Our main window handle
 
 public:
-	oComponent(HWND pFieldHWnd);																	// Constructor
-	virtual	qbool				init();																// Initialize component
+	virtual	qbool				init(HWND pHWnd);													// Initialize component
 	
 };
 

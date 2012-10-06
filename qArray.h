@@ -26,8 +26,8 @@ private:
 	unsigned long	mMaxElements;
 	
 public:
-	qArray()								// constructor
-	~qArray()								// destructor
+	qArray();								// constructor
+	~qArray();								// destructor
 	
 	// general access
 	void *			getArray();				// return a pointer to our array
@@ -40,7 +40,7 @@ public:
 	
 	// operators
 	qElement *		operator [] (unsigned long pIndex);	// get an item at this index
-	qArray *		operator + (qElement *pItem);		// add an item
+	qArray<qElement> * operator += (qElement *pItem);		// add an item
 	
 	enum exceptions {
 		CantAllocateMemory,
@@ -92,7 +92,7 @@ void qArray<qElement>::addElements(qElement * pItems, unsigned long pNumberOfIte
 		throw BufferNotInitialized;
 	}
 	
-	for (unsigned long i == 0; i<pNumberOfItems; i++) {
+	for (unsigned long i = 0; i<pNumberOfItems; i++) {
 		push(&pItems[i]);
 	}
 }
@@ -133,7 +133,7 @@ qElement * qArray<qElement>::pop(void) {
 
 // get an item at this index
 template<class qElement>
-qElement * operator [] (unsigned long pIndex) {
+qElement * qArray<qElement>::operator [] (unsigned long pIndex) {
 	if (mArray == NULL) {
 		throw BufferNotInitialized;
 	}
@@ -147,10 +147,10 @@ qElement * operator [] (unsigned long pIndex) {
 
 // add an item
 template<class qElement>
-qArray * operator + (qElement *pItem) {
+qArray<qElement> * qArray<qElement>::operator += (qElement * pItem) {
 	push(pItem);
 	
-	return this; // we return ourselves so we can do further processing.
+	return this;
 }
 
 
