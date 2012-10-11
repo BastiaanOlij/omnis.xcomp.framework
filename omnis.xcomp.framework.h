@@ -6,10 +6,18 @@
  *  This include file simply ensures all required header files are imported into our files
  *
  *  Bastiaan Olij
+ *
+ *  Todos:
+ *  - investigate if we can compile this into a library/framework instead of having to include all the files in our projects.
  */
 
 #ifndef omnisxcompframeworkh
 #define omnisxcompframeworkh
+
+// A note about string usage, in non-unicode qchar and char are the same but in unicode qchar is a 32bit unicode string while char is a standard 8bit string
+// We use char to mainly interact with the system API. For the most part we assume that char will contain a UTF-8 string and convert between char and qchar
+// accordingly.
+
 
 #ifdef ismach_o
 // For MACOSX, Omnis uses some deprectated APIS, ignore for now...
@@ -30,7 +38,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-
 
 // add in some useful framework headers
 #include "qArray.h"

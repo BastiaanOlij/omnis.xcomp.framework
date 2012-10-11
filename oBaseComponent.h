@@ -15,6 +15,7 @@
  *  - Generally complete this implementation
  *  - Add support for events
  *  - Implement visual components
+ *  - Maybe split this into separate files for the three classes
  */
 
 #ifndef obasecomponenth
@@ -33,6 +34,9 @@ public:
 	oBaseComponent(void);																			// constructor
 	~oBaseComponent(void);																			// destructor
 	virtual	qbool				init(HWND pHWnd);													// Initialize component
+
+/*** some nice support function ***/
+	void addToTraceLog(const char *pData, ...);														// Add formatted string to trace log
 	
 /*** Properties ***/
 	virtual qint				propertyCount(void);												// return the number of properties supported by this component
@@ -56,10 +60,32 @@ public:
 
 /* baseclass for visual components */
 class oBaseVisComponent : public oBaseComponent {
-protected:
-
-public:
+private:
+	/*** only valid during drawing ***/
+	GDItextSpecStruct			mTextSpec;															// Info on how to draw text
+	qcol						mTextColor;															// Our text color
+	qpat						mBackpattern;														// Our back pattern
+	HBRUSH						mBackpatBrush;														// backpattern brush
+	qcol						mForecolor, mBackcolor;												// Our forecolor and backcolor
 	
+	void						setup(EXTCompInfo* pECI);											// setup our colors and fonts etc.
+
+protected:
+	qrect						mClientRect;														// Our client rect, gives the size of our visual component
+	
+public:
+	oBaseVisComponent(void);																		// constructor
+	
+	virtual qProperties *		properties(void);													// return array of property meta data
+	virtual qbool				setProperty(qint pPropID,EXTfldval &pNewValue,EXTCompInfo* eci);	// set the value of a property
+	virtual void				getProperty(qint pPropID,EXTfldval &pGetValue,EXTCompInfo* eci);	// get the value of a property
+
+	
+	virtual void				doPaint(HDC pHDC);													// Do our drawing in here
+
+	
+	// called from our WndProc, don't override these directly
+	qbool						wm_paint(EXTCompInfo* pECI);														// Paint message
 };
 
 #endif

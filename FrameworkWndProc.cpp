@@ -19,6 +19,7 @@ qComponents gComponents;
 extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND hwnd, LPARAM Msg,WPARAM wParam,LPARAM lParam,EXTCompInfo* eci) {
 	// Initialize callback tables - THIS MUST BE DONE 
 	ECOsetupCallbacks(hwnd, eci);		
+	
 	switch (Msg) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // library initialisation
@@ -39,7 +40,6 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND hwnd, LPARAM Msg,WPARAM wPar
 		// For most components this can be removed - see other BLYTH component examples
 		case ECM_DISCONNECT: { 
 			// should clear out gComponents somehow
-
 			return UnloadLibrary();
 		} break;
 
@@ -85,13 +85,13 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND hwnd, LPARAM Msg,WPARAM wPar
 			for (int i=0;i<gComponents.numberOfElements();i++) {
 				if (gComponents[i]->componentID == eci->mCompId) {					
 					// Allocate a new object
-					oBaseComponent* object = (oBaseComponent *) gComponents[i]->newObjectFunction(); 
+					oBaseComponent* lvObject = (oBaseComponent *) gComponents[i]->newObjectFunction(); 
 
 					// !BAS! Need to check if we're initializing a visual or non-visual object and react accordingly!
-					object->init(hwnd);
+					lvObject->init(hwnd);
 					
 					// and insert into a chain of objects. The OMNIS library will maintain this chain
-					ECOinsertObject( eci, hwnd, (void*)object );
+					ECOinsertObject( eci, hwnd, (void*)lvObject );
 					return qtrue;					
 				}
 			}
@@ -105,30 +105,85 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND hwnd, LPARAM Msg,WPARAM wPar
 			
 			// First find the object in the libraries chain of objects, 
 			// this call if ok also removes the object from the chain.
-			oBaseComponent* object = (oBaseComponent*)ECOremoveObject( eci, hwnd );
-			if ( NULL!=object )
-			{
+			oBaseComponent* lvObject = (oBaseComponent*)ECOremoveObject( eci, hwnd );
+			if ( NULL!=lvObject ) {
 				// Now you can delete the object you previous allocated
 				// Note: The hwnd passed on ECM_OBJCONSTRUCT should not be deleted, as
 				// it was created and will be destroyed by OMNIS
-				delete object;
+				delete lvObject;
 			}
 			return qtrue;
 		} break;
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// properties
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+		// ECM_GETPROPNAME - this message is sent by OMNIS to get information about the properties of an object
+		case ECM_GETPROPNAME: { 
+			for (int i=0;i<gComponents.numberOfElements();i++) {
+				if (gComponents[i]->componentID == eci->mCompId) {	
+					// Allocate a new object temporarily just to get to our meta data
+					oBaseComponent* lvObject = (oBaseComponent *) gComponents[i]->newObjectFunction(); 
+					
+					if (lvObject != NULL) {	
+						qlong retVal = ECOreturnProperties( gInstLib, eci, (ECOproperty *) lvObject->properties()->getArray(), lvObject->propertyCount() );
+						
+						delete lvObject;
+						
+						return retVal; 				
+					};
+				};
+			};
+		}; break;
+			
+		// ECM_PROPERTYCANASSIGN: Is the property assignable
+		case ECM_PROPERTYCANASSIGN: {	
+			oBaseComponent* lvObject = (oBaseComponent*)ECOfindObject( eci, hwnd );
+			if (lvObject != NULL) {
+				return lvObject->canAssign(ECOgetId(eci));
+			};
+		}; break;
+			
+		// ECM_SETPROPERTY: Assignment to a property
+		case ECM_SETPROPERTY:	{	
+			EXTParamInfo* lvNewParam = ECOfindParamNum( eci, 1 );
+			
+			oBaseComponent* lvObject = (oBaseComponent*)ECOfindObject( eci, hwnd );
+			if ((lvObject != NULL) && (lvNewParam !=NULL)) {
+				EXTfldval lvValue( (qfldval)lvNewParam->mData );
+				
+				return lvObject->setProperty(ECOgetId(eci), lvValue, eci);
+			};			
+		}; break;
+		
+		// ECM_GETPROPERTY: Retrieve value from property
+		case ECM_GETPROPERTY:	{	
+			oBaseComponent* lvObject = (oBaseComponent*)ECOfindObject( eci, hwnd );
+			if (lvObject != NULL) {
+				EXTfldval lvValue;
+				
+				lvObject->getProperty(ECOgetId(eci), lvValue, eci);
+				ECOaddParam(eci, &lvValue);
+				
+				return 1L;
+			};			
+			
+		}; break;
 			
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // window messaging
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 			
 		// WM_PAINT - standard paint message
-/*		case WM_PAINT: {
-			 // First find the object in the libraries chain of objects
-			 tqfGenericObject* object = (tqfGenericObject*)ECOfindObject( eci, hwnd );
+		case WM_PAINT: {
+			 // This should only be called on visual object
+			 oBaseVisComponent* lvObject = (oBaseVisComponent*)ECOfindObject( eci, hwnd );
 			 // and if its good, call the paint function
-			 if ( NULL!=object && object->paint() )
+			 if ( NULL!=lvObject && lvObject->wm_paint(eci) )
 			 return qtrue;
 			 
-		} break; */
+		} break;
 			
 	}
 	
