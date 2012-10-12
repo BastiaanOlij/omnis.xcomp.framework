@@ -13,7 +13,12 @@
 // Include our framework files
 #include "omnis.xcomp.framework.h"
 
-qComponents gComponents;
+// this class should be defined in our implementation, I need to find a better way do this.
+class mainlib : public oXCompLib {
+	
+};
+
+mainlib *gXCompLib = NULL;
 
 // Component library entry point (name as declared in resource 31000 )
 extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND hwnd, LPARAM Msg,WPARAM wParam,LPARAM lParam,EXTCompInfo* eci) {
@@ -30,7 +35,10 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND hwnd, LPARAM Msg,WPARAM wPar
 		//
 		// For most components this can be removed - see other BLYTH component examples
 		case ECM_CONNECT: {
-			return LoadLibrary(&gComponents); // Return external flags
+			// instantiate our library
+			gXCompLib = new mainlib();
+			
+			return gXCompLib->ecm_connect(); // Return external flags
 		} break;
 			
 		// ECM_DISCONNECT - this message is sent only once when the OMNIS session is ending and should not be confused
@@ -39,14 +47,17 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND hwnd, LPARAM Msg,WPARAM wPar
 		// 
 		// For most components this can be removed - see other BLYTH component examples
 		case ECM_DISCONNECT: { 
-			// should clear out gComponents somehow
-			return UnloadLibrary();
+			qbool lvResult = gXCompLib->ecm_disconnect();
+			
+			// and we no longer need our library...
+			delete gXCompLib;
+			return lvResult;
 		} break;
 
 		// ECM_GETCOMPLIBINFO - this is sent by OMNIS to find out the name of the library, and
 		// the number of components this library supports
 		case ECM_GETCOMPLIBINFO: {
-			return ECOreturnCompInfo( gInstLib, eci, RES_LIBNAME, gComponents.numberOfElements() );
+			return ECOreturnCompInfo( gInstLib, eci, gXCompLib->getResourceID(), gXCompLib->numberOfComponents() );
 		}
 
 		// ECM_GETCOMPID - this message is sent by OMNIS to get information about each component in this library
@@ -55,11 +66,14 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND hwnd, LPARAM Msg,WPARAM wPar
 		// For each call you should return the internal object ID and the type of object it is.
 		// The object id will be used for other calls such as ECM_GETCOMPICON 
 		// 
-		// The object type is for example : cObjType_Basic 		- a basic window object or 
-		//																	cRepObjType_Basic	- a basic report object.
-		// 																	There are others 	- see BLYTH examples and headers
+		// The object type is for example :		cObjType_Basic 		- a basic window object or 
+		//										cRepObjType_Basic	- a basic report object.
+		//										There are others 	- see BLYTH examples and headers
 		case ECM_GETCOMPID: {
-			return ECOreturnCompID( gInstLib, eci, gComponents[wParam-1]->componentID, gComponents[wParam-1]->componentType );
+			OXFcomponent *lvComponent = gXCompLib->componentByIndex(wParam-1);
+			if (lvComponent!=NULL) {
+				return ECOreturnCompID( gInstLib, eci, lvComponent->componentID, lvComponent->componentType );				
+			}
 		} break;
 			
 		// ECM_GETCOMPICON - this is sent by OMNIS to get an icon for the OMNIS component store and
@@ -67,10 +81,9 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND hwnd, LPARAM Msg,WPARAM wPar
 		case ECM_GETCOMPICON: {
 			// OMNIS will call you once per component for an icon.
 			// GENERIC_ICON is defined in the header and included in the resource file
-			for (int i=0;i<gComponents.numberOfElements();i++) {
-				if (gComponents[i]->componentID == eci->mCompId) {
-					return ECOreturnIcon( gInstLib, eci, gComponents[i]->bitmapID );
-				}
+			OXFcomponent *lvComponent = gXCompLib->componentByID(eci->mCompId);
+			if (lvComponent!=NULL) {
+				return ECOreturnIcon( gInstLib, eci, lvComponent->bitmapID );				
 			}
 			
 			return qfalse;
@@ -82,19 +95,15 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND hwnd, LPARAM Msg,WPARAM wPar
 			
 		// ECM_OBJCONSTRUCT - this is a message to create a new object.
 		case ECM_OBJCONSTRUCT: {
-			for (int i=0;i<gComponents.numberOfElements();i++) {
-				if (gComponents[i]->componentID == eci->mCompId) {					
-					// Allocate a new object
-					oBaseComponent* lvObject = (oBaseComponent *) gComponents[i]->newObjectFunction(); 
-
-					// !BAS! Need to check if we're initializing a visual or non-visual object and react accordingly!
-					lvObject->init(hwnd);
-					
-					// and insert into a chain of objects. The OMNIS library will maintain this chain
-					ECOinsertObject( eci, hwnd, (void*)lvObject );
-					return qtrue;					
-				}
-			}
+			oBaseComponent * lvObject = gXCompLib->instantiateComponent(eci->mCompId);
+			if (lvObject!=NULL) {
+				// !BAS! Need to check if we're initializing a visual or non-visual object and react accordingly!
+				lvObject->init(hwnd);
+				
+				// and insert into a chain of objects. The OMNIS library will maintain this chain
+				ECOinsertObject( eci, hwnd, (void*)lvObject );
+				return qtrue;				
+			};
 
 			return qfalse;
 		} break;
@@ -121,19 +130,13 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND hwnd, LPARAM Msg,WPARAM wPar
 
 		// ECM_GETPROPNAME - this message is sent by OMNIS to get information about the properties of an object
 		case ECM_GETPROPNAME: { 
-			for (int i=0;i<gComponents.numberOfElements();i++) {
-				if (gComponents[i]->componentID == eci->mCompId) {	
-					// Allocate a new object temporarily just to get to our meta data
-					oBaseComponent* lvObject = (oBaseComponent *) gComponents[i]->newObjectFunction(); 
-					
-					if (lvObject != NULL) {	
-						qlong retVal = ECOreturnProperties( gInstLib, eci, (ECOproperty *) lvObject->properties()->getArray(), lvObject->propertyCount() );
-						
-						delete lvObject;
-						
-						return retVal; 				
-					};
-				};
+			oBaseComponent * lvObject = gXCompLib->instantiateComponent(eci->mCompId);
+			if (lvObject!=NULL) {
+				qlong retVal = ECOreturnProperties( gInstLib, eci, (ECOproperty *) lvObject->properties()->getArray(), lvObject->propertyCount() );
+				
+				delete lvObject;
+				
+				return retVal; 				
 			};
 		}; break;
 			
@@ -170,6 +173,36 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND hwnd, LPARAM Msg,WPARAM wPar
 			};			
 			
 		}; break;
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Methods
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+		case ECM_GETMETHODNAME : {
+			oBaseComponent * lvObject = gXCompLib->instantiateComponent(eci->mCompId);
+			if (lvObject != NULL) {				
+				qlong retVal = ECOreturnMethods( gInstLib, eci, (ECOmethodEvent *) lvObject->methods()->getArray(), lvObject->methodCount() );
+				
+				delete lvObject;				
+				return retVal; 				
+			};
+		}; break ;
+			
+		case ECM_METHODCALL : {
+			qlong lvResult;
+			qlong methodID = ECOgetId(eci);
+			
+			oBaseComponent* lvObject = (oBaseComponent*)ECOfindObject( eci, hwnd );
+			if (lvObject != NULL) { 
+				lvResult = lvObject->invokeMethod(methodID, eci);
+			} else {
+				// must be static method call
+				lvResult = gXCompLib->invokeMethod(methodID, eci);
+			};
+			return lvResult;
+		}; break;
+			
+			
 			
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // window messaging

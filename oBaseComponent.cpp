@@ -82,12 +82,12 @@ qbool oBaseComponent::canAssign(qint pPropID) {
 };
 
 // set the value of a property
-qbool oBaseComponent::setProperty(qint pPropID,EXTfldval &pNewValue,EXTCompInfo* eci) {
+qbool oBaseComponent::setProperty(qint pPropID,EXTfldval &pNewValue,EXTCompInfo* pECI) {
 	return false;
 };
 
 // get the value of a property
-void oBaseComponent::getProperty(qint pPropID,EXTfldval &pGetValue,EXTCompInfo* eci) {
+void oBaseComponent::getProperty(qint pPropID,EXTfldval &pGetValue,EXTCompInfo* pECI) {
 	// nothing to do here, base class does not have any properties...
 };
 
@@ -154,14 +154,12 @@ qProperties * oBaseVisComponent::properties(void) {
 		mProperties = oBaseComponent::properties();
 		
 		mProperties->addElements(oBaseVisProperties, sizeof(oBaseVisProperties) / sizeof(ECOproperty));
-		
-		addToTraceLog("Added %li properties",mProperties->numberOfElements());
 	};
 	return mProperties;
 };
 
 // set the value of a property
-qbool oBaseVisComponent::setProperty(qint pPropID,EXTfldval &pNewValue,EXTCompInfo* eci) {
+qbool oBaseVisComponent::setProperty(qint pPropID,EXTfldval &pNewValue,EXTCompInfo* pECI) {
 	// most anum properties are managed by Omnis but some we need to do ourselves...
 
 	switch (pPropID) {
@@ -184,7 +182,7 @@ qbool oBaseVisComponent::setProperty(qint pPropID,EXTfldval &pNewValue,EXTCompIn
 			return 1L;
 			break;
 		default:
-			return oBaseComponent::setProperty(pPropID, pNewValue, eci);
+			return oBaseComponent::setProperty(pPropID, pNewValue, pECI);
 			break;
 	};
 };

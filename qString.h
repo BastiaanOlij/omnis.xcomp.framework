@@ -8,10 +8,10 @@
  *  Bastiaan Olij
  */
 
+#include "xCompStandardIncludes.h"
+
 #ifndef qstringh
 #define qstringh
-
-#include "omnis.xcomp.framework.h"
 
 class qstring {
 private:

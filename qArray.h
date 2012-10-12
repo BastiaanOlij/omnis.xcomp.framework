@@ -153,5 +153,4 @@ qArray<qElement> * qArray<qElement>::operator += (qElement * pItem) {
 	return this;
 }
 
-
 #endif

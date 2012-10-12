@@ -18,13 +18,21 @@
  *  - Maybe split this into separate files for the three classes
  */
 
+#include "xCompStandardIncludes.h"
+#include "qArray.h"
+#include "qString.h"
+
 #ifndef obasecomponenth
 #define obasecomponenth
 
-#include "omnis.xcomp.framework.h"
+// Some handy arrays
+typedef	qArray<ECOproperty>		qProperties;
+typedef qArray<ECOmethodEvent>	qMethods;
 
 /* our base class for all component objects */
 class oBaseComponent {
+private:
+	
 protected:
 	HWND						mHWnd;																// Our main window handle (not applicable for NV objects)
 	qProperties					*mProperties;														// Property definition for our object (lazy loading)
@@ -42,13 +50,13 @@ public:
 	virtual qint				propertyCount(void);												// return the number of properties supported by this component
 	virtual qProperties *		properties(void);													// return array of property meta data
 	virtual qbool				canAssign(qint pPropID);											// return true/false if a property can be written too
-	virtual qbool				setProperty(qint pPropID,EXTfldval &pNewValue,EXTCompInfo* eci);	// set the value of a property
-	virtual void				getProperty(qint pPropID,EXTfldval &pGetValue,EXTCompInfo* eci);	// get the value of a property
+	virtual qbool				setProperty(qint pPropID,EXTfldval &pNewValue,EXTCompInfo* pECI);	// set the value of a property
+	virtual void				getProperty(qint pPropID,EXTfldval &pGetValue,EXTCompInfo* pECI);	// get the value of a property
 	
 /*** Methods ***/
 	virtual qint				methodCount(void);													// return the number of methods supported by this component
 	virtual qMethods *			methods(void);														// return an array of method meta data
-	virtual int					invokeMethod(qint pMethodId,EXTCompInfo* eci);						// invoke a method
+	virtual int					invokeMethod(qint pMethodId, EXTCompInfo* pECI);					// invoke a method
 	
 };
 
