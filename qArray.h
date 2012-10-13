@@ -35,6 +35,7 @@ public:
 	void			addElements(qElement * pItems, unsigned long pNumberOfItems); // add an (static) array of elements
 	
 	// push/pop to use array as a stack
+	void			clear(void);			// remove all elements from our array
 	void			push(qElement * pItem);	// push an item on the stack
 	qElement *		pop(void);				// pop an item from the stack
 	
@@ -97,7 +98,15 @@ void qArray<qElement>::addElements(qElement * pItems, unsigned long pNumberOfIte
 	}
 }
 
-// push an item on the stack
+// remove all elements from our array
+template<class qElement>
+void qArray<qElement>::clear(void) {
+	// maybe in the future implement freeing up memory if array has grown in size??
+	
+	mNumberOfElements = 0;
+}
+
+// push an item on the stack, we get a pointer but we copy the contents of whatever the pointer points too.
 template<class qElement>
 void qArray<qElement>::push(qElement * pItem) {
 	if (mArray == NULL) {

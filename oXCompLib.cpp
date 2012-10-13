@@ -28,6 +28,65 @@ qint oXCompLib::getResourceID(void){
 	return 1000;
 };
 
+// return the number of NV objects in our library
+unsigned long oXCompLib::numberOfObjects(void) {
+	return mObjects.numberOfElements();
+};
+
+// return our objects as an Omnis structure
+ECOobject * oXCompLib::objects(void) {
+	if (mECOobjects.numberOfElements()!=mObjects.numberOfElements()) {
+		mECOobjects.clear();
+		
+		// convert our array to something Omnis likes..
+		for (qlong i=0;i<mObjects.numberOfElements();i++) {
+			ECOobject	lvECOobject;
+			OXFNVobject	*lvNVObject = mObjects[i];
+			
+			lvECOobject.mObjectID = lvNVObject->objectID; // we use our resource ID for our object ID, this makes sure that our ID is unique over objects and components
+			lvECOobject.mNameResID = lvNVObject->objectID;
+			lvECOobject.mFlags = lvNVObject->flags;
+			lvECOobject.mGroupResID = lvNVObject->groupResID;
+			
+			mECOobjects.push(&lvECOobject);
+		};
+	};
+	
+	return (ECOobject *) mECOobjects.getArray();
+};
+
+
+// return object definition by index
+OXFNVobject * oXCompLib::objectByIndex(uint pIndex){
+	return mObjects[pIndex];
+};
+
+// return object definition by ID
+OXFNVobject * oXCompLib::objectByID(long pObjID) {
+	for (int i=0;i<mObjects.numberOfElements();i++) {
+		OXFNVobject *lvNVObject = mObjects[i];
+		if (lvNVObject->objectID == pObjID) {
+			return lvNVObject;
+		};
+	};
+	
+	return NULL;
+};
+
+// instantiate an object by object ID
+oBaseNVComponent * oXCompLib::instantiateObject(long pObjID) {
+	OXFNVobject *	lvNVObject;
+	lvNVObject = objectByID(pObjID);
+	if (lvNVObject != NULL) {
+		oBaseNVComponent * lvObject = (oBaseNVComponent *) lvNVObject->newObjectFunction();
+		
+		return lvObject;
+	};
+	
+	return NULL;
+};
+
+
 // return the number of components in our library
 unsigned long oXCompLib::numberOfComponents(void){
 	return mComponents.numberOfElements();
@@ -50,12 +109,12 @@ OXFcomponent * oXCompLib::componentByID(long pCompID) {
 };
 
 // instantiate a component by component ID
-oBaseComponent * oXCompLib::instantiateComponent(long pCompID) {
+oBaseVisComponent * oXCompLib::instantiateComponent(long pCompID) {
 	OXFcomponent *	lvComponent;
 	lvComponent = componentByID(pCompID);
 	
 	if (lvComponent!=NULL) {
-		oBaseComponent* lvObject = (oBaseComponent *) lvComponent->newObjectFunction(); 
+		oBaseVisComponent* lvObject = (oBaseVisComponent *) lvComponent->newObjectFunction(); 
 		
 		return lvObject;
 	}
@@ -63,10 +122,41 @@ oBaseComponent * oXCompLib::instantiateComponent(long pCompID) {
 	return NULL;
 };	
 
+// call the proper destruct code for this object
+void oXCompLib::destructComponent(oBaseComponent *pDestruct, long pCompID) {
+	int i;
+	for (i=0;i<mObjects.numberOfElements();i++) {
+		OXFNVobject *lvNVObject = mObjects[i];
+		if (lvNVObject->objectID == pCompID) {
+			lvNVObject->destructObjectFunc((oBaseNVComponent*) pDestruct);
+			
+			return;
+		};
+	};
+	
+	for (i=0;i<mComponents.numberOfElements();i++) {
+		OXFcomponent *lvComponent = mComponents[i];
+		if (lvComponent->componentID == pCompID) {
+			lvComponent->destructObjectFunc((oBaseVisComponent*) pDestruct);
+		
+			return;
+		};
+	};
+};
+
+
 
 // initialize our library
 qint oXCompLib::ecm_connect(void){
-	return EXT_FLAG_LOADED|EXT_FLAG_ALWAYS_USABLE|EXT_FLAG_REMAINLOADED; // also return EXT_FLAG_NVOBJECTS if we have non-visual objects	
+	qint	lvFlags = EXT_FLAG_LOADED|EXT_FLAG_ALWAYS_USABLE|EXT_FLAG_REMAINLOADED;
+	
+	// !BAS! We probably need to add a check for static functions here too.
+
+	if (numberOfObjects()!=0) {
+		lvFlags = lvFlags | EXT_FLAG_NVOBJECTS;		// Let Omnis know we also include non-visual object, this means ECM_GETOBJECT will be called
+	}
+	
+	return lvFlags;	
 };
 
 // cleanup

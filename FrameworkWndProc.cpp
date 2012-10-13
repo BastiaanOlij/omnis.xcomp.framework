@@ -21,11 +21,11 @@ class mainlib : public oXCompLib {
 mainlib *gXCompLib = NULL;
 
 // Component library entry point (name as declared in resource 31000 )
-extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND hwnd, LPARAM Msg,WPARAM wParam,LPARAM lParam,EXTCompInfo* eci) {
+extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wParam,LPARAM lParam,EXTCompInfo* pECI) {
 	// Initialize callback tables - THIS MUST BE DONE 
-	ECOsetupCallbacks(hwnd, eci);		
+	ECOsetupCallbacks(pHWND, pECI);		
 	
-	switch (Msg) {
+	switch (pMsg) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // library initialisation
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -53,12 +53,20 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND hwnd, LPARAM Msg,WPARAM wPar
 			delete gXCompLib;
 			return lvResult;
 		} break;
+			
+		// ECM_GETOBJECT - this is sent by OMNIS to find out which non-visual objects are part of our library
+		case ECM_GETOBJECT: {
+			str255	lvMsg("Testing ECM_GETOBJECT");
+			ECOaddTraceLine(&lvMsg);
+			
+			return ECOreturnObjects( gInstLib, pECI, gXCompLib->objects(), gXCompLib->numberOfObjects());
+		} break;
 
 		// ECM_GETCOMPLIBINFO - this is sent by OMNIS to find out the name of the library, and
 		// the number of components this library supports
 		case ECM_GETCOMPLIBINFO: {
-			return ECOreturnCompInfo( gInstLib, eci, gXCompLib->getResourceID(), gXCompLib->numberOfComponents() );
-		}
+			return ECOreturnCompInfo( gInstLib, pECI, gXCompLib->getResourceID(), gXCompLib->numberOfComponents() );
+		} break;
 
 		// ECM_GETCOMPID - this message is sent by OMNIS to get information about each component in this library
 		// wParam is a number from 1 to the number of components return on the ECM_GETCOMPLIBINFO message.
@@ -72,7 +80,7 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND hwnd, LPARAM Msg,WPARAM wPar
 		case ECM_GETCOMPID: {
 			OXFcomponent *lvComponent = gXCompLib->componentByIndex(wParam-1);
 			if (lvComponent!=NULL) {
-				return ECOreturnCompID( gInstLib, eci, lvComponent->componentID, lvComponent->componentType );				
+				return ECOreturnCompID( gInstLib, pECI, lvComponent->componentID, lvComponent->componentType );				
 			}
 		} break;
 			
@@ -81,9 +89,9 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND hwnd, LPARAM Msg,WPARAM wPar
 		case ECM_GETCOMPICON: {
 			// OMNIS will call you once per component for an icon.
 			// GENERIC_ICON is defined in the header and included in the resource file
-			OXFcomponent *lvComponent = gXCompLib->componentByID(eci->mCompId);
+			OXFcomponent *lvComponent = gXCompLib->componentByID(pECI->mCompId);
 			if (lvComponent!=NULL) {
-				return ECOreturnIcon( gInstLib, eci, lvComponent->bitmapID );				
+				return ECOreturnIcon( gInstLib, pECI, lvComponent->bitmapID );				
 			}
 			
 			return qfalse;
@@ -95,13 +103,33 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND hwnd, LPARAM Msg,WPARAM wPar
 			
 		// ECM_OBJCONSTRUCT - this is a message to create a new object.
 		case ECM_OBJCONSTRUCT: {
-			oBaseComponent * lvObject = gXCompLib->instantiateComponent(eci->mCompId);
+			oBaseComponent * lvObject;
+			
+			// first try and see if we have an existing NV object for this
+			lvObject = (oBaseComponent *) ECOfindNVObject(pECI->mOmnisInstance, lParam);
 			if (lvObject!=NULL) {
-				// !BAS! Need to check if we're initializing a visual or non-visual object and react accordingly!
-				lvObject->init(hwnd);
+				// nothing more to do...
+				return qtrue;
+			}
+			
+			// see if we can instantiate this as a non-visual component
+			lvObject = gXCompLib->instantiateObject(pECI->mCompId);
+			if (lvObject!=NULL) {
+				lvObject->init(pHWND); // pHWND is not really needed here but this made it easier to get our class structure in place...
+				
+				// and insert into a chain of non-visual object. The OMNIS library will maintain this chain
+				ECOinsertNVObject( pECI->mOmnisInstance, lParam, (void*)lvObject );
+				
+				return qtrue;
+			};
+			
+			// finally see if we can instantiate it as a visual component
+			lvObject = gXCompLib->instantiateComponent(pECI->mCompId);
+			if (lvObject!=NULL) {
+				lvObject->init(pHWND);
 				
 				// and insert into a chain of objects. The OMNIS library will maintain this chain
-				ECOinsertObject( eci, hwnd, (void*)lvObject );
+				ECOinsertObject( pECI, pHWND, (void*)lvObject );
 				return qtrue;				
 			};
 
@@ -109,32 +137,61 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND hwnd, LPARAM Msg,WPARAM wPar
 		} break;
 			
 		// ECM_OBJDESTRUCT - this is a message to inform you to delete the object
-		case ECM_OBJDESTRUCT: {
-			// !BAS! need to alter this to destruct the object properly
-			
-			// First find the object in the libraries chain of objects, 
-			// this call if ok also removes the object from the chain.
-			oBaseComponent* lvObject = (oBaseComponent*)ECOremoveObject( eci, hwnd );
+		case ECM_OBJDESTRUCT: {			
+			oBaseComponent* lvObject;
+
+			// See if we can remove this as a visual component
+			lvObject = (oBaseComponent*)ECOremoveObject( pECI, pHWND );			
 			if ( NULL!=lvObject ) {
-				// Now you can delete the object you previous allocated
-				// Note: The hwnd passed on ECM_OBJCONSTRUCT should not be deleted, as
-				// it was created and will be destroyed by OMNIS
-				delete lvObject;
+				gXCompLib->destructComponent(lvObject, pECI->mCompId);
 			}
+
+			// checking for non-visual component we only do if wParam == ECM_WPARAM_OBJINFO
+			if (wParam == ECM_WPARAM_OBJINFO) {
+				lvObject = (oBaseComponent*)ECOremoveNVObject(pECI->mOmnisInstance, lParam);
+				if (lvObject != NULL) {
+					gXCompLib->destructComponent(lvObject, pECI->mCompId);
+				}				
+			}
+			
 			return qtrue;
 		} break;
 
+		// ECM_OBJECT_COPY - this is a message to inform you that a copy of our object is required
+		case ECM_OBJECT_COPY: {
+			objCopyInfo * lvCopyInfo = (objCopyInfo*) lParam;
+			oBaseNVComponent * lvSourceObj = (oBaseNVComponent *) ECOfindNVObject(pECI->mOmnisInstance, lvCopyInfo->mSourceObject);
+			if (lvSourceObj != NULL) {
+				oBaseNVComponent * lvDestObj = (oBaseNVComponent *) ECOfindNVObject(pECI->mOmnisInstance, lvCopyInfo->mDestinationObject);
+				if (lvDestObj == NULL) {
+					lvDestObj = gXCompLib->instantiateObject(pECI->mCompId); // hopefully we can trust mCompID here..
+					if (lvDestObj != NULL) {
+						lvDestObj->init(pHWND);
+						ECOinsertNVObject(pECI->mOmnisInstance, lvCopyInfo->mDestinationObject, (void*)lvDestObj);
+					};
+				};
+				if (lvDestObj != NULL) {
+					lvDestObj->copyObject(lvSourceObj);
+				};
+			};
+		} break;
+		
+			
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // properties
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 		// ECM_GETPROPNAME - this message is sent by OMNIS to get information about the properties of an object
 		case ECM_GETPROPNAME: { 
-			oBaseComponent * lvObject = gXCompLib->instantiateComponent(eci->mCompId);
+			oBaseComponent * lvObject;
+			lvObject = gXCompLib->instantiateObject(pECI->mCompId); // try and instantiate a non visual object
+			if (lvObject == NULL) {
+				lvObject = gXCompLib->instantiateComponent(pECI->mCompId); // no? must be a component
+			}
 			if (lvObject!=NULL) {
-				qlong retVal = ECOreturnProperties( gInstLib, eci, (ECOproperty *) lvObject->properties()->getArray(), lvObject->propertyCount() );
+				qlong retVal = ECOreturnProperties( gInstLib, pECI, (ECOproperty *) lvObject->properties()->getArray(), lvObject->propertyCount() );
 				
-				delete lvObject;
+				gXCompLib->destructComponent(lvObject, pECI->mCompId);
 				
 				return retVal; 				
 			};
@@ -142,32 +199,44 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND hwnd, LPARAM Msg,WPARAM wPar
 			
 		// ECM_PROPERTYCANASSIGN: Is the property assignable
 		case ECM_PROPERTYCANASSIGN: {	
-			oBaseComponent* lvObject = (oBaseComponent*)ECOfindObject( eci, hwnd );
+			oBaseComponent* lvObject;
+			lvObject = (oBaseComponent *)ECOfindNVObject(pECI->mOmnisInstance, lParam); // first try and see if this is an NV object
+			if (lvObject == NULL) {
+				lvObject = (oBaseComponent *)ECOfindObject( pECI, pHWND ); // No? must be a visual component
+			}
 			if (lvObject != NULL) {
-				return lvObject->canAssign(ECOgetId(eci));
+				return lvObject->canAssign(ECOgetId(pECI));
 			};
 		}; break;
 			
 		// ECM_SETPROPERTY: Assignment to a property
 		case ECM_SETPROPERTY:	{	
-			EXTParamInfo* lvNewParam = ECOfindParamNum( eci, 1 );
+			EXTParamInfo* lvNewParam = ECOfindParamNum( pECI, 1 );
 			
-			oBaseComponent* lvObject = (oBaseComponent*)ECOfindObject( eci, hwnd );
+			oBaseComponent* lvObject;
+			lvObject = (oBaseComponent *)ECOfindNVObject(pECI->mOmnisInstance, lParam); // first try and see if this is an NV object
+			if (lvObject == NULL) {
+				lvObject = (oBaseComponent *)ECOfindObject( pECI, pHWND ); // No? must be a visual component
+			}
 			if ((lvObject != NULL) && (lvNewParam !=NULL)) {
 				EXTfldval lvValue( (qfldval)lvNewParam->mData );
 				
-				return lvObject->setProperty(ECOgetId(eci), lvValue, eci);
+				return lvObject->setProperty(ECOgetId(pECI), lvValue, pECI);
 			};			
 		}; break;
 		
 		// ECM_GETPROPERTY: Retrieve value from property
 		case ECM_GETPROPERTY:	{	
-			oBaseComponent* lvObject = (oBaseComponent*)ECOfindObject( eci, hwnd );
+			oBaseComponent* lvObject;
+			lvObject = (oBaseComponent *)ECOfindNVObject(pECI->mOmnisInstance, lParam); // first try and see if this is an NV object
+			if (lvObject == NULL) {
+				lvObject = (oBaseComponent *)ECOfindObject( pECI, pHWND ); // No? must be a visual component
+			}
 			if (lvObject != NULL) {
 				EXTfldval lvValue;
 				
-				lvObject->getProperty(ECOgetId(eci), lvValue, eci);
-				ECOaddParam(eci, &lvValue);
+				lvObject->getProperty(ECOgetId(pECI), lvValue, pECI);
+				ECOaddParam(pECI, &lvValue);
 				
 				return 1L;
 			};			
@@ -179,25 +248,33 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND hwnd, LPARAM Msg,WPARAM wPar
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 		case ECM_GETMETHODNAME : {
-			oBaseComponent * lvObject = gXCompLib->instantiateComponent(eci->mCompId);
+			oBaseComponent * lvObject;
+			lvObject = gXCompLib->instantiateObject(pECI->mCompId); // try and instantiate a non visual object
+			if (lvObject == NULL) {
+				lvObject = gXCompLib->instantiateComponent(pECI->mCompId); // no? must be a component
+			}
 			if (lvObject != NULL) {				
-				qlong retVal = ECOreturnMethods( gInstLib, eci, (ECOmethodEvent *) lvObject->methods()->getArray(), lvObject->methodCount() );
+				qlong retVal = ECOreturnMethods( gInstLib, pECI, (ECOmethodEvent *) lvObject->methods()->getArray(), lvObject->methodCount() );
 				
-				delete lvObject;				
+				gXCompLib->destructComponent(lvObject, pECI->mCompId);
 				return retVal; 				
 			};
 		}; break ;
 			
 		case ECM_METHODCALL : {
 			qlong lvResult;
-			qlong methodID = ECOgetId(eci);
+			qlong methodID = ECOgetId(pECI);
 			
-			oBaseComponent* lvObject = (oBaseComponent*)ECOfindObject( eci, hwnd );
+			oBaseComponent* lvObject;
+			lvObject = (oBaseComponent *)ECOfindNVObject(pECI->mOmnisInstance, lParam); // first try and see if this is an NV object
+			if (lvObject == NULL) {
+				lvObject = (oBaseComponent *)ECOfindObject( pECI, pHWND ); // No? must be a visual component
+			}
 			if (lvObject != NULL) { 
-				lvResult = lvObject->invokeMethod(methodID, eci);
+				lvResult = lvObject->invokeMethod(methodID, pECI);
 			} else {
 				// must be static method call
-				lvResult = gXCompLib->invokeMethod(methodID, eci);
+				lvResult = gXCompLib->invokeMethod(methodID, pECI);
 			};
 			return lvResult;
 		}; break;
@@ -211,9 +288,9 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND hwnd, LPARAM Msg,WPARAM wPar
 		// WM_PAINT - standard paint message
 		case WM_PAINT: {
 			 // This should only be called on visual object
-			 oBaseVisComponent* lvObject = (oBaseVisComponent*)ECOfindObject( eci, hwnd );
+			 oBaseVisComponent* lvObject = (oBaseVisComponent*)ECOfindObject( pECI, pHWND );
 			 // and if its good, call the paint function
-			 if ( NULL!=lvObject && lvObject->wm_paint(eci) )
+			 if ( NULL!=lvObject && lvObject->wm_paint(pECI) )
 			 return qtrue;
 			 
 		} break;
@@ -221,6 +298,6 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND hwnd, LPARAM Msg,WPARAM wPar
 	}
 	
 	// As a final result this must ALWAYS be called. It handles all other messages that this component
-	// decides to ignore.
-	return WNDdefWindowProc(hwnd,Msg,wParam,lParam,eci);
+	// dpECIdes to ignore.
+	return WNDdefWindowProc(pHWND,pMsg,wParam,lParam,pECI);
 }
