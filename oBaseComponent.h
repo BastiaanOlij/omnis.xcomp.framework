@@ -40,7 +40,7 @@ protected:
 	
 public:
 	oBaseComponent(void);																			// constructor
-	~oBaseComponent(void);																			// destructor
+	virtual ~oBaseComponent(void);																	// destructor
 	virtual	qbool				init(HWND pHWnd);													// Initialize component
 
 /*** some nice support function ***/

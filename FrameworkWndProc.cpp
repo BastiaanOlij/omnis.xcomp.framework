@@ -143,14 +143,14 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 			// See if we can remove this as a visual component
 			lvObject = (oBaseComponent*)ECOremoveObject( pECI, pHWND );			
 			if ( NULL!=lvObject ) {
-				gXCompLib->destructComponent(lvObject, pECI->mCompId);
+				delete lvObject;
 			}
 
 			// checking for non-visual component we only do if wParam == ECM_WPARAM_OBJINFO
 			if (wParam == ECM_WPARAM_OBJINFO) {
 				lvObject = (oBaseComponent*)ECOremoveNVObject(pECI->mOmnisInstance, lParam);
 				if (lvObject != NULL) {
-					gXCompLib->destructComponent(lvObject, pECI->mCompId);
+					delete lvObject;
 				}				
 			}
 			
@@ -191,7 +191,7 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 			if (lvObject!=NULL) {
 				qlong retVal = ECOreturnProperties( gInstLib, pECI, (ECOproperty *) lvObject->properties()->getArray(), lvObject->propertyCount() );
 				
-				gXCompLib->destructComponent(lvObject, pECI->mCompId);
+				delete lvObject;
 				
 				return retVal; 				
 			};
@@ -256,7 +256,7 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 			if (lvObject != NULL) {				
 				qlong retVal = ECOreturnMethods( gInstLib, pECI, (ECOmethodEvent *) lvObject->methods()->getArray(), lvObject->methodCount() );
 				
-				gXCompLib->destructComponent(lvObject, pECI->mCompId);
+				delete lvObject;
 				return retVal; 				
 			};
 		}; break ;

@@ -26,7 +26,6 @@ struct OXFNVobject {
 	qlong				flags;												// flags
 	qlong				groupResID;											// group resource ID
 	void *				(*newObjectFunction) (void);						// Function pointer to the function that returns a new instance
-	void				(*destructObjectFunc) (oBaseNVComponent * pObj);	// Function pointer to the function that destructs our instance
 };
 
 // Array of objects
@@ -39,7 +38,6 @@ struct OXFcomponent {
 	unsigned int		componentID;										// Resource ID for this component, also the object ID
 	unsigned int		bitmapID;											// Resource ID for this components bitmap
 	void *				(*newObjectFunction) (void);						// Function pointer to the function that returns a new instance
-	void				(*destructObjectFunc) (oBaseVisComponent * pObj);	// Function pointer to the function that destructs our instance
 };
 
 // Array of components
@@ -72,9 +70,6 @@ public:
 	OXFcomponent *		componentByIndex(uint pIndex);						// return component by index
 	OXFcomponent *		componentByID(long pCompID);						// return component by component ID
 	oBaseVisComponent *	instantiateComponent(long pCompID);					// instantiate a component by component ID
-	
-	// destruct an object we've created
-	void				destructComponent(oBaseComponent *pDestruct, long pCompID);	// call the proper destruct code for this object
 	
 	// calls from our wndproc
 	virtual qint		ecm_connect(void);									// initialize our library

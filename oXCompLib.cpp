@@ -120,31 +120,7 @@ oBaseVisComponent * oXCompLib::instantiateComponent(long pCompID) {
 	}
 	
 	return NULL;
-};	
-
-// call the proper destruct code for this object
-void oXCompLib::destructComponent(oBaseComponent *pDestruct, long pCompID) {
-	int i;
-	for (i=0;i<mObjects.numberOfElements();i++) {
-		OXFNVobject *lvNVObject = mObjects[i];
-		if (lvNVObject->objectID == pCompID) {
-			lvNVObject->destructObjectFunc((oBaseNVComponent*) pDestruct);
-			
-			return;
-		};
-	};
-	
-	for (i=0;i<mComponents.numberOfElements();i++) {
-		OXFcomponent *lvComponent = mComponents[i];
-		if (lvComponent->componentID == pCompID) {
-			lvComponent->destructObjectFunc((oBaseVisComponent*) pDestruct);
-		
-			return;
-		};
-	};
 };
-
-
 
 // initialize our library
 qint oXCompLib::ecm_connect(void){
