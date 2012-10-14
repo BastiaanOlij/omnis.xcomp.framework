@@ -59,13 +59,15 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 			str255	lvMsg("Testing ECM_GETOBJECT");
 			ECOaddTraceLine(&lvMsg);
 			
-			return ECOreturnObjects( gInstLib, pECI, gXCompLib->objects(), gXCompLib->numberOfObjects());
+			qECOobjects * lvObject = gXCompLib->objects();
+			
+			return ECOreturnObjects( gInstLib, pECI, (ECOobject *) lvObject->getArray(), lvObject->numberOfElements());
 		} break;
 
 		// ECM_GETCOMPLIBINFO - this is sent by OMNIS to find out the name of the library, and
 		// the number of components this library supports
 		case ECM_GETCOMPLIBINFO: {
-			return ECOreturnCompInfo( gInstLib, pECI, gXCompLib->getResourceID(), gXCompLib->numberOfComponents() );
+			return ECOreturnCompInfo( gInstLib, pECI, gXCompLib->getResourceID(), gXCompLib->numberOfvisComps() );
 		} break;
 
 		// ECM_GETCOMPID - this message is sent by OMNIS to get information about each component in this library
@@ -78,9 +80,9 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 		//										cRepObjType_Basic	- a basic report object.
 		//										There are others 	- see BLYTH examples and headers
 		case ECM_GETCOMPID: {
-			OXFcomponent *lvComponent = gXCompLib->componentByIndex(wParam-1);
-			if (lvComponent!=NULL) {
-				return ECOreturnCompID( gInstLib, pECI, lvComponent->componentID, lvComponent->componentType );				
+			OXFcomponent lvComponent = gXCompLib->visCompByIndex(wParam-1);
+			if (lvComponent.componentType!=0) {
+				return ECOreturnCompID( gInstLib, pECI, lvComponent.componentID, lvComponent.componentType );				
 			}
 		} break;
 			
@@ -89,9 +91,9 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 		case ECM_GETCOMPICON: {
 			// OMNIS will call you once per component for an icon.
 			// GENERIC_ICON is defined in the header and included in the resource file
-			OXFcomponent *lvComponent = gXCompLib->componentByID(pECI->mCompId);
-			if (lvComponent!=NULL) {
-				return ECOreturnIcon( gInstLib, pECI, lvComponent->bitmapID );				
+			OXFcomponent lvComponent = gXCompLib->componentByID(pECI->mCompId);
+			if (lvComponent.componentType!=0) {
+				return ECOreturnIcon( gInstLib, pECI, lvComponent.bitmapID );				
 			}
 			
 			return qfalse;
@@ -112,24 +114,12 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 				return qtrue;
 			}
 			
-			// see if we can instantiate this as a non-visual component
-			lvObject = gXCompLib->instantiateObject(pECI->mCompId);
+			// instantiate our component
+			lvObject = gXCompLib->instantiateComponent(pECI->mCompId, pECI, pHWND, lParam);
 			if (lvObject!=NULL) {
-				lvObject->init(pHWND); // pHWND is not really needed here but this made it easier to get our class structure in place...
-				
-				// and insert into a chain of non-visual object. The OMNIS library will maintain this chain
-				ECOinsertNVObject( pECI->mOmnisInstance, lParam, (void*)lvObject );
-				
-				return qtrue;
-			};
-			
-			// finally see if we can instantiate it as a visual component
-			lvObject = gXCompLib->instantiateComponent(pECI->mCompId);
-			if (lvObject!=NULL) {
+				// this will eventually move into instantiateComponent once we restructure parameters and methods
 				lvObject->init(pHWND);
 				
-				// and insert into a chain of objects. The OMNIS library will maintain this chain
-				ECOinsertObject( pECI, pHWND, (void*)lvObject );
 				return qtrue;				
 			};
 
@@ -164,10 +154,9 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 			if (lvSourceObj != NULL) {
 				oBaseNVComponent * lvDestObj = (oBaseNVComponent *) ECOfindNVObject(pECI->mOmnisInstance, lvCopyInfo->mDestinationObject);
 				if (lvDestObj == NULL) {
-					lvDestObj = gXCompLib->instantiateObject(pECI->mCompId); // hopefully we can trust mCompID here..
+					lvDestObj = (oBaseNVComponent *)gXCompLib->instantiateComponent(pECI->mCompId, pECI, pHWND, lvCopyInfo->mDestinationObject); // hopefully we can trust mCompID here..
 					if (lvDestObj != NULL) {
 						lvDestObj->init(pHWND);
-						ECOinsertNVObject(pECI->mOmnisInstance, lvCopyInfo->mDestinationObject, (void*)lvDestObj);
 					};
 				};
 				if (lvDestObj != NULL) {
@@ -184,17 +173,14 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 		// ECM_GETPROPNAME - this message is sent by OMNIS to get information about the properties of an object
 		case ECM_GETPROPNAME: { 
 			oBaseComponent * lvObject;
-			lvObject = gXCompLib->instantiateObject(pECI->mCompId); // try and instantiate a non visual object
-			if (lvObject == NULL) {
-				lvObject = gXCompLib->instantiateComponent(pECI->mCompId); // no? must be a component
-			}
+			lvObject = gXCompLib->instantiateComponent(pECI->mCompId, NULL, pHWND, 0); // no? must be a component
 			if (lvObject!=NULL) {
 				qlong retVal = ECOreturnProperties( gInstLib, pECI, (ECOproperty *) lvObject->properties()->getArray(), lvObject->propertyCount() );
 				
 				delete lvObject;
 				
 				return retVal; 				
-			};
+			}; 
 		}; break;
 			
 		// ECM_PROPERTYCANASSIGN: Is the property assignable
@@ -249,10 +235,7 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 
 		case ECM_GETMETHODNAME : {
 			oBaseComponent * lvObject;
-			lvObject = gXCompLib->instantiateObject(pECI->mCompId); // try and instantiate a non visual object
-			if (lvObject == NULL) {
-				lvObject = gXCompLib->instantiateComponent(pECI->mCompId); // no? must be a component
-			}
+			lvObject = gXCompLib->instantiateComponent(pECI->mCompId, NULL, pHWND, 0); // no? must be a component
 			if (lvObject != NULL) {				
 				qlong retVal = ECOreturnMethods( gInstLib, pECI, (ECOmethodEvent *) lvObject->methods()->getArray(), lvObject->methodCount() );
 				

@@ -28,64 +28,41 @@ qint oXCompLib::getResourceID(void){
 	return 1000;
 };
 
-// return the number of NV objects in our library
-unsigned long oXCompLib::numberOfObjects(void) {
-	return mObjects.numberOfElements();
-};
-
 // return our objects as an Omnis structure
-ECOobject * oXCompLib::objects(void) {
-	if (mECOobjects.numberOfElements()!=mObjects.numberOfElements()) {
-		mECOobjects.clear();
+qECOobjects * oXCompLib::objects(void) {
+	return &mECOobjects;
+};
+
+// Add a component
+void oXCompLib::addComponent(OXFcomponent pAdd) {
+	if (pAdd.componentType == cObjType_NVObject) {
+		// also add it to our mECOobjects list, this is how Omnis requires it...
+		ECOobject	lvNVObject;
 		
-		// convert our array to something Omnis likes..
-		for (qlong i=0;i<mObjects.numberOfElements();i++) {
-			ECOobject	lvECOobject;
-			OXFNVobject	*lvNVObject = mObjects[i];
-			
-			lvECOobject.mObjectID = lvNVObject->objectID; // we use our resource ID for our object ID, this makes sure that our ID is unique over objects and components
-			lvECOobject.mNameResID = lvNVObject->objectID;
-			lvECOobject.mFlags = lvNVObject->flags;
-			lvECOobject.mGroupResID = lvNVObject->groupResID;
-			
-			mECOobjects.push(&lvECOobject);
-		};
-	};
-	
-	return (ECOobject *) mECOobjects.getArray();
-};
-
-
-// return object definition by index
-OXFNVobject * oXCompLib::objectByIndex(uint pIndex){
-	return mObjects[pIndex];
-};
-
-// return object definition by ID
-OXFNVobject * oXCompLib::objectByID(long pObjID) {
-	for (int i=0;i<mObjects.numberOfElements();i++) {
-		OXFNVobject *lvNVObject = mObjects[i];
-		if (lvNVObject->objectID == pObjID) {
-			return lvNVObject;
-		};
-	};
-	
-	return NULL;
-};
-
-// instantiate an object by object ID
-oBaseNVComponent * oXCompLib::instantiateObject(long pObjID) {
-	OXFNVobject *	lvNVObject;
-	lvNVObject = objectByID(pObjID);
-	if (lvNVObject != NULL) {
-		oBaseNVComponent * lvObject = (oBaseNVComponent *) lvNVObject->newObjectFunction();
+		lvNVObject.mObjectID	= pAdd.componentID;			// Components' ID for the object 
+		lvNVObject.mNameResID	= pAdd.componentID;			// Objects' name resource id (equals our component ID
+		lvNVObject.mFlags		= pAdd.flags;					// Flags
+		lvNVObject.mGroupResID	= pAdd.groupResID;				// Objects' group resource id (may be 0 for default)
 		
-		return lvObject;
+		mECOobjects.push(lvNVObject);
+	} else {
+		// We just need to map it as Omnis does not expect our visual components to be mixed with our non-visual ones.
+		mVisIndex.push(mComponents.numberOfElements()); // as we're about to add our component but our index is 0 based, this works fine:)
 	};
 	
-	return NULL;
+	mComponents.push(pAdd);
 };
 
+// return number of visual components
+unsigned long oXCompLib::numberOfvisComps(void) {
+	return mVisIndex.numberOfElements();
+};
+
+// return visual component by index using our vis index
+OXFcomponent oXCompLib::visCompByIndex(uint pIndex) {
+	uint lvIndex = (uint) mVisIndex[pIndex];
+	return componentByIndex(lvIndex);
+};
 
 // return the number of components in our library
 unsigned long oXCompLib::numberOfComponents(void){
@@ -93,28 +70,46 @@ unsigned long oXCompLib::numberOfComponents(void){
 };
 
 // return component by index
-OXFcomponent * oXCompLib::componentByIndex(uint pIndex) {
+OXFcomponent oXCompLib::componentByIndex(uint pIndex) {
 	return mComponents[pIndex];
 };
 
 // return component by component ID
-OXFcomponent * oXCompLib::componentByID(long pCompID) {
+OXFcomponent oXCompLib::componentByID(long pCompID) {
+	OXFcomponent lvEmpty;
+	
 	for (int i=0;i<mComponents.numberOfElements();i++) {
-		OXFcomponent *lvComponent = mComponents[i];
-		if (lvComponent->componentID == pCompID) {
+		OXFcomponent lvComponent = mComponents[i];
+		if (lvComponent.componentID == pCompID) {
 			return lvComponent;
 		}
 	}
-	return NULL;
+	
+	lvEmpty.componentType = 0;
+	return lvEmpty;
 };
 
 // instantiate a component by component ID
-oBaseVisComponent * oXCompLib::instantiateComponent(long pCompID) {
-	OXFcomponent *	lvComponent;
-	lvComponent = componentByID(pCompID);
+oBaseComponent * oXCompLib::instantiateComponent(long pCompID
+													, EXTCompInfo* pECI
+													, HWND pHWND
+													, LPARAM pParam) {
 	
-	if (lvComponent!=NULL) {
-		oBaseVisComponent* lvObject = (oBaseVisComponent *) lvComponent->newObjectFunction(); 
+	// Once we redo how we handle parameters and methods we can remove pCompID and use pECI->mCompId instead
+	OXFcomponent lvComponent = componentByID(pCompID);
+	
+	if (lvComponent.componentType!=0) {
+		oBaseComponent* lvObject = (oBaseComponent *) lvComponent.newObjectFunction();
+		
+		if ((lvObject!=NULL) && (pECI!=NULL)) {
+			// and insert into a chain of objects. The OMNIS library will maintain this chain
+
+			if (lvComponent.componentType == cObjType_NVObject) {
+				ECOinsertNVObject( pECI->mOmnisInstance, pParam, (void*)lvObject );				
+			} else {
+				ECOinsertObject( pECI, pHWND, (void*)lvObject );
+			}
+		}
 		
 		return lvObject;
 	}
@@ -128,7 +123,7 @@ qint oXCompLib::ecm_connect(void){
 	
 	// !BAS! We probably need to add a check for static functions here too.
 
-	if (numberOfObjects()!=0) {
+	if (mECOobjects.numberOfElements()!=0) {
 		lvFlags = lvFlags | EXT_FLAG_NVOBJECTS;		// Let Omnis know we also include non-visual object, this means ECM_GETOBJECT will be called
 	}
 	
@@ -143,7 +138,7 @@ qbool oXCompLib::ecm_disconnect(void){
 };
 
 // invoke a static method
-int	oXCompLib::invokeMethod(qint pMethodId, EXTCompInfo* eci){
+int	oXCompLib::invokeMethod(qint pMethodId, EXTCompInfo* pECI){
 	// no static methods by default
 	return qfalse;
 };		

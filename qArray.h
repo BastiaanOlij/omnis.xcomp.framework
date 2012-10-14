@@ -36,12 +36,12 @@ public:
 	
 	// push/pop to use array as a stack
 	void			clear(void);			// remove all elements from our array
-	void			push(qElement * pItem);	// push an item on the stack
-	qElement *		pop(void);				// pop an item from the stack
+	void			push(qElement pItem);	// push an item on the stack
+	qElement		pop(void);				// pop an item from the stack
 	
 	// operators
-	qElement *		operator [] (unsigned long pIndex);	// get an item at this index
-	qArray<qElement> * operator += (qElement *pItem);		// add an item
+	qElement		operator [] (unsigned long pIndex);	// get an item at this index
+	qArray<qElement> * operator += (qElement pItem);		// add an item
 	
 	enum exceptions {
 		CantAllocateMemory,
@@ -94,11 +94,11 @@ void qArray<qElement>::addElements(qElement * pItems, unsigned long pNumberOfIte
 	}
 	
 	for (unsigned long i = 0; i<pNumberOfItems; i++) {
-		push(&pItems[i]);
+		push(pItems[i]);
 	}
 }
 
-// remove all elements from our array
+// remove all elements from our array, if our array contains pointers this does NOT free up the memory being pointed too!
 template<class qElement>
 void qArray<qElement>::clear(void) {
 	// maybe in the future implement freeing up memory if array has grown in size??
@@ -108,7 +108,7 @@ void qArray<qElement>::clear(void) {
 
 // push an item on the stack, we get a pointer but we copy the contents of whatever the pointer points too.
 template<class qElement>
-void qArray<qElement>::push(qElement * pItem) {
+void qArray<qElement>::push(qElement pItem) {
 	if (mArray == NULL) {
 		throw BufferNotInitialized;
 	}
@@ -122,12 +122,12 @@ void qArray<qElement>::push(qElement * pItem) {
 	}
 	
 	mNumberOfElements++;
-	mArray[mNumberOfElements-1] = *pItem;
+	mArray[mNumberOfElements-1] = pItem;
 }
 
 // pop an item from the stack
 template<class qElement>
-qElement * qArray<qElement>::pop(void) {
+qElement qArray<qElement>::pop(void) {
 	if (mArray == NULL) {
 		throw BufferNotInitialized;
 	}
@@ -137,12 +137,12 @@ qElement * qArray<qElement>::pop(void) {
 	}
 	
 	mNumberOfElements--; // simply decrease our size
-	return &mArray[mNumberOfElements]; // Return pointer to our last entry 
+	return mArray[mNumberOfElements]; // Return pointer to our last entry 
 }
 
 // get an item at this index
 template<class qElement>
-qElement * qArray<qElement>::operator [] (unsigned long pIndex) {
+qElement qArray<qElement>::operator [] (unsigned long pIndex) {
 	if (mArray == NULL) {
 		throw BufferNotInitialized;
 	}
@@ -151,12 +151,12 @@ qElement * qArray<qElement>::operator [] (unsigned long pIndex) {
 		throw IndexOutOfBounds;
 	}
 	
-	return &mArray[pIndex];
+	return mArray[pIndex];
 }	
 
 // add an item
 template<class qElement>
-qArray<qElement> * qArray<qElement>::operator += (qElement * pItem) {
+qArray<qElement> * qArray<qElement>::operator += (qElement pItem) {
 	push(pItem);
 	
 	return this;

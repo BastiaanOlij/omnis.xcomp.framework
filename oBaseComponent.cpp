@@ -160,7 +160,7 @@ qProperties * oBaseVisComponent::properties(void) {
 
 // set the value of a property
 qbool oBaseVisComponent::setProperty(qint pPropID,EXTfldval &pNewValue,EXTCompInfo* pECI) {
-	// most anum properties are managed by Omnis but some we need to do ourselves...
+	// most anum properties are managed by Omnis but some we need to do ourselves, no idea why...
 
 	switch (pPropID) {
 		case anumForecolor:
@@ -250,7 +250,9 @@ void oBaseVisComponent::setup(EXTCompInfo* pECI) {
 	
 	// Now see if we need to override any of these defaults with our fieldstyle...
 	if (fieldStyle[0]>0) {
-		ECOgetStyle( ECOgetApp(pECI->mInstLocp), &fieldStyle[1], fieldStyle[0], &mTextSpec );		
+		ECOgetStyle( ECOgetApp(pECI->mInstLocp), &fieldStyle[1], fieldStyle[0], &mTextSpec );
+		
+		// !BAS! need to also see if we need to get our foreground color, background color and/or background pattern
 	};	
 };
 
@@ -283,8 +285,8 @@ qbool oBaseVisComponent::wm_paint(EXTCompInfo* pECI) {
 		// do our real drawing
 		doPaint(lvHDC);
 		
-		// If in design mode, then call drawNumber & drawMultiKnobs to draw design
-		// numbers and multiknobs, if required.
+		// If in design mode, then call drawDesignName, drawNumber & drawMultiKnobs to draw design
+		// name, numbers and multiknobs, if required.
 		if ( ECOisDesign(mHWnd) ) {
 			ECOdrawDesignName(mHWnd,lvHDC);
 			ECOdrawNumber(mHWnd,lvHDC);

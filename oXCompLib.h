@@ -20,23 +20,16 @@
 #ifndef xcomplibh
 #define xcomplibh
 
-// Non-visual object definition
-struct OXFNVobject {
-	qlong				objectID;											// Resource ID for this object
-	qlong				flags;												// flags
-	qlong				groupResID;											// group resource ID
-	void *				(*newObjectFunction) (void);						// Function pointer to the function that returns a new instance
-};
-
 // Array of objects
-typedef qArray<OXFNVobject> qObjects;
 typedef qArray<ECOobject> qECOobjects;
 
 // Visual object definition
 struct OXFcomponent {
 	int					componentType;										// Type of component
 	unsigned int		componentID;										// Resource ID for this component, also the object ID
-	unsigned int		bitmapID;											// Resource ID for this components bitmap
+	unsigned int		bitmapID;											// Resource ID for this components bitmap (only for visible objects)
+	qlong				flags;												// flags (only for NV-objects)
+	qlong				groupResID;											// group resource ID (only for NV-objects)
 	void *				(*newObjectFunction) (void);						// Function pointer to the function that returns a new instance
 };
 
@@ -46,10 +39,10 @@ typedef qArray<OXFcomponent> qComponents;
 class oXCompLib {
 private:
 	qECOobjects			mECOobjects;										// our object array converted to Omnis
+	qArray<uint>		mVisIndex;											// index of visual components
+	qComponents			mComponents;										// array of component definitions
 
 protected:
-	qObjects			mObjects;											// array of object definitions
-	qComponents			mComponents;										// array of component definitions
 	
 public:	
 	oXCompLib(void);														// constructor
@@ -57,26 +50,26 @@ public:
 	
 	// info
 	virtual qint		getResourceID(void);								// get our library resource id
-	
-	// access to non visual object
-	unsigned long		numberOfObjects(void);								// return the number of NV objects in our library
-	ECOobject *			objects(void);										// return our objects as an Omnis structure
-	OXFNVobject *		objectByIndex(uint pIndex);							// return object definition by index
-	OXFNVobject *		objectByID(long pObjID);							// return object definition by ID
-	oBaseNVComponent *	instantiateObject(long pObjID);						// instantiate an object by object ID
-	
+		
 	// access to components
+	qECOobjects *		objects(void);										// return our objects as an Omnis structure
+	void				addComponent(OXFcomponent pAdd);					// Add a component
+	unsigned long		numberOfvisComps(void);								// return number of visual components
+	OXFcomponent		visCompByIndex(uint pIndex);						// return visual component by index using our vis index
 	unsigned long		numberOfComponents(void);							// return the number of components in our library
-	OXFcomponent *		componentByIndex(uint pIndex);						// return component by index
-	OXFcomponent *		componentByID(long pCompID);						// return component by component ID
-	oBaseVisComponent *	instantiateComponent(long pCompID);					// instantiate a component by component ID
+	OXFcomponent		componentByIndex(uint pIndex);						// return component by index
+	OXFcomponent		componentByID(long pCompID);						// return component by component ID
+	oBaseComponent *	instantiateComponent(long pCompID
+											 , EXTCompInfo* pECI
+											 , HWND pHWND
+											 , LPARAM pParam);				// instantiate a component by component ID
 	
 	// calls from our wndproc
 	virtual qint		ecm_connect(void);									// initialize our library
 	virtual qbool		ecm_disconnect(void);								// cleanup
 
 	// need to add methods for returning static method information
-	virtual int			invokeMethod(qint pMethodId, EXTCompInfo* eci);		// invoke a static method
+	virtual int			invokeMethod(qint pMethodId, EXTCompInfo* pECI);		// invoke a static method
 };
 
 #endif

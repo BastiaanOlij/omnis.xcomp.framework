@@ -25,6 +25,9 @@
 #ifndef obasecomponenth
 #define obasecomponenth
 
+// Made a type for non-visual objects...
+const int cObjType_NVObject = 255;																	// Omnis reserved 1-9, assume they won't reach 255 any time soon...
+
 // Some handy arrays
 typedef	qArray<ECOproperty>		qProperties;
 typedef qArray<ECOmethodEvent>	qMethods;
