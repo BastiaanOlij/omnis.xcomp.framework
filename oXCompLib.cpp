@@ -20,7 +20,19 @@ oXCompLib::oXCompLib(void) {
 
 // destructor
 oXCompLib::~oXCompLib(void) {
-	// nothing to do here right now...
+	// Make sure we properly clear our memory
+	// we aren't freeing the memory for mComponents, mECOObjects, etc. itself, that will happen when the library unloads
+	// but we do need to free the memory allocated by the objects contained within.
+	// I guess one day we could subclass qArray<OXFComponent> and put this logic inside of clear and call clear from the destruct.
+	
+	while (mComponents.numberOfElements()>0) {
+		OXFcomponent lvComponent = mComponents.pop();
+		if (lvComponent.mProperties!=0) {
+			delete lvComponent.mProperties;
+		};
+	};
+	
+	mECOobjects.clear();
 };
 
 // get our library resource id
@@ -116,6 +128,27 @@ oBaseComponent * oXCompLib::instantiateComponent(long pCompID
 	
 	return NULL;
 };
+
+// return property meta data for this object
+qProperties * oXCompLib::properties(long pCompID) {
+	OXFcomponent lvComponent = componentByID(pCompID);
+	if (lvComponent.componentType!=0) {
+		return lvComponent.mProperties;
+	};
+	
+	return NULL;
+};
+
+// return method meta data for this object
+qMethods * oXCompLib::methods(long pCompID) {
+	OXFcomponent lvComponent = componentByID(pCompID);
+	if (lvComponent.componentType!=0) {
+		return lvComponent.mMethods;
+	};
+	
+	return NULL;	
+};
+
 
 // initialize our library
 qint oXCompLib::ecm_connect(void){

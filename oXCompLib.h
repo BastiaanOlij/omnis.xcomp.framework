@@ -31,6 +31,8 @@ struct OXFcomponent {
 	qlong				flags;												// flags (only for NV-objects)
 	qlong				groupResID;											// group resource ID (only for NV-objects)
 	void *				(*newObjectFunction) (void);						// Function pointer to the function that returns a new instance
+	qProperties *		mProperties;										// Array containing property definitions
+	qMethods *			mMethods;											// Array containing method definitions
 };
 
 // Array of components
@@ -63,6 +65,10 @@ public:
 											 , EXTCompInfo* pECI
 											 , HWND pHWND
 											 , LPARAM pParam);				// instantiate a component by component ID
+	
+	// access to meta data
+	qProperties *		properties(long pCompID);							// return property meta data for this object
+	qMethods *			methods(long pCompID);								// return method meta data for this object
 	
 	// calls from our wndproc
 	virtual qint		ecm_connect(void);									// initialize our library

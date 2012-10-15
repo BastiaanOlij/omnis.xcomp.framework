@@ -16,26 +16,17 @@
 
 // constructor
 oBaseComponent::oBaseComponent(void) {
-	mProperties = NULL;
-	mMethods = NULL;
+	// nothing to do here just yet
 };
 
 // destructor
 oBaseComponent::~oBaseComponent(void) {
-	if (mProperties!=NULL) {
-		delete mProperties;
-		mProperties = NULL;
-	};
-	
-	if (mMethods!=NULL) {
-		delete mMethods;
-		mMethods = NULL;
-	}
+	// nothing to do here just yet
 };
 
 // Initialize component
 qbool oBaseComponent::init(HWND pHWnd) {
-	mHWnd = pHWnd;			// note, this is useless for non-visual components but it made my life easier to keep the inits the same.
+	mHWnd = pHWnd;			// We'll move this into oBaseVisComponent shortly..
 	
 	return true;
 };
@@ -60,20 +51,15 @@ void oBaseComponent::addToTraceLog(const char *pData, ...) {
 
 /*** Properties ***/
 
-// return the number of properties supported by this component
-qint oBaseComponent::propertyCount(void) {
-	return this->properties()->numberOfElements();
-};
-
-// return array of property meta data
-// Lazy loading approach, check if mProperties is not set:
-// - if not set call superclass and add your own properties
-// - if set, return as is
+// Static function, return array of property meta data
+// Each subclass of our component must implement this and add their properties into this definition
+// See oBaseNVComponent and oBaseVisComponent for examples
 qProperties * oBaseComponent::properties(void) {
-	if (mProperties==NULL) {
-		mProperties = new qProperties();
-	};
-	return mProperties;
+	qProperties * lvProperties = new qProperties();
+
+	// Our base class has not properties
+	
+	return lvProperties;
 };
 
 // return true/false if a property can be written too
@@ -92,20 +78,16 @@ void oBaseComponent::getProperty(qint pPropID,EXTfldval &pGetValue,EXTCompInfo* 
 };
 
 /*** Methods ***/
-// return the number of methods supported by this component
-qint oBaseComponent::methodCount(void) {
-	return this->methods()->numberOfElements();
-};
 
-// return an array of method meta data
-// Lazy loading approach, check if mMethods is not set:
-// - if not set call superclass and add your own methods
-// - if set, return as is
+// Static function, return array of property meta data
+// Each subclass of our component must implement this and add their properties into this definition
+// See oBaseNVComponent and oBaseVisComponent for examples
 qMethods * oBaseComponent::methods(void) {
-	if (mMethods==NULL) {
-		mMethods = new qMethods();
-	};
-	return mMethods;
+	qMethods * lvMethods = new qMethods();
+	
+	// our base class has not methods
+
+	return lvMethods;
 };
 
 // invoke a method
@@ -122,6 +104,24 @@ int oBaseComponent::invokeMethod(qint pMethodId,EXTCompInfo* eci) {
 // create a copy of pCopy, this MUST be implemented in a subclass
 void oBaseNVComponent::copyObject(oBaseNVComponent *pCopy) {
 	// nothing to copy...
+};
+
+// Add properties for NV componect
+qProperties * oBaseNVComponent::properties(void) {
+	qProperties *	lvProperties = oBaseComponent::properties();
+	
+	// Our non-visual class has not properties, we still need to implement this...
+	
+	return lvProperties;
+};
+
+// Add methods for NV component
+qMethods * oBaseNVComponent::methods(void) {
+	qMethods * lvMethods = oBaseComponent::methods();
+	
+	// our non-visual class has not methods, we still need to implement this...
+	
+	return lvMethods;
 };
 
 
@@ -148,14 +148,14 @@ oBaseVisComponent::oBaseVisComponent(void) {
 	mBackpattern = 0;
 };
 	
-// our visual components support a number of default properties
+// Add properties for visual componect
 qProperties * oBaseVisComponent::properties(void) {
-	if (mProperties==NULL) {
-		mProperties = oBaseComponent::properties();
-		
-		mProperties->addElements(oBaseVisProperties, sizeof(oBaseVisProperties) / sizeof(ECOproperty));
-	};
-	return mProperties;
+	qProperties *	lvProperties = oBaseComponent::properties();
+	
+	// Add the property definition for our visual component here...
+	lvProperties->addElements(oBaseVisProperties, sizeof(oBaseVisProperties) / sizeof(ECOproperty));
+	
+	return lvProperties;
 };
 
 // set the value of a property
@@ -207,6 +207,14 @@ void oBaseVisComponent::getProperty(qint pPropID,EXTfldval &pGetValue,EXTCompInf
 			break;
 	};
 };	
+
+qMethods * oBaseVisComponent::methods(void) {
+	qMethods * lvMethods = oBaseComponent::methods();
+	
+	// our visual class has not methods, we still need to implement this...
+	
+	return lvMethods;
+};
 
 // Do our drawing in here
 void oBaseVisComponent::doPaint(HDC pHDC) {

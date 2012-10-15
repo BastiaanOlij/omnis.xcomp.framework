@@ -172,12 +172,9 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 
 		// ECM_GETPROPNAME - this message is sent by OMNIS to get information about the properties of an object
 		case ECM_GETPROPNAME: { 
-			oBaseComponent * lvObject;
-			lvObject = gXCompLib->instantiateComponent(pECI->mCompId, NULL, pHWND, 0); // no? must be a component
-			if (lvObject!=NULL) {
-				qlong retVal = ECOreturnProperties( gInstLib, pECI, (ECOproperty *) lvObject->properties()->getArray(), lvObject->propertyCount() );
-				
-				delete lvObject;
+			qProperties * lvProperties = gXCompLib->properties(pECI->mCompId);
+			if (lvProperties!=NULL) {
+				qlong retVal = ECOreturnProperties( gInstLib, pECI, (ECOproperty *) lvProperties->getArray(), lvProperties->numberOfElements() );
 				
 				return retVal; 				
 			}; 
@@ -234,12 +231,10 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 		case ECM_GETMETHODNAME : {
-			oBaseComponent * lvObject;
-			lvObject = gXCompLib->instantiateComponent(pECI->mCompId, NULL, pHWND, 0); // no? must be a component
-			if (lvObject != NULL) {				
-				qlong retVal = ECOreturnMethods( gInstLib, pECI, (ECOmethodEvent *) lvObject->methods()->getArray(), lvObject->methodCount() );
+			qMethods * lvMethods = gXCompLib->methods(pECI->mCompId);
+			if (lvMethods != NULL) {				
+				qlong retVal = ECOreturnMethods( gInstLib, pECI, (ECOmethodEvent *) lvMethods->getArray(), lvMethods->numberOfElements() );
 				
-				delete lvObject;
 				return retVal; 				
 			};
 		}; break ;

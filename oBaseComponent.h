@@ -38,8 +38,6 @@ private:
 	
 protected:
 	HWND						mHWnd;																// Our main window handle (not applicable for NV objects)
-	qProperties					*mProperties;														// Property definition for our object (lazy loading)
-	qMethods					*mMethods;															// Method definition for our object (lazy loading)
 	
 public:
 	oBaseComponent(void);																			// constructor
@@ -50,15 +48,13 @@ public:
 	void addToTraceLog(const char *pData, ...);														// Add formatted string to trace log
 	
 /*** Properties ***/
-	virtual qint				propertyCount(void);												// return the number of properties supported by this component
-	virtual qProperties *		properties(void);													// return array of property meta data
+	static  qProperties *		properties(void);													// return array of property meta data
 	virtual qbool				canAssign(qint pPropID);											// return true/false if a property can be written too
 	virtual qbool				setProperty(qint pPropID,EXTfldval &pNewValue,EXTCompInfo* pECI);	// set the value of a property
 	virtual void				getProperty(qint pPropID,EXTfldval &pGetValue,EXTCompInfo* pECI);	// get the value of a property
 	
 /*** Methods ***/
-	virtual qint				methodCount(void);													// return the number of methods supported by this component
-	virtual qMethods *			methods(void);														// return an array of method meta data
+	static  qMethods *			methods(void);														// return an array of method meta data
 	virtual int					invokeMethod(qint pMethodId, EXTCompInfo* pECI);					// invoke a method
 	
 };
@@ -67,6 +63,9 @@ public:
 class oBaseNVComponent : public oBaseComponent {
 public:
 	virtual void				copyObject(oBaseNVComponent *pCopy);								// create a copy of pCopy, this MUST be implemented in a subclass
+
+	static  qProperties *		properties(void);													// return array of property meta data
+	static  qMethods *			methods(void);														// return array of method meta data
 };
 
 /* baseclass for visual components */
@@ -87,10 +86,11 @@ protected:
 public:
 	oBaseVisComponent(void);																		// constructor
 	
-	virtual qProperties *		properties(void);													// return array of property meta data
+	static  qProperties *		properties(void);													// return array of property meta data
 	virtual qbool				setProperty(qint pPropID,EXTfldval &pNewValue,EXTCompInfo* eci);	// set the value of a property
 	virtual void				getProperty(qint pPropID,EXTfldval &pGetValue,EXTCompInfo* eci);	// get the value of a property
 
+	static  qMethods *			methods(void);														// return array of method meta data
 	
 	virtual void				doPaint(HDC pHDC);													// Do our drawing in here
 
