@@ -97,6 +97,35 @@ int oBaseComponent::invokeMethod(qint pMethodId,EXTCompInfo* eci) {
 	return 1L;
 };
 
+/*** Parameters ***/
+
+// get string from parameter, call needs to delete returned object
+qstring	* oBaseComponent::newStringFromParam(int pParamNo, EXTCompInfo* pECI) {
+	EXTParamInfo*		tmpParam = ECOfindParamNum( pECI, pParamNo );
+	EXTfldval			tmpFldVal((qfldval) tmpParam->mData);
+	qstring	*			tmpNewString = new qstring(tmpFldVal);
+
+	return tmpNewString;
+};
+
+// get long from parameter
+long oBaseComponent::getLongFromParam(int pParamNo, EXTCompInfo* pECI) {
+	EXTParamInfo*		tmpParam = ECOfindParamNum( pECI, pParamNo );
+	EXTfldval			tmpFldVal((qfldval) tmpParam->mData);
+
+	return tmpFldVal.getLong();
+};
+
+// get qlist from parameter, caller needs to delete return object
+EXTqlist *	oBaseComponent::newQListFromParam(int pParamNo, EXTCompInfo* pECI) {
+	EXTParamInfo*		tmpParam = ECOfindParamNum( pECI, pParamNo );
+	EXTfldval			tmpFldVal((qfldval) tmpParam->mData);
+	EXTqlist *			tmpList = tmpFldVal.getList(qfalse);
+	
+	return tmpList;
+};
+
+
 /********************************************************************************************************************************************
  oBaseNVComponent
  ********************************************************************************************************************************************/

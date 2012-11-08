@@ -57,6 +57,14 @@ qstring::qstring(const qchar *pString, qlong pSize) {
 	copy(pString, pSize);
 };
 
+qstring::qstring(const EXTfldval &pExtFld) {
+	mBuffer=0;
+	mMaxSize=0;
+	
+	copy(pExtFld);	
+};
+
+
 qstring * qstring::newStringFromFromat(const char *pFormat, ...)
 {
 	qstring *   retString;
@@ -143,6 +151,33 @@ qlong	qstring::length() const {
 		return 0;
 	};
 };
+
+void	qstring::getAsUTF8(char * pBuffer, long pMaxLen) {
+	if (mBuffer!=0) {
+		long	tmpLen = length();
+
+#ifdef isunicode
+		// note, we could end up with a string that is too long as a single character may be multiple bytes in UTF8.
+		// I need to improve this, maybe by changing this code to converting the string character by character.
+		// For now, ensure your buffer is large enough:)
+		if (tmpLen>=pMaxLen) {
+			CHRunicode::charToUtf8(mBuffer, sizeof(qchar) * pMaxLen, (qbyte *) pBuffer);			
+		} else {
+			CHRunicode::charToUtf8(mBuffer, sizeof(qchar) * tmpLen, (qbyte *) pBuffer);			
+		}
+#else	
+		if (tmpLen>=pMaxLen) {
+			memcpy(pBuffer, mBuffer, pMaxLen-1);
+			pBuffer[pMaxLen-1]=0;
+		} else {
+			memcpy(pBuffer, mBuffer, tmpLen+1);
+		};
+#endif		
+	} else {
+		pBuffer[0]=0;
+	}
+};
+
 
 /********************************************************************************************************************************
  * Modifications
@@ -247,6 +282,26 @@ void	qstring::copy(const qchar *pString, qlong pSize) {
 	};
 };
 
+void	qstring::copy(const EXTfldval &pExtFld) {
+	long				tmpLen, tmpRealLen;
+
+	// ignore const warnings on value, we are not doing any modifications, need to fix this..
+	// note, we assume our fldval contains a character string
+
+	// create a buffer large enough for our data
+	tmpLen = (pExtFld.getBinLen() / sizeof(qchar)) + 12;
+	if (tmpLen>mMaxSize) {
+		redim(tmpLen, qtrue);
+	};
+	
+	if (tmpLen<=mMaxSize) { // always double check in case redim failed
+		pExtFld.getChar(tmpLen, mBuffer, tmpRealLen, qtrue);
+		tmpLen = tmpRealLen / sizeof(qchar);
+		mBuffer[tmpLen]=0; // zero terminate
+	};
+};
+
+
 qstring&	qstring::appendStyle(qchar pStyle, qulong pValue) {
 	qlong	len = this->length();
 	
@@ -301,19 +356,21 @@ qstring& qstring::appendBinary(const qbyte *pBuffer, qlong pLen) {
 	};
 };
 
-qstring& qstring::appendFldVal(EXTfldval &value){
+qstring& qstring::appendFldVal(const EXTfldval &value){
 	qbyte *	tmpBuffer;
 	qchar	data[2048];
 	qlong	len, intvalue;
 	ffttype	valueType;
 	qshort	valueSubtype;
 	
+	// ignore const warnings on value, we are not doing any modifications, need to fix this..
+	
 	value.getType(valueType, &valueSubtype);
 	
 	switch (valueType) {
 		case fftCharacter:
-			value.getChar(2048, data, len, qfalse);
-			data[len]=0x00;
+			value.getChar(sizeof(data), data, len, qfalse);
+			data[len / sizeof(qchar)]=0x00;
 			
 			*this += data;
 			
@@ -381,6 +438,13 @@ qstring&	qstring::operator=(const qchar* pCopy) {
 	return *this;
 };
 
+qstring&	qstring::operator=(const EXTfldval& pCopy) {
+	copy(pCopy);
+	
+	return *this;
+};
+
+
 qstring&	qstring::operator+=(const qstring& pAdd) {
 	qlong	ourLen = this->length();
 	qlong	addLen = pAdd.length();
@@ -432,6 +496,13 @@ qstring&	qstring::operator+=(const qchar* pAdd) {
 	
 	return *this;
 };
+
+qstring&	qstring::operator+=(const EXTfldval& pAdd) {
+	appendFldVal(pAdd);
+	
+	return *this;
+};
+
 
 bool	qstring::operator==(const qstring& pCompare) const {
 	const qchar	*strA = this->cString();

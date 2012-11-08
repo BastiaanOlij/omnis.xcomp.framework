@@ -24,6 +24,7 @@ private:
 	void			copy(const qchar *pString);							/* copy zero terminated omnis string */
 #endif
 	void			copy(const qchar *pString, qlong pSize);			/* copy an omnis string */
+	void			copy(const EXTfldval &pExtFld);						/* copy an omnis field value */
 	
 protected:
 	
@@ -36,6 +37,7 @@ public:
 	qstring(const qchar* pCopy);
 #endif
 	qstring(const qchar *pString, qlong pSize);
+	qstring(const EXTfldval &pExtFld);
 	~qstring();
 
 	static qstring * newStringFromFromat(const char *pFormat, ...);
@@ -44,18 +46,22 @@ public:
 
 	const qchar*	cString() const;
 	qlong			length() const;
+	void			getAsUTF8(char * pBuffer, long pMaxLen);
 	
 	qstring&		appendStyle(qchar pStyle, qulong pValue);
 	qstring&		appendFormattedString(const char *pFormat, ...);
 	qstring&		appendBinary(const qbyte *pBuffer, qlong pLen);
-	qstring&		appendFldVal(EXTfldval &value);
+	qstring&		appendFldVal(const EXTfldval &value);
 	
 	qchar*			operator[](qlong pIndex);
 
 	qstring&		operator=(const qstring& pCopy);
 	qstring&		operator=(const qchar* pCopy);
+	qstring&		operator=(const EXTfldval& pCopy);
+	
 	qstring&		operator+=(const qstring& pAdd);
 	qstring&		operator+=(const qchar* pAdd);
+	qstring&		operator+=(const EXTfldval& pAdd);
 
 	/* Some inline operators */
 	const qstring	operator+(const qstring& pAdd) const {

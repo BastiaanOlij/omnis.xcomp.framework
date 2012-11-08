@@ -38,6 +38,11 @@ private:
 	
 protected:
 	HWND						mHWnd;																// Our main window handle (not applicable for NV objects)
+
+	/*** Parameters ***/
+	qstring	*					newStringFromParam(int pParamNo, EXTCompInfo* pECI);				// get string from parameter, call needs to delete returned object
+	long						getLongFromParam(int pParamNo, EXTCompInfo* pECI);					// get long from parameter
+	EXTqlist *					newQListFromParam(int pParamNo, EXTCompInfo* pECI);					// get qlist from parameter, caller needs to delete return object
 	
 public:
 	oBaseComponent(void);																			// constructor
@@ -56,7 +61,7 @@ public:
 /*** Methods ***/
 	static  qMethods *			methods(void);														// return an array of method meta data
 	virtual int					invokeMethod(qint pMethodId, EXTCompInfo* pECI);					// invoke a method
-	
+
 };
 
 /* baseclass for non visual components */
