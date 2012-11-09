@@ -16,11 +16,13 @@
 
 qstring::qstring() {
 	mBuffer=0;
+	mCStr=0;
 	mMaxSize=0;
 };
 
 qstring::qstring(qlong pSize) {
 	mBuffer=0;
+	mCStr=0;
 	mMaxSize=0;
 	
 	redim(pSize);
@@ -28,6 +30,7 @@ qstring::qstring(qlong pSize) {
 
 qstring::qstring(const qstring& pCopy) {
 	mBuffer=0;
+	mCStr=0;
 	mMaxSize=0;
 	
 	*this = pCopy;
@@ -35,6 +38,7 @@ qstring::qstring(const qstring& pCopy) {
 
 qstring::qstring(const char *pString) {
 	mBuffer=0;
+	mCStr=0;
 	mMaxSize=0;
 	
 	copy(pString);
@@ -44,6 +48,7 @@ qstring::qstring(const char *pString) {
 // On non-unicode qchar and char are the same thing so this is not needed
 qstring::qstring(const qchar *pString) {
 	mBuffer=0;
+	mCStr=0;
 	mMaxSize=0;
 	
 	copy(pString);
@@ -52,6 +57,7 @@ qstring::qstring(const qchar *pString) {
 
 qstring::qstring(const qchar *pString, qlong pSize) {
 	mBuffer=0;
+	mCStr=0;
 	mMaxSize=0;
 	
 	copy(pString, pSize);
@@ -59,6 +65,7 @@ qstring::qstring(const qchar *pString, qlong pSize) {
 
 qstring::qstring(const EXTfldval &pExtFld) {
 	mBuffer=0;
+	mCStr=0;
 	mMaxSize=0;
 	
 	copy(pExtFld);	
@@ -81,6 +88,11 @@ qstring * qstring::newStringFromFromat(const char *pFormat, ...)
 };
 
 qstring::~qstring() {
+	if (mCStr!=0) {
+		MEMfree(mCStr);
+		mCStr=0;
+	};
+	
 	if (mBuffer!=0) {
 		MEMfree(mBuffer);
 
@@ -144,6 +156,29 @@ const qchar*	qstring::cString() const {
 	};
 };
 
+const char *	qstring::c_str() const {
+#ifdef isunicode
+	if (mCStr!=0) {
+		MEMfree(mCStr);
+		mCStr = 0;
+	};
+	
+	if (mBuffer!=0) {
+		long	tmpLen = length();
+		
+		// a UTF8 string can be up to 6 bytes per character so we may be allocating WAY to much memory here...
+		mCStr = (char *) MEMmalloc(tmpLen*UTF8_MAX_BYTES_PER_CHAR);
+		long	tmpRealLen = CHRunicode::charToUtf8(mBuffer, tmpLen, (qbyte *) mCStr);			
+	
+		mCstr[tmpRealLen]='\0'; // Make sure we zero terminate the string!
+	};
+	
+	return mCStr;
+#else	
+	return (char *) mBuffer; // it's already a c string...
+#endif
+};
+
 qlong	qstring::length() const {
 	if (mBuffer!=0) {
 		return qstring::qstrlen(mBuffer); 
@@ -151,33 +186,6 @@ qlong	qstring::length() const {
 		return 0;
 	};
 };
-
-void	qstring::getAsUTF8(char * pBuffer, long pMaxLen) {
-	if (mBuffer!=0) {
-		long	tmpLen = length();
-
-#ifdef isunicode
-		// note, we could end up with a string that is too long as a single character may be multiple bytes in UTF8.
-		// I need to improve this, maybe by changing this code to converting the string character by character.
-		// For now, ensure your buffer is large enough:)
-		if (tmpLen>=pMaxLen) {
-			CHRunicode::charToUtf8(mBuffer, sizeof(qchar) * pMaxLen, (qbyte *) pBuffer);			
-		} else {
-			CHRunicode::charToUtf8(mBuffer, sizeof(qchar) * tmpLen, (qbyte *) pBuffer);			
-		}
-#else	
-		if (tmpLen>=pMaxLen) {
-			memcpy(pBuffer, mBuffer, pMaxLen-1);
-			pBuffer[pMaxLen-1]=0;
-		} else {
-			memcpy(pBuffer, mBuffer, tmpLen+1);
-		};
-#endif		
-	} else {
-		pBuffer[0]=0;
-	}
-};
-
 
 /********************************************************************************************************************************
  * Modifications

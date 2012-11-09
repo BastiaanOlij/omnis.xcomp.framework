@@ -18,6 +18,8 @@ private:
 	qchar			*mBuffer;
 	qlong			mMaxSize;
 	
+	char			*mCStr;
+	
 	void			redim(qlong pSize, qbool pKeepData = qfalse);		/* resize the buffer */
 	void			copy(const char *pString);							/* copy an 8bit string */
 #ifdef isunicode
@@ -45,8 +47,8 @@ public:
 	static qshort	qstrcmp(const qchar *pA, const qchar *pB);
 
 	const qchar*	cString() const;
+	const char *	c_str() const;
 	qlong			length() const;
-	void			getAsUTF8(char * pBuffer, long pMaxLen);
 	
 	qstring&		appendStyle(qchar pStyle, qulong pValue);
 	qstring&		appendFormattedString(const char *pFormat, ...);

@@ -35,17 +35,39 @@ qbool oBaseComponent::init(HWND pHWnd) {
 
 // Add formatted string to trace log
 void oBaseComponent::addToTraceLog(const char *pData, ...) {
+	char		tmpOutLine[2048];
+	uint		tmpLen=0;
 	char		lvBuffer[2048]; // hopefully 2048 is large enough to parse our buffer, note that our trace log doesn't support strings longer then 255 characters...
+	uint		tmpBufLen;
 	va_list		lvArgList;
 	
 	va_start( lvArgList, pData );
 	vsprintf( lvBuffer, pData, lvArgList );
 	va_end( lvArgList );
 	
-	// need to find out if a conversion between char and qchar is needed here in unicode..
-	str255 lvAddText((qchar *)lvBuffer);
-	
-	ECOaddTraceLine(&lvAddText);
+	tmpBufLen = strlen(lvBuffer);
+	for (uint tmpIndex = 0; tmpIndex<tmpBufLen; tmpIndex++) {
+		if (lvBuffer[tmpIndex]=='\r') {
+			// ignore...
+		} else if ((lvBuffer[tmpIndex]=='\n') || (tmpLen==250)) {
+			// output line..
+			tmpOutLine[tmpLen]='\0';
+			
+			// need to convert line to qchar if on unicode!
+			str255 lvAddText((qchar *)tmpOutLine);
+			ECOaddTraceLine(&lvAddText);
+
+			tmpLen=0;
+		} else {
+			tmpOutLine[tmpLen]=lvBuffer[tmpIndex];
+			tmpLen++;
+		};
+	};
+	tmpOutLine[tmpLen]='\0';
+		
+	// need to convert line to qchar if on unicode!
+	str255 lvAddText((qchar *)tmpOutLine);
+	ECOaddTraceLine(&lvAddText);	
 };
 
 
