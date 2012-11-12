@@ -8,6 +8,8 @@
  *  Note that the basis of this code comes straight from the generic examples in the Omnis SDK
  *
  *  Bastiaan Olij
+ *
+ *  https://github.com/BastiaanOlij/omnis.xcomp.framework
  */
 
 // Include our framework files

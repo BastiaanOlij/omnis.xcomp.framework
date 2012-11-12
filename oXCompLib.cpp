@@ -9,6 +9,8 @@
  *
  *  Bastiaan Olij
  *
+ *
+ *  https://github.com/BastiaanOlij/omnis.xcomp.framework
  */
 
 #include "oXCompLib.h"

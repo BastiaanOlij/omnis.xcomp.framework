@@ -10,6 +10,8 @@
  *  Todos:
  *  - investigate if we can compile this into a library/framework instead of having to include all the files in our projects.
  *  - add better checking if we get object returned, maybe start using exception handling where appropriate
+ *
+ *  https://github.com/BastiaanOlij/omnis.xcomp.framework
  */
 
 #ifndef omnisxcompframeworkh

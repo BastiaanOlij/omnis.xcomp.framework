@@ -7,6 +7,8 @@
  *
  *  Bastiaan Olij
  *
+ *
+ *  https://github.com/BastiaanOlij/omnis.xcomp.framework
  */
 
 #ifndef xcompstandardincludesh

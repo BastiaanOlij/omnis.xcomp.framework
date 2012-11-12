@@ -6,6 +6,8 @@
  *  Our own version of a string object based on qchar, variable lenght NOT limited to 256 characters like Omnis' own str255..
  *
  *  Bastiaan Olij
+ *
+ *  https://github.com/BastiaanOlij/omnis.xcomp.framework
  */
 
 #include "qString.h"

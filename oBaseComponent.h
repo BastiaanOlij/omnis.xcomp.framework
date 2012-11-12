@@ -16,6 +16,8 @@
  *  - Add support for events
  *  - Implement visual components
  *  - Maybe split this into separate files for the three classes
+ *
+ *  https://github.com/BastiaanOlij/omnis.xcomp.framework
  */
 
 #include "xCompStandardIncludes.h"

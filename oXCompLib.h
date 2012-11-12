@@ -12,6 +12,8 @@
  *  Todos:
  *  - finish implementation of static methods
  *
+ *
+ *  https://github.com/BastiaanOlij/omnis.xcomp.framework
  */
 
 // our base component library already includes everything else we need...

@@ -11,6 +11,8 @@
  *  - test code :)
  *  - add option to remove items from the array at specific locations
  *  - speed up addElements by allocating enough memory and using memcpy
+ *
+ *  https://github.com/BastiaanOlij/omnis.xcomp.framework
  */
 
 #ifndef qarrayh

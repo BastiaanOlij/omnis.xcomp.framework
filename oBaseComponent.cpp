@@ -6,6 +6,8 @@
  *  Base classes to subclass components from. These classes implement alot of the basics that each component shares
  *
  *  Bastiaan Olij
+ *
+ *  https://github.com/BastiaanOlij/omnis.xcomp.framework
  */
 
 #include "oBaseComponent.h"
@@ -123,28 +125,42 @@ int oBaseComponent::invokeMethod(qint pMethodId,EXTCompInfo* eci) {
 
 // get string from parameter, call needs to delete returned object
 qstring	* oBaseComponent::newStringFromParam(int pParamNo, EXTCompInfo* pECI) {
-	EXTParamInfo*		tmpParam = ECOfindParamNum( pECI, pParamNo );
-	EXTfldval			tmpFldVal((qfldval) tmpParam->mData);
-	qstring	*			tmpNewString = new qstring(tmpFldVal);
-
-	return tmpNewString;
+	if (ECOgetParamCount(pECI) >= pParamNo) {
+		EXTParamInfo*		tmpParam = ECOfindParamNum( pECI, pParamNo );
+		EXTfldval			tmpFldVal((qfldval) tmpParam->mData);
+		qstring	*			tmpNewString = new qstring(tmpFldVal);
+		
+		return tmpNewString;		
+	} else {
+		qstring	*			tmpNewString = new qstring("");
+		
+		return tmpNewString;
+	};
 };
 
 // get long from parameter
 long oBaseComponent::getLongFromParam(int pParamNo, EXTCompInfo* pECI) {
-	EXTParamInfo*		tmpParam = ECOfindParamNum( pECI, pParamNo );
-	EXTfldval			tmpFldVal((qfldval) tmpParam->mData);
-
-	return tmpFldVal.getLong();
+	if (ECOgetParamCount(pECI) >= pParamNo) {
+		EXTParamInfo*		tmpParam = ECOfindParamNum( pECI, pParamNo );
+		EXTfldval			tmpFldVal((qfldval) tmpParam->mData);
+		
+		return tmpFldVal.getLong();
+	} else {
+		return 0;
+	}
 };
 
 // get qlist from parameter, caller needs to delete return object
 EXTqlist *	oBaseComponent::newQListFromParam(int pParamNo, EXTCompInfo* pECI) {
-	EXTParamInfo*		tmpParam = ECOfindParamNum( pECI, pParamNo );
-	EXTfldval			tmpFldVal((qfldval) tmpParam->mData);
-	EXTqlist *			tmpList = tmpFldVal.getList(qfalse);
-	
-	return tmpList;
+	if (ECOgetParamCount(pECI) >= pParamNo) {
+		EXTParamInfo*		tmpParam = ECOfindParamNum( pECI, pParamNo );
+		EXTfldval			tmpFldVal((qfldval) tmpParam->mData);
+		EXTqlist *			tmpList = tmpFldVal.getList(qfalse);
+		
+		return tmpList;
+	} else {
+		return 0;
+	};
 };
 
 
