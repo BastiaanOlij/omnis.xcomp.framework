@@ -163,6 +163,33 @@ EXTqlist *	oBaseComponent::newQListFromParam(int pParamNo, EXTCompInfo* pECI) {
 	};
 };
 
+// get binary buffer, returns NULL if the buffer is empty
+char * oBaseComponent::newBinfromParam(int pParamNo, size_t *pLen, EXTCompInfo* pECI) {
+	char *			tmpBuffer = NULL;
+	long			tmpLen = 0;
+
+	if (ECOgetParamCount(pECI) >= pParamNo) {
+		EXTParamInfo*		tmpParam = ECOfindParamNum( pECI, pParamNo );
+		EXTfldval			tmpFldVal((qfldval) tmpParam->mData);
+
+		tmpLen = tmpFldVal.getBinLen();
+		if (tmpLen>0) {
+			tmpBuffer = (char *) malloc(tmpLen);
+			if (tmpBuffer!=NULL) {
+				long	tmpRealLen;
+				memset(tmpBuffer, 0, tmpLen); // JIC
+				
+				tmpFldVal.getBinary(tmpLen, (qbyte *) tmpBuffer, tmpRealLen);
+			} else {
+				tmpLen = 0;
+			};
+		};
+	};
+
+	*pLen = tmpLen;
+	return tmpBuffer;
+};
+
 
 /********************************************************************************************************************************************
  oBaseNVComponent

@@ -45,6 +45,7 @@ protected:
 	qstring	*					newStringFromParam(int pParamNo, EXTCompInfo* pECI);				// get string from parameter, call needs to delete returned object
 	long						getLongFromParam(int pParamNo, EXTCompInfo* pECI);					// get long from parameter
 	EXTqlist *					newQListFromParam(int pParamNo, EXTCompInfo* pECI);					// get qlist from parameter, caller needs to delete return object
+	char *						newBinfromParam(int pParamNo, size_t *pLen,  EXTCompInfo* pECI);	// get binary buffer, returns NULL if the buffer is empty
 	
 public:
 	oBaseComponent(void);																			// constructor
