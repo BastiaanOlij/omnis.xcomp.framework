@@ -86,4 +86,13 @@ public:
 	virtual int			invokeMethod(qint pMethodId, EXTCompInfo* pECI);		// invoke a static method
 };
 
+// This class must be implemented in your library (on windows its not enough to just have a class definition...) 
+// An instance of this class is created to manage your library.
+class mainlib : public oXCompLib {
+public:	
+	virtual qint		ecm_connect(void);
+	virtual qbool		ecm_disconnect(void);
+	virtual int			invokeMethod(qint pMethodId, EXTCompInfo* pECI);
+};
+
 #endif

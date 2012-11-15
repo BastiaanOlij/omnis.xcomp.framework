@@ -59,6 +59,11 @@ qECOobjects * oXCompLib::objects(void) {
 
 // Add a component
 void oXCompLib::addComponent(OXFcomponent pAdd) {
+	qstring	tmpString;
+	tmpString.appendFormattedString("Adding component %li", pAdd.componentID);
+	str255 tmpStr(tmpString.cString());
+	ECOaddTraceLine(&tmpStr);
+
 	if (pAdd.componentType == cObjType_NVObject) {
 		// also add it to our mECOobjects list, this is how Omnis requires it...
 		ECOobject	lvNVObject;
@@ -102,7 +107,7 @@ OXFcomponent oXCompLib::componentByIndex(uint pIndex) {
 OXFcomponent oXCompLib::componentByID(long pCompID) {
 	OXFcomponent lvEmpty;
 	
-	for (int i=0;i<mComponents.numberOfElements();i++) {
+	for (uint i=0;i<mComponents.numberOfElements();i++) {
 		OXFcomponent lvComponent = mComponents[i];
 		if (lvComponent.componentID == pCompID) {
 			return lvComponent;

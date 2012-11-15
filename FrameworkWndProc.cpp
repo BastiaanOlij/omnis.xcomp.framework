@@ -15,11 +15,6 @@
 // Include our framework files
 #include "omnis.xcomp.framework.h"
 
-// this class should be defined in our implementation, I need to find a better way do this.
-class mainlib : public oXCompLib {
-	
-};
-
 mainlib *gXCompLib = NULL;
 
 // Component library entry point (name as declared in resource 31000 )
@@ -57,10 +52,7 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 		} break;
 			
 		// ECM_GETOBJECT - this is sent by OMNIS to find out which non-visual objects are part of our library
-		case ECM_GETOBJECT: {
-			str255	lvMsg("Testing ECM_GETOBJECT");
-			ECOaddTraceLine(&lvMsg);
-			
+		case ECM_GETOBJECT: {			
 			qECOobjects * lvObject = gXCompLib->objects();
 			
 			return ECOreturnObjects( gInstLib, pECI, (ECOobject *) lvObject->getArray(), lvObject->numberOfElements());
