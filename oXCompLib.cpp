@@ -42,6 +42,16 @@ qint oXCompLib::getResourceID(void){
 	return 1000;
 };
 
+// get major version number
+qshort	oXCompLib::major() {
+	return 1;
+};
+
+// get minor version number
+qshort	oXCompLib::minor() {
+	return 0;	
+};
+
 // return our objects as an Omnis structure
 qECOobjects * oXCompLib::objects(void) {
 	return &mECOobjects;
@@ -119,8 +129,14 @@ oBaseComponent * oXCompLib::instantiateComponent(long pCompID
 			// and insert into a chain of objects. The OMNIS library will maintain this chain
 
 			if (lvComponent.componentType == cObjType_NVObject) {
+				oBaseNVComponent * lvNVObject = (oBaseNVComponent *) lvObject;
+				lvNVObject->init((qobjinst) pParam);
+				
 				ECOinsertNVObject( pECI->mOmnisInstance, pParam, (void*)lvObject );				
 			} else {
+				oBaseVisComponent * lvVisObject = (oBaseVisComponent *) lvObject;
+				lvVisObject->init(pHWND);
+
 				ECOinsertObject( pECI, pHWND, (void*)lvObject );
 			}
 		}
@@ -151,6 +167,25 @@ qMethods * oXCompLib::methods(long pCompID) {
 	return NULL;	
 };
 
+// return our event method resource ID
+unsigned int	oXCompLib::eventMethodID(long pCompID) {
+	OXFcomponent lvComponent = componentByID(pCompID);
+	if (lvComponent.componentType!=0) {
+		return lvComponent.mEventMethodID;
+	};
+	
+	return 0;
+};
+
+// return event meta data for this object
+qEvents *	oXCompLib::events(long pCompID) {
+	OXFcomponent lvComponent = componentByID(pCompID);
+	if (lvComponent.componentType!=0) {
+		return lvComponent.mEvents;
+	};
+	
+	return NULL;		
+};
 
 // initialize our library
 qint oXCompLib::ecm_connect(void){

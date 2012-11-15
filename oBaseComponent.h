@@ -33,14 +33,13 @@ const int cObjType_NVObject = 255;																	// Omnis reserved 1-9, assume
 // Some handy arrays
 typedef	qArray<ECOproperty>		qProperties;
 typedef qArray<ECOmethodEvent>	qMethods;
+typedef qArray<ECOmethodEvent>	qEvents;
 
 /* our base class for all component objects */
 class oBaseComponent {
 private:
 	
 protected:
-	HWND						mHWnd;																// Our main window handle (not applicable for NV objects)
-
 	/*** Parameters ***/
 	qstring	*					newStringFromParam(int pParamNo, EXTCompInfo* pECI);				// get string from parameter, call needs to delete returned object
 	long						getLongFromParam(int pParamNo, EXTCompInfo* pECI);					// get long from parameter
@@ -50,7 +49,6 @@ protected:
 public:
 	oBaseComponent(void);																			// constructor
 	virtual ~oBaseComponent(void);																	// destructor
-	virtual	qbool				init(HWND pHWnd);													// Initialize component
 
 /*** some nice support function ***/
 	void addToTraceLog(const char *pData, ...);														// Add formatted string to trace log
@@ -65,20 +63,28 @@ public:
 	static  qMethods *			methods(void);														// return an array of method meta data
 	virtual int					invokeMethod(qint pMethodId, EXTCompInfo* pECI);					// invoke a method
 
+/*** Events ***/
+	static	qEvents *			events(void);														// return an array of events meta data
 };
 
 /* baseclass for non visual components */
 class oBaseNVComponent : public oBaseComponent {
+protected:
+	qobjinst					mObjInst;															// Object instance
+
 public:
+	virtual	qbool				init(qobjinst pInst);												// Initialize component
+
 	virtual void				copyObject(oBaseNVComponent *pCopy);								// create a copy of pCopy, this MUST be implemented in a subclass
 
 	static  qProperties *		properties(void);													// return array of property meta data
 	static  qMethods *			methods(void);														// return array of method meta data
+	static	qEvents *			events(void);														// return an array of events meta data
 };
 
 /* baseclass for visual components */
 class oBaseVisComponent : public oBaseComponent {
-private:
+private:	
 	/*** only valid during drawing ***/
 	GDItextSpecStruct			mTextSpec;															// Info on how to draw text
 	qcol						mTextColor;															// Our text color
@@ -89,22 +95,25 @@ private:
 	void						setup(EXTCompInfo* pECI);											// setup our colors and fonts etc.
 
 protected:
+	HWND						mHWnd;																// Our main window handle (not applicable for NV objects)
 	qrect						mClientRect;														// Our client rect, gives the size of our visual component
 	
 public:
 	oBaseVisComponent(void);																		// constructor
+	virtual	qbool				init(HWND pHWnd);													// Initialize component
 	
 	static  qProperties *		properties(void);													// return array of property meta data
 	virtual qbool				setProperty(qint pPropID,EXTfldval &pNewValue,EXTCompInfo* eci);	// set the value of a property
 	virtual void				getProperty(qint pPropID,EXTfldval &pGetValue,EXTCompInfo* eci);	// get the value of a property
 
 	static  qMethods *			methods(void);														// return array of method meta data
+	static	qEvents *			events(void);														// return an array of events meta data
 	
 	virtual void				doPaint(HDC pHDC);													// Do our drawing in here
 
 	
 	// called from our WndProc, don't override these directly
-	qbool						wm_paint(EXTCompInfo* pECI);														// Paint message
+	void						wm_paint(EXTCompInfo* pECI);										// Paint message
 };
 
 #endif

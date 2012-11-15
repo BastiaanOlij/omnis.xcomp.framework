@@ -26,13 +26,6 @@ oBaseComponent::~oBaseComponent(void) {
 	// nothing to do here just yet
 };
 
-// Initialize component
-qbool oBaseComponent::init(HWND pHWnd) {
-	mHWnd = pHWnd;			// We'll move this into oBaseVisComponent shortly..
-	
-	return true;
-};
-
 /*** some nice support function ***/
 
 // Add formatted string to trace log
@@ -103,13 +96,13 @@ void oBaseComponent::getProperty(qint pPropID,EXTfldval &pGetValue,EXTCompInfo* 
 
 /*** Methods ***/
 
-// Static function, return array of property meta data
-// Each subclass of our component must implement this and add their properties into this definition
+// Static function, return array of method meta data
+// Each subclass of our component must implement this and add their methods into this definition
 // See oBaseNVComponent and oBaseVisComponent for examples
 qMethods * oBaseComponent::methods(void) {
 	qMethods * lvMethods = new qMethods();
 	
-	// our base class has not methods
+	// our base class has no methods
 
 	return lvMethods;
 };
@@ -120,6 +113,20 @@ int oBaseComponent::invokeMethod(qint pMethodId,EXTCompInfo* eci) {
 	
 	return 1L;
 };
+
+/*** Events ***/
+
+// Static function, return array of event meta data
+// Each subclass of our component must implement this and add their events into this definition
+// See oBaseNVComponent and oBaseVisComponent for examples
+qEvents *	oBaseComponent::events(void) {
+	qEvents * lvEvents = new qEvents();
+	
+	// our base class has no events
+	
+	return lvEvents;
+};
+
 
 /*** Parameters ***/
 
@@ -195,6 +202,13 @@ char * oBaseComponent::newBinfromParam(int pParamNo, size_t *pLen, EXTCompInfo* 
  oBaseNVComponent
  ********************************************************************************************************************************************/
 
+// Initialize component
+qbool oBaseNVComponent::init(qobjinst pInst) {
+	mObjInst = pInst;
+	
+	return true;
+};
+
 // create a copy of pCopy, this MUST be implemented in a subclass
 void oBaseNVComponent::copyObject(oBaseNVComponent *pCopy) {
 	// nothing to copy...
@@ -216,6 +230,15 @@ qMethods * oBaseNVComponent::methods(void) {
 	// our non-visual class has not methods, we still need to implement this...
 	
 	return lvMethods;
+};
+
+// Add events for NV component
+qEvents *	oBaseNVComponent::events(void) {
+	qEvents * lvEvents =oBaseComponent::events();
+	
+	// our non-visual class has no events
+	
+	return lvEvents;
 };
 
 
@@ -242,6 +265,13 @@ oBaseVisComponent::oBaseVisComponent(void) {
 	mBackpattern = 0;
 };
 	
+// Initialize component
+qbool oBaseVisComponent::init(HWND pHWnd) {
+	mHWnd = pHWnd;
+	
+	return true;
+};
+
 // Add properties for visual componect
 qProperties * oBaseVisComponent::properties(void) {
 	qProperties *	lvProperties = oBaseComponent::properties();
@@ -310,6 +340,16 @@ qMethods * oBaseVisComponent::methods(void) {
 	return lvMethods;
 };
 
+// Add events for visual component
+qEvents *	oBaseVisComponent::events(void) {
+	qEvents * lvEvents = oBaseComponent::events();
+	
+	// our visual class has no events
+	
+	return lvEvents;
+};
+
+
 // Do our drawing in here
 void oBaseVisComponent::doPaint(HDC pHDC) {
 	// override to implement drawing...
@@ -359,7 +399,7 @@ void oBaseVisComponent::setup(EXTCompInfo* pECI) {
 };
 
 // paint message
-qbool oBaseVisComponent::wm_paint(EXTCompInfo* pECI) {
+void oBaseVisComponent::wm_paint(EXTCompInfo* pECI) {
 	WNDpaintStruct	lvPaintStruct;
 	qrect			lvUpdateRect;
 	HDC				lvHDC;
@@ -406,7 +446,5 @@ qbool oBaseVisComponent::wm_paint(EXTCompInfo* pECI) {
 	
 	// And finish paint...
 	WNDendPaint( mHWnd, &lvPaintStruct );	
-	return qtrue;
-	
 }
 

@@ -99,7 +99,14 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 			}
 			
 			return qfalse;
-		}
+		} break;
+			
+		case ECM_GETVERSION: {
+			qshort	major = gXCompLib->major();
+			qshort	minor = gXCompLib->minor();
+			
+			return ECOreturnVersion(major, minor);
+		} break;
 			
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // construct/destruct and initialisation of objects
@@ -119,9 +126,6 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 			// instantiate our component
 			lvObject = gXCompLib->instantiateComponent(pECI->mCompId, pECI, pHWND, lParam);
 			if (lvObject!=NULL) {
-				// this will eventually move into instantiateComponent once we restructure parameters and methods
-				lvObject->init(pHWND);
-				
 				return qtrue;				
 			};
 
@@ -157,9 +161,6 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 				oBaseNVComponent * lvDestObj = (oBaseNVComponent *) ECOfindNVObject(pECI->mOmnisInstance, lvCopyInfo->mDestinationObject);
 				if (lvDestObj == NULL) {
 					lvDestObj = (oBaseNVComponent *)gXCompLib->instantiateComponent(pECI->mCompId, pECI, pHWND, lvCopyInfo->mDestinationObject); // hopefully we can trust mCompID here..
-					if (lvDestObj != NULL) {
-						lvDestObj->init(pHWND);
-					};
 				};
 				if (lvDestObj != NULL) {
 					lvDestObj->copyObject(lvSourceObj);
@@ -259,7 +260,25 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 			return lvResult;
 		}; break;
 			
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Events
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 			
+		case ECM_GETEVENTMETHOD: {
+			unsigned int lvID = gXCompLib->eventMethodID(pECI->mCompId);
+			if (lvID>0) {
+				//  return ECOreturnEventMethod(gInstLib, pECI, lvID);
+			};
+		}; break;
+			
+		case ECM_GETEVENTNAME : {
+			qEvents * lvEvents = gXCompLib->events(pECI->mCompId);
+			if (lvEvents != NULL) {
+				qlong retVal = ECOreturnEvents( gInstLib, pECI, (ECOmethodEvent *) lvEvents->getArray(), lvEvents->numberOfElements() );
+				
+				return retVal; 				
+			};
+		};  break;
 			
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // window messaging
@@ -270,9 +289,10 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 			 // This should only be called on visual object
 			 oBaseVisComponent* lvObject = (oBaseVisComponent*)ECOfindObject( pECI, pHWND );
 			 // and if its good, call the paint function
-			 if ( NULL!=lvObject && lvObject->wm_paint(pECI) )
-			 return qtrue;
-			 
+			 if (lvObject!=NULL) {
+				 lvObject->wm_paint(pECI); 
+				 return 1L;
+			 } 
 		} break;
 			
 	}

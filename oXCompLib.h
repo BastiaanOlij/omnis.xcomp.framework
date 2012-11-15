@@ -23,7 +23,7 @@
 #define xcomplibh
 
 // Array of objects
-typedef qArray<ECOobject> qECOobjects;
+typedef qArray<ECOobject>		qECOobjects;
 
 // Visual object definition
 struct OXFcomponent {
@@ -35,6 +35,8 @@ struct OXFcomponent {
 	void *				(*newObjectFunction) (void);						// Function pointer to the function that returns a new instance
 	qProperties *		mProperties;										// Array containing property definitions
 	qMethods *			mMethods;											// Array containing method definitions
+	unsigned int		mEventMethodID;										// Resource ID for the first line of our $event method text for our object
+	qEvents *			mEvents;											// Array containing our event definitions
 };
 
 // Array of components
@@ -54,6 +56,8 @@ public:
 	
 	// info
 	virtual qint		getResourceID(void);								// get our library resource id
+	virtual qshort		major();											// get major version number
+	virtual qshort		minor();											// get minor version number
 		
 	// access to components
 	qECOobjects *		objects(void);										// return our objects as an Omnis structure
@@ -71,6 +75,8 @@ public:
 	// access to meta data
 	qProperties *		properties(long pCompID);							// return property meta data for this object
 	qMethods *			methods(long pCompID);								// return method meta data for this object
+	unsigned int		eventMethodID(long pCompID);						// return our event method resource ID
+	qEvents *			events(long pCompID);								// return event meta data for this object
 	
 	// calls from our wndproc
 	virtual qint		ecm_connect(void);									// initialize our library
