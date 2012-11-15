@@ -299,13 +299,13 @@ void	qstring::copy(const EXTfldval &pExtFld) {
 	// note, we assume our fldval contains a character string
 
 	// create a buffer large enough for our data
-	tmpLen = (pExtFld.getBinLen() / sizeof(qchar)) + 12;
+	tmpLen = (const_cast<EXTfldval &>(pExtFld).getBinLen() / sizeof(qchar)) + 12; // getBinLen won't modify our object, Tigerlogic should mark this as a const function
 	if (tmpLen>mMaxSize) {
 		redim(tmpLen, qtrue);
 	};
 	
 	if (tmpLen<=mMaxSize) { // always double check in case redim failed
-		pExtFld.getChar(tmpLen, mBuffer, tmpRealLen, qtrue);
+		const_cast<EXTfldval &>(pExtFld).getChar(tmpLen, mBuffer, tmpRealLen, qtrue); // getChar won't modify our object, Tigerlogic should mark this as a const function
 		tmpLen = tmpRealLen / sizeof(qchar);
 		mBuffer[tmpLen]=0; // zero terminate
 	};
@@ -364,6 +364,8 @@ qstring& qstring::appendBinary(const qbyte *pBuffer, qlong pLen) {
 		
 		*this += hex;
 	};
+
+	return *this;
 };
 
 qstring& qstring::appendFldVal(const EXTfldval &value){
@@ -375,26 +377,26 @@ qstring& qstring::appendFldVal(const EXTfldval &value){
 	
 	// ignore const warnings on value, we are not doing any modifications, need to fix this..
 	
-	value.getType(valueType, &valueSubtype);
+	const_cast<EXTfldval &>(value).getType(valueType, &valueSubtype); // getType won't modify our object, Tigerlogic should mark this as a const function
 	
 	switch (valueType) {
 		case fftCharacter:
-			value.getChar(sizeof(data), data, len, qfalse);
+			const_cast<EXTfldval &>(value).getChar(sizeof(data), data, len, qfalse);  // getChar won't modify our object, Tigerlogic should mark this as a const function
 			data[len / sizeof(qchar)]=0x00;
 			
 			*this += data;
 			
 			break;
 		case fftInteger:
-			intvalue = value.getLong();
+			intvalue = const_cast<EXTfldval &>(value).getLong();   // getLong won't modify our object, Tigerlogic should mark this as a const function
 			this->appendFormattedString("%i",intvalue);
 			break;
 		case fftBinary:
-			len = value.getBinLen();
+			len = const_cast<EXTfldval &>(value).getBinLen();    // getBinLen won't modify our object, Tigerlogic should mark this as a const function
 			if (len>0) {
 				tmpBuffer = (qbyte *) MEMmalloc(len+1);
 				if (tmpBuffer!=0) {					
-					value.getBinary(len, tmpBuffer, len);
+					const_cast<EXTfldval &>(value).getBinary(len, tmpBuffer, len);   // getBinary won't modify our object, Tigerlogic should mark this as a const function
 					
 					this->appendBinary(tmpBuffer, len);
 					
@@ -407,7 +409,9 @@ qstring& qstring::appendFldVal(const EXTfldval &value){
 		default:
 			// need to implement!!
 			break;
-	}
+	};
+
+	return *this;
 };
 
 

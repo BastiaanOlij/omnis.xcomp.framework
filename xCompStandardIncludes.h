@@ -19,6 +19,10 @@
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
+#ifdef iswin32
+typedef unsigned int uint;
+#endif
+
 // add in our SDK headers
 #include <anums.he>
 #include <extcomp.he>
