@@ -55,7 +55,7 @@ public:
 	~oXCompLib(void);														// destructor
 	
 	// info
-	virtual qint		getResourceID(void);								// get our library resource id
+	qint				getResourceID(void);								// get our library resource id
 	virtual qshort		major();											// get major version number
 	virtual qshort		minor();											// get minor version number
 		
@@ -90,6 +90,9 @@ public:
 // An instance of this class is created to manage your library.
 class mainlib : public oXCompLib {
 public:	
+	virtual qshort		major();											// get major version number
+	virtual qshort		minor();											// get minor version number
+
 	virtual qint		ecm_connect(void);
 	virtual qbool		ecm_disconnect(void);
 	virtual int			invokeMethod(qint pMethodId, EXTCompInfo* pECI);
