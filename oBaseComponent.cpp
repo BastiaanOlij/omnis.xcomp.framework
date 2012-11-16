@@ -80,17 +80,17 @@ qProperties * oBaseComponent::properties(void) {
 };
 
 // return true/false if a property can be written too
-qbool oBaseComponent::canAssign(qint pPropID) {
+qbool oBaseComponent::canAssign(qlong pPropID) {
 	return true; // assume assignable
 };
 
 // set the value of a property
-qbool oBaseComponent::setProperty(qint pPropID,EXTfldval &pNewValue,EXTCompInfo* pECI) {
+qbool oBaseComponent::setProperty(qlong pPropID,EXTfldval &pNewValue,EXTCompInfo* pECI) {
 	return false;
 };
 
 // get the value of a property
-void oBaseComponent::getProperty(qint pPropID,EXTfldval &pGetValue,EXTCompInfo* pECI) {
+void oBaseComponent::getProperty(qlong pPropID,EXTfldval &pGetValue,EXTCompInfo* pECI) {
 	// nothing to do here, base class does not have any properties...
 };
 
@@ -108,7 +108,7 @@ qMethods * oBaseComponent::methods(void) {
 };
 
 // invoke a method
-int oBaseComponent::invokeMethod(qint pMethodId,EXTCompInfo* eci) {
+int oBaseComponent::invokeMethod(qlong pMethodId,EXTCompInfo* eci) {
 	// nothing to do here by default
 	
 	return 1L;
@@ -197,7 +197,6 @@ char * oBaseComponent::newBinfromParam(int pParamNo, size_t *pLen, EXTCompInfo* 
 	return tmpBuffer;
 };
 
-
 /********************************************************************************************************************************************
  oBaseNVComponent
  ********************************************************************************************************************************************/
@@ -241,6 +240,10 @@ qEvents *	oBaseNVComponent::events(void) {
 	return lvEvents;
 };
 
+// object is being send a rebuild message
+qint	oBaseNVComponent::ecm_object_rebuild(EXTCompInfo* pECI) {
+	return mNeedRebuild ? 1L : 0L;
+};
 
 /********************************************************************************************************************************************
  oBaseVisComponent
@@ -300,7 +303,7 @@ qbool oBaseVisComponent::setProperty(qint pPropID,EXTfldval &pNewValue,EXTCompIn
 			return 1L;
 			break;
 		case anumBackpattern:
-			mBackpattern = pNewValue.getLong();
+			mBackpattern = (qpat) pNewValue.getLong();
 			WNDinvalidateRect(mHWnd, NULL);	
 			
 			return 1L;

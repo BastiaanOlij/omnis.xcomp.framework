@@ -213,8 +213,13 @@ qbool oXCompLib::ecm_disconnect(void){
 };
 
 // invoke a static method
-int	oXCompLib::invokeMethod(qint pMethodId, EXTCompInfo* pECI){
+int	oXCompLib::invokeMethod(qlong pMethodId, EXTCompInfo* pECI){
 	// no static methods by default
-	return qfalse;
+	qstring		tmpString;
+	tmpString.appendFormattedString("Unknown static method call %li",pMethodId);
+	str255		tmpStr(tmpString.cString());
+	ECOaddTraceLine(&tmpStr);
+
+	return 1L;
 };		
 

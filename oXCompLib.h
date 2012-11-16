@@ -83,7 +83,7 @@ public:
 	virtual qbool		ecm_disconnect(void);								// cleanup
 
 	// need to add methods for returning static method information
-	virtual int			invokeMethod(qint pMethodId, EXTCompInfo* pECI);		// invoke a static method
+	virtual int			invokeMethod(qlong pMethodId, EXTCompInfo* pECI);		// invoke a static method
 };
 
 // This class must be implemented in your library (on windows its not enough to just have a class definition...) 
@@ -95,7 +95,7 @@ public:
 
 	virtual qint		ecm_connect(void);
 	virtual qbool		ecm_disconnect(void);
-	virtual int			invokeMethod(qint pMethodId, EXTCompInfo* pECI);
+	virtual int			invokeMethod(qlong pMethodId, EXTCompInfo* pECI);
 };
 
 #endif

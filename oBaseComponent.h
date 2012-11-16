@@ -55,13 +55,13 @@ public:
 	
 /*** Properties ***/
 	static  qProperties *		properties(void);													// return array of property meta data
-	virtual qbool				canAssign(qint pPropID);											// return true/false if a property can be written too
-	virtual qbool				setProperty(qint pPropID,EXTfldval &pNewValue,EXTCompInfo* pECI);	// set the value of a property
-	virtual void				getProperty(qint pPropID,EXTfldval &pGetValue,EXTCompInfo* pECI);	// get the value of a property
+	virtual qbool				canAssign(qlong pPropID);											// return true/false if a property can be written too
+	virtual qbool				setProperty(qlong pPropID,EXTfldval &pNewValue,EXTCompInfo* pECI);	// set the value of a property
+	virtual void				getProperty(qlong pPropID,EXTfldval &pGetValue,EXTCompInfo* pECI);	// get the value of a property
 	
 /*** Methods ***/
 	static  qMethods *			methods(void);														// return an array of method meta data
-	virtual int					invokeMethod(qint pMethodId, EXTCompInfo* pECI);					// invoke a method
+	virtual int					invokeMethod(qlong pMethodId, EXTCompInfo* pECI);					// invoke a method
 
 /*** Events ***/
 	static	qEvents *			events(void);														// return an array of events meta data
@@ -71,6 +71,7 @@ public:
 class oBaseNVComponent : public oBaseComponent {
 protected:
 	qobjinst					mObjInst;															// Object instance
+	bool						mNeedRebuild;														// Set this to true if a rebuild of property/method definitions is required
 
 public:
 	virtual	qbool				init(qobjinst pInst);												// Initialize component
@@ -80,6 +81,8 @@ public:
 	static  qProperties *		properties(void);													// return array of property meta data
 	static  qMethods *			methods(void);														// return array of method meta data
 	static	qEvents *			events(void);														// return an array of events meta data
+
+	qint						ecm_object_rebuild(EXTCompInfo* pECI);								// object is being send a rebuild message
 };
 
 /* baseclass for visual components */
