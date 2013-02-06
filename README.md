@@ -10,4 +10,10 @@ http://www.tigerlogic.com/tigerlogic/omnis/products/components/buildyourown.jsp
 
 Unicode and Omnis Studio 5 support is UNTESTED.
 
+Directories are setup relative and assume the framework is installed within the Omnis SDK folders:
+Omnis SDK
+ - complib
+ - omnis.xcomp.framework
+ - ...
+
 Bastiaan Olij - 2012.
