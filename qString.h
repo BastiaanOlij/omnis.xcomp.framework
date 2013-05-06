@@ -51,6 +51,8 @@ public:
 	const qchar*	cString() const;
 	const char *	c_str() const;
 	qlong			length() const;
+
+	qstring&		setFormattedString(const char *pFormat, ...);
 	
 	qstring&		appendStyle(qchar pStyle, qulong pValue);
 	qstring&		appendFormattedString(const char *pFormat, ...);

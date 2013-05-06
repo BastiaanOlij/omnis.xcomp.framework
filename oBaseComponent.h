@@ -98,6 +98,7 @@ private:
 	void						setup(EXTCompInfo* pECI);											// setup our colors and fonts etc.
 
 protected:
+	qbool						mDrawBuffer;														// If true (default) we'll setup our canvas buffer
 	HWND						mHWnd;																// Our main window handle (not applicable for NV objects)
 	qrect						mClientRect;														// Our client rect, gives the size of our visual component
 	
@@ -113,10 +114,11 @@ public:
 	static	qEvents *			events(void);														// return an array of events meta data
 	
 	virtual void				doPaint(HDC pHDC);													// Do our drawing in here
-
+	virtual void				Resized();															// Our component was resized
 	
 	// called from our WndProc, don't override these directly
 	void						wm_paint(EXTCompInfo* pECI);										// Paint message
+	void						wm_windowposchanged(EXTCompInfo* pECI, WNDwindowPosStruct * pPos);	// Component resize/repos message
 };
 
 #endif

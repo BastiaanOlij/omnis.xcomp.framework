@@ -310,6 +310,17 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 				 return 1L;
 			 } 
 		} break;
+			
+		// WM_WINDOWPOSCHANGED - inform that the position or size of our visual component has changed
+		case WM_WINDOWPOSCHANGED: {
+			// This should only be called on visual object
+			oBaseVisComponent* lvObject = (oBaseVisComponent*)ECOfindObject( pECI, pHWND );
+			// and if its good, call the paint function
+			if (lvObject!=NULL) {
+				lvObject->wm_windowposchanged(pECI, (WNDwindowPosStruct *) lParam); 
+				return 1L;
+			} 			
+		} break;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // omnis internal calls that we need to pass through..

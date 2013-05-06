@@ -266,6 +266,7 @@ oBaseVisComponent::oBaseVisComponent(void) {
 	mForecolor = GDI_COLOR_QDEFAULT;
 	mBackcolor = GDI_COLOR_QDEFAULT;
 	mBackpattern = 0;
+	mDrawBuffer = true;
 };
 	
 // Initialize component
@@ -353,6 +354,10 @@ qEvents *	oBaseVisComponent::events(void) {
 };
 
 
+void	oBaseVisComponent::Resized() {
+	
+};
+
 // Do our drawing in here
 void oBaseVisComponent::doPaint(HDC pHDC) {
 	// override to implement drawing...
@@ -407,47 +412,60 @@ void oBaseVisComponent::wm_paint(EXTCompInfo* pECI) {
 	qrect			lvUpdateRect;
 	HDC				lvHDC;
 	void *			lvOffScreenPaint;
-	
-	// create our paint structure
-	WNDbeginPaint( mHWnd, &lvPaintStruct );
+
+	// get current size info
 	WNDgetClientRect(mHWnd, &mClientRect);
 	
-	lvUpdateRect = lvPaintStruct.rcPaint;
-	lvHDC = lvPaintStruct.hdc;
-	
-	setup(pECI);
-	
-	// On windows this will do a double buffer trick, on Mac OSX the OS already does the offscreen painting:)
-	lvOffScreenPaint = GDIoffscreenPaintBegin(NULL, lvHDC, mClientRect, lvUpdateRect);
-	if (lvOffScreenPaint) {
-		// setup defaults for GDI drawing..
-		HFONT		lvTextFont	= GDIcreateFont(&mTextSpec.mFnt, mTextSpec.mSty);
-		HFONT		lvOldFont	= GDIselectObject(lvHDC, lvTextFont); 
+	if (mDrawBuffer) {
+		// create our paint structure
+		WNDbeginPaint( mHWnd, &lvPaintStruct );
 		
-		GDIsetBkColor(lvHDC, mBackcolor);
-		GDIsetTextColor(lvHDC, mTextColor);	// if we need our forecolor for drawing we will switch..
+		lvUpdateRect = lvPaintStruct.rcPaint;
+		lvHDC = lvPaintStruct.hdc;
 		
-		// do our real drawing
-		doPaint(lvHDC);
+		setup(pECI);
 		
-		// If in design mode, then call drawDesignName, drawNumber & drawMultiKnobs to draw design
-		// name, numbers and multiknobs, if required.
-		if ( ECOisDesign(mHWnd) ) {
-			ECOdrawDesignName(mHWnd,lvHDC);
-			ECOdrawNumber(mHWnd,lvHDC);
-			ECOdrawMultiKnobs(mHWnd,lvHDC);
+		// On windows this will do a double buffer trick, on Mac OSX the OS already does the offscreen painting:)
+		lvOffScreenPaint = GDIoffscreenPaintBegin(NULL, lvHDC, mClientRect, lvUpdateRect);
+		if (lvOffScreenPaint) {
+			// setup defaults for GDI drawing..
+			HFONT		lvTextFont	= GDIcreateFont(&mTextSpec.mFnt, mTextSpec.mSty);
+			HFONT		lvOldFont	= GDIselectObject(lvHDC, lvTextFont); 
+			
+			GDIsetBkColor(lvHDC, mBackcolor);
+			GDIsetTextColor(lvHDC, mTextColor);	// if we need our forecolor for drawing we will switch..
+			
+			// do our real drawing
+			doPaint(lvHDC);
+			
+			// If in design mode, then call drawDesignName, drawNumber & drawMultiKnobs to draw design
+			// name, numbers and multiknobs, if required.
+			if ( ECOisDesign(mHWnd) ) {
+				ECOdrawDesignName(mHWnd,lvHDC);
+				ECOdrawNumber(mHWnd,lvHDC);
+				ECOdrawMultiKnobs(mHWnd,lvHDC);
+			}
+			
+			GDIselectObject(lvHDC, lvOldFont);
+			GDIdeleteObject(lvTextFont);
+			
+			GDIdeleteObject(mBackpatBrush);
+			
+			GDIoffscreenPaintEnd(lvOffScreenPaint);
 		}
 		
-		GDIselectObject(lvHDC, lvOldFont);
-		GDIdeleteObject(lvTextFont);
 		
-		GDIdeleteObject(mBackpatBrush);
-		
-		GDIoffscreenPaintEnd(lvOffScreenPaint);
+		// And finish paint...
+		WNDendPaint( mHWnd, &lvPaintStruct );	
+	} else {		
+		// component must fully implement...
+		doPaint(0);
 	}
-	
-	
-	// And finish paint...
-	WNDendPaint( mHWnd, &lvPaintStruct );	
-}
+};
+
+// Component resize/repos message
+void	oBaseVisComponent::wm_windowposchanged(EXTCompInfo* pECI, WNDwindowPosStruct * pPos) {
+	Resized();
+};
+
 

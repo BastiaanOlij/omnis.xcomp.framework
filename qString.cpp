@@ -159,26 +159,32 @@ const qchar*	qstring::cString() const {
 };
 
 const char *	qstring::c_str() const {
-#ifdef isunicode
-	if (mCStr!=0) {
-		MEMfree(mCStr);
-		mCStr = 0;
-	};
-	
 	if (mBuffer!=0) {
-		long	tmpLen = length();
+#ifdef isunicode
+		if (mCStr!=0) {
+			MEMfree(mCStr);
+			mCStr = 0;
+		};
+	
+		if (mBuffer!=0) {
+			long	tmpLen = length();
 		
-		// a UTF8 string can be up to 6 bytes per character so we may be allocating WAY to much memory here...
-		mCStr = (char *) MEMmalloc(tmpLen*UTF8_MAX_BYTES_PER_CHAR);
-		long	tmpRealLen = CHRunicode::charToUtf8(mBuffer, tmpLen, (qbyte *) mCStr);			
+			// a UTF8 string can be up to 6 bytes per character so we may be allocating WAY to much memory here...
+			mCStr = (char *) MEMmalloc((tmpLen*UTF8_MAX_BYTES_PER_CHAR)+10);
+			long	tmpRealLen = CHRunicode::charToUtf8(mBuffer, tmpLen, (qbyte *) mCStr);			
 	
-		mCstr[tmpRealLen]='\0'; // Make sure we zero terminate the string!
-	};
+			mCstr[tmpRealLen]='\0'; // Make sure we zero terminate the string!
+		};
 	
-	return mCStr;
+		return mCStr;
 #else	
-	return (char *) mBuffer; // it's already a c string...
+		return (char *) mBuffer; // it's already a c string...
 #endif
+	} else {
+		static char	emptyString[] = "";
+		
+		return emptyString;
+	};	
 };
 
 qlong	qstring::length() const {
@@ -309,6 +315,19 @@ void	qstring::copy(const EXTfldval &pExtFld) {
 		tmpLen = tmpRealLen / sizeof(qchar);
 		mBuffer[tmpLen]=0; // zero terminate
 	};
+};
+
+qstring& qstring::setFormattedString(const char *pFormat, ...) {
+	char		tmpBuffer[2048]; // hopefully 2048 is large enough...
+	va_list		arglist;
+	
+	va_start( arglist, pFormat );
+	vsprintf( tmpBuffer, pFormat, arglist );
+	va_end( arglist );
+	
+	*this = tmpBuffer;
+	
+	return *this; // return ourselves
 };
 
 
