@@ -41,6 +41,13 @@ void oBaseComponent::addToTraceLog(const char *pData, ...) {
 	va_end( lvArgList );
 	
 	tmpBufLen = strlen(lvBuffer);
+	
+	// remove trailing newline
+	while ((tmpBufLen > 0) && (lvBuffer[tmpBufLen-1]=='\r' || lvBuffer[tmpBufLen-1]=='\n')) {
+		tmpBufLen--;
+	};
+	
+	// and output..
 	for (uint tmpIndex = 0; tmpIndex<tmpBufLen; tmpIndex++) {
 		if (lvBuffer[tmpIndex]=='\r') {
 			// ignore...
