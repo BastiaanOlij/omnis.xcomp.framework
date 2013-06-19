@@ -25,6 +25,7 @@
 #include "xCompStandardIncludes.h"
 
 // add in our framework header files
+#include "oUTF8.h"
 #include "qArray.h"
 #include "qString.h"
 #include "oBaseComponent.h"
