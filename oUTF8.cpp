@@ -20,7 +20,7 @@
 #elseif iswin32
 // convert win-1252
 // Derived from the table at:  http://alanwood.net/demos/ansi.html
-unsigned long  ToUnicode[128] = {
+unsigned long  charsetToUnicode[128] = {
 	8364 ,  129, 8218,  402, 8222, 8230, 8224, 8225,  710, 8240,  352, 8249,  338,  141,   381,   143, // 128 - 143
 	144  , 8216, 8217, 8220, 8221, 8226, 8211, 8212,  732, 8482,  353, 8250,  339,  157,   382,   376, // 144 - 159
 	160  ,  161,  162,  163,  164,  165,  166,  167,  168,  169,  170,  171,  172,  173,   174,   175, // 160 - 175
@@ -33,7 +33,7 @@ unsigned long  ToUnicode[128] = {
 #else
 // convert macroman
 //  Derived from the table at:  http://alanwood.net/demos/macroman.html
-unsigned long  ToUnicode[128] = {
+unsigned long  charsetToUnicode[128] = {
 	196  ,  197,  199,  201,  209,  214,  220,  225,  224,  226,  228,  227,  229,  231,   233,   232, // 128 - 143
 	234  ,  235,  237,  236,  238,  239,  241,  243,  242,  244,  246,  245,  250,  249,   251,   252, // 144 - 159
 	8224 ,  176,  162,  163,  167, 8226,  182,  223,  174,  169, 8482,  180,  168, 8800,   198,   216, // 160 - 175
@@ -82,7 +82,7 @@ std::string	oUTF8::convertToUTF8(const char *pString, bool pSkipNewLines) {
 		} else if (tmpChar < 128) {
 			tmpUTF8 += tmpChar;
 		} else {
-			unsigned long tmpUnicode = ToUnicode[tmpChar-128];
+			unsigned long tmpUnicode = charsetToUnicode[tmpChar-128];
 		
 			if (tmpUnicode < 2048) {
 				tmpChar = 192 + (tmpUnicode >> 6);
