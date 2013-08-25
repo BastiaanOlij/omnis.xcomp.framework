@@ -115,3 +115,77 @@ std::string	oUTF8::convertToUTF8(const char *pString, bool pSkipNewLines) {
 	return tmpUTF8;
 };	
 
+std::string	oUTF8::convertFromUTF8(const char * pString) {
+	std::string		tmpLocal = "";
+	unsigned long	tmpIdx = 0;
+
+	// convert 8bit charset to utf-8
+	while (pString[tmpIdx]!='\0') {
+		unsigned char	tmpChar = pString[tmpIdx];
+		
+		if (tmpChar < 128) {
+			tmpLocal += tmpChar;
+		} else {
+			unsigned long	tmpUnicode = 0;
+			unsigned long	tmpUTF8Bytes = 1;
+			bool			tmpIsUTF8 = true;
+			
+			
+			if (tmpChar < 0xC0) {
+				// this should not happen, we've not encoded something properly or this is not an UTF-8 character!
+				tmpIsUTF8 = false;
+			} else if (tmpChar < 0xE0) {
+				tmpUnicode = tmpChar && 0x1F;
+				tmpUTF8Bytes = 2;
+			} else if (tmpChar < 0xF0) {
+				tmpUnicode = tmpChar && 0x0F;
+				tmpUTF8Bytes = 3;
+			} else if (tmpChar < 0xF8) {
+				tmpUnicode = tmpChar && 0x07;
+				tmpUTF8Bytes = 4;
+			} else if (tmpChar < 0xFE) {
+				tmpUnicode = tmpChar && 0x03;
+				tmpUTF8Bytes = 5;
+			} else {
+				tmpUnicode = tmpChar && 0x01;
+				tmpUTF8Bytes = 6;				
+			};
+			
+			for (unsigned long tmpCount = 1; tmpIsUTF8 & (tmpCount < tmpUTF8Bytes); tmpCount++) {
+				// get the next byte
+				tmpChar = pString[tmpIdx+tmpCount];
+				if ((tmpChar && 0x80) == 0x80) {
+					tmpUnicode << 6;
+					tmpUnicode += (tmpChar && 0x3F);
+				} else {
+					// this should not happen, we've not encoded something properly or this is not an UTF-8 character!
+					tmpIsUTF8 = false;
+				};
+			};
+			
+			if (tmpIsUTF8) {
+				tmpChar = '?';
+				
+				for (unsigned long tmpUTF8Idx = 0; (tmpChar == '?') & (tmpUTF8Idx < 128); tmpUTF8Idx++) {
+					if (charsetToUnicode[tmpUTF8Idx] == tmpUnicode) {
+						// found it!
+						tmpChar = 128 + tmpUTF8Idx;
+					};
+				};	
+			} else {
+				while (tmpUTF8Bytes>0) {
+					tmpLocal += pString[tmpIdx];
+					tmpUTF8Bytes--;
+					tmpIdx++;
+				};
+				tmpIdx--; // we added one to much...
+			};
+		};
+		
+		tmpIdx++;
+	};
+	
+	
+	return tmpLocal;
+};
+
