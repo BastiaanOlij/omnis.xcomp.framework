@@ -269,7 +269,7 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 						lvObject = (oBaseComponent *)ECOfindNVObject(pECI->mOmnisInstance, lParam);
 					};
 				} else {
-					str255	lvStr("Method call on unknown object");
+					str255	lvStr(QTEXT("Method call on unknown object"));
 					ECOaddTraceLine(&lvStr);
 				};
 			};

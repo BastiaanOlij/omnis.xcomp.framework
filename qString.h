@@ -19,9 +19,7 @@ class qstring {
 private:
 	qchar			*mBuffer;
 	qlong			mMaxSize;
-	
-	char			*mCStr;
-	
+		
 	void			redim(qlong pSize, qbool pKeepData = qfalse);		/* resize the buffer */
 	void			copy(const char *pString);							/* copy an 8bit string */
 #ifdef isunicode

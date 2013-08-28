@@ -15,9 +15,7 @@
 
 // With thanks to: http://alienryderflex.com/utf-8/
 
-#ifdef isunicode
-// not applicable
-#elseif iswin32
+#if iswin32
 // convert win-1252
 // Derived from the table at:  http://alanwood.net/demos/ansi.html
 unsigned long  charsetToUnicode[128] = {
@@ -51,7 +49,7 @@ std::string	oUTF8::convertToUTF8(const qchar *pString) {
 	long			tmpLen = OMstrlen(pString);
 	char *			tmpString = (char *) MEMmalloc((tmpLen*UTF8_MAX_BYTES_PER_CHAR)+10);
 	if (tmpString != NULL) {
-		long			tmpRealLen = CHRunicode::charToUtf8(pString, tmpLen, (qbyte *) tmpString);
+		long			tmpRealLen = CHRunicode::charToUtf8((qchar *)pString, tmpLen, (qbyte *) tmpString);
 		
 		tmpString[tmpRealLen]='\0'; // Make sure we zero terminate the string!
 		

@@ -18,13 +18,11 @@
 
 qstring::qstring() {
 	mBuffer=0;
-	mCStr=0;
 	mMaxSize=0;
 };
 
 qstring::qstring(qlong pSize) {
 	mBuffer=0;
-	mCStr=0;
 	mMaxSize=0;
 	
 	redim(pSize);
@@ -32,7 +30,6 @@ qstring::qstring(qlong pSize) {
 
 qstring::qstring(const qstring& pCopy) {
 	mBuffer=0;
-	mCStr=0;
 	mMaxSize=0;
 	
 	*this = pCopy;
@@ -40,7 +37,6 @@ qstring::qstring(const qstring& pCopy) {
 
 qstring::qstring(const char *pString) {
 	mBuffer=0;
-	mCStr=0;
 	mMaxSize=0;
 	
 	copy(pString);
@@ -50,7 +46,6 @@ qstring::qstring(const char *pString) {
 // On non-unicode qchar and char are the same thing so this is not needed
 qstring::qstring(const qchar *pString) {
 	mBuffer=0;
-	mCStr=0;
 	mMaxSize=0;
 	
 	copy(pString);
@@ -59,7 +54,6 @@ qstring::qstring(const qchar *pString) {
 
 qstring::qstring(const qchar *pString, qlong pSize) {
 	mBuffer=0;
-	mCStr=0;
 	mMaxSize=0;
 	
 	copy(pString, pSize);
@@ -67,7 +61,6 @@ qstring::qstring(const qchar *pString, qlong pSize) {
 
 qstring::qstring(const EXTfldval &pExtFld) {
 	mBuffer=0;
-	mCStr=0;
 	mMaxSize=0;
 	
 	copy(pExtFld);	
@@ -90,11 +83,6 @@ qstring * qstring::newStringFromFromat(const char *pFormat, ...)
 };
 
 qstring::~qstring() {
-	if (mCStr!=0) {
-		MEMfree(mCStr);
-		mCStr=0;
-	};
-	
 	if (mBuffer!=0) {
 		MEMfree(mBuffer);
 
@@ -152,7 +140,9 @@ const qchar*	qstring::cString() const {
 	if (mBuffer!=0) {
 		return mBuffer;
 	} else {
-		static qchar	emptyString[] = "";
+		static qchar	emptyString[1];
+		
+		emptyString[0] = 0;
 		
 		return emptyString;
 	};
@@ -161,22 +151,19 @@ const qchar*	qstring::cString() const {
 const char *	qstring::c_str() const {
 	if (mBuffer!=0) {
 #ifdef isunicode
-		if (mCStr!=0) {
-			MEMfree(mCStr);
-			mCStr = 0;
+		static qbyte	lvReturnStr[UTF8_MAX_BYTES_PER_CHAR*16000];		
+
+		long	tmpLen = length();
+		if (tmpLen>16000) {
+			tmpLen = 16000;
 		};
-	
-		if (mBuffer!=0) {
-			long	tmpLen = length();
 		
-			// a UTF8 string can be up to 6 bytes per character so we may be allocating WAY to much memory here...
-			mCStr = (char *) MEMmalloc((tmpLen*UTF8_MAX_BYTES_PER_CHAR)+10);
-			long	tmpRealLen = CHRunicode::charToUtf8(mBuffer, tmpLen, (qbyte *) mCStr);			
+		// a UTF8 string can be up to 6 bytes per character so we may be allocating WAY to much memory here...
+		long	tmpRealLen = CHRunicode::charToUtf8(mBuffer, tmpLen, lvReturnStr);			
 	
-			mCstr[tmpRealLen]='\0'; // Make sure we zero terminate the string!
-		};
+		lvReturnStr[tmpRealLen]='\0'; // Make sure we zero terminate the string!
 	
-		return mCStr;
+		return (char *) lvReturnStr;
 #else	
 		return (char *) mBuffer; // it's already a c string...
 #endif
@@ -299,7 +286,7 @@ void	qstring::copy(const qchar *pString, qlong pSize) {
 };
 
 void	qstring::copy(const EXTfldval &pExtFld) {
-	long				tmpLen, tmpRealLen;
+	qlong				tmpLen, tmpRealLen;
 
 	// ignore const warnings on value, we are not doing any modifications, need to fix this..
 	// note, we assume our fldval contains a character string
