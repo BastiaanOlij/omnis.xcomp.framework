@@ -45,20 +45,23 @@ unsigned long  charsetToUnicode[128] = {
 
 std::string	oUTF8::convertToUTF8(const qchar *pString) {
 #ifdef isunicode
-	std::string		tmpResult="";
-	long			tmpLen = OMstrlen(pString);
-	char *			tmpString = (char *) MEMmalloc((tmpLen*UTF8_MAX_BYTES_PER_CHAR)+10);
-	if (tmpString != NULL) {
-		long			tmpRealLen = CHRunicode::charToUtf8((qchar *)pString, tmpLen, (qbyte *) tmpString);
+	std::string		tmpUTF8 = "";
+	unsigned long	tmpIdx = 0;
+
+	while (pString[tmpIdx]!='\0') {
+		qlong	tmpLen;
+		char	tmpCharacter[10]; // Multi byte UTF 8 character
 		
-		tmpString[tmpRealLen]='\0'; // Make sure we zero terminate the string!
+		// Convert input to output..
+		tmpLen = CHRunicode::charToEncodedCharacters(qtrue, (qchar *) &pString[tmpIdx], 1, (qbyte *)tmpCharacter);
+		tmpCharacter[tmpLen]= '\0';
+		tmpUTF8 += tmpCharacter;
 		
-		tmpResult = tmpString;
 		
-		MEMfree(tmpString);
+		tmpIdx++;
 	};
 	
-	return tmpResult;
+	return tmpUTF8;
 #else 
 	return oUTF8::convertToUTF8((char *) pString);
 #endif

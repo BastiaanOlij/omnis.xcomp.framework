@@ -56,7 +56,12 @@ void oBaseComponent::addToTraceLog(const char *pData, ...) {
 			tmpOutLine[tmpLen]='\0';
 			
 			// need to convert line to qchar if on unicode!
+#ifdef isunicode
+			qstring	lvString(tmpOutLine);
+			str255 lvAddText(lvString.cString());
+#else
 			str255 lvAddText((qchar *)tmpOutLine);
+#endif
 			ECOaddTraceLine(&lvAddText);
 
 			tmpLen=0;
@@ -68,7 +73,12 @@ void oBaseComponent::addToTraceLog(const char *pData, ...) {
 	tmpOutLine[tmpLen]='\0';
 		
 	// need to convert line to qchar if on unicode!
+#ifdef isunicode
+	qstring	lvString(tmpOutLine);
+	str255 lvAddText(lvString.cString());
+#else
 	str255 lvAddText((qchar *)tmpOutLine);
+#endif
 	ECOaddTraceLine(&lvAddText);	
 };
 

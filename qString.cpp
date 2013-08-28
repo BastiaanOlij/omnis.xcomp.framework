@@ -292,14 +292,14 @@ void	qstring::copy(const EXTfldval &pExtFld) {
 	// note, we assume our fldval contains a character string
 
 	// create a buffer large enough for our data
-	tmpLen = (const_cast<EXTfldval &>(pExtFld).getBinLen() / sizeof(qchar)) + 12; // getBinLen won't modify our object, Tigerlogic should mark this as a const function
+	tmpLen = const_cast<EXTfldval &>(pExtFld).getCharLen() + 12; // getBinLen won't modify our object, Tigerlogic should mark this as a const function
 	if (tmpLen>mMaxSize) {
 		redim(tmpLen, qtrue);
 	};
 	
 	if (tmpLen<=mMaxSize) { // always double check in case redim failed
 		const_cast<EXTfldval &>(pExtFld).getChar(tmpLen, mBuffer, tmpRealLen, qtrue); // getChar won't modify our object, Tigerlogic should mark this as a const function
-		tmpLen = tmpRealLen / sizeof(qchar);
+		tmpLen = tmpRealLen;
 		mBuffer[tmpLen]=0; // zero terminate
 	};
 };
