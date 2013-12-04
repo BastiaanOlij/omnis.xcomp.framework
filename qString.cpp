@@ -16,28 +16,32 @@
  * Construct/copy/delete
  ********************************************************************************************************************************/
 
-qstring::qstring() {
+void	qstring::init() {
 	mBuffer=0;
 	mMaxSize=0;
+#ifdef isunicode
+	mReturnStr=0;
+#endif
+};
+
+qstring::qstring() {
+	init();
 };
 
 qstring::qstring(qlong pSize) {
-	mBuffer=0;
-	mMaxSize=0;
+	init();
 	
 	redim(pSize);
 };
 
 qstring::qstring(const qstring& pCopy) {
-	mBuffer=0;
-	mMaxSize=0;
+	init();
 	
 	*this = pCopy;
 };
 
 qstring::qstring(const char *pString) {
-	mBuffer=0;
-	mMaxSize=0;
+	init();
 	
 	copy(pString);
 };
@@ -45,23 +49,20 @@ qstring::qstring(const char *pString) {
 #ifdef isunicode
 // On non-unicode qchar and char are the same thing so this is not needed
 qstring::qstring(const qchar *pString) {
-	mBuffer=0;
-	mMaxSize=0;
+	init();
 	
 	copy(pString);
 };
 #endif
 
 qstring::qstring(const qchar *pString, qlong pSize) {
-	mBuffer=0;
-	mMaxSize=0;
+	init();
 	
 	copy(pString, pSize);
 };
 
 qstring::qstring(const EXTfldval &pExtFld) {
-	mBuffer=0;
-	mMaxSize=0;
+	init();
 	
 	copy(pExtFld);	
 };
@@ -89,6 +90,14 @@ qstring::~qstring() {
 		mBuffer=0;
 		mMaxSize=0;
 	};
+
+#ifdef isunicode
+	if (mReturnStr!=0) {
+		MEMfree(mReturnStr);
+		mReturnStr = 0;
+	};
+#endif
+	
 };
 
 qlong qstring::qstrlen(const qchar *pString){
@@ -148,28 +157,34 @@ const qchar*	qstring::cString() const {
 	};
 };
 
-const char *	qstring::c_str() const {
+const char *	qstring::c_str() {
 	if (mBuffer!=0) {
 #ifdef isunicode
-		static qbyte	lvReturnStr[UTF8_MAX_BYTES_PER_CHAR*16000];		
-
-		long	tmpLen = length();
-		if (tmpLen>16000) {
-			tmpLen = 16000;
+		if (mReturnStr!=0) {
+			MEMfree(mReturnStr);
+			mReturnStr = 0;
 		};
 		
-		// a UTF8 string can be up to 6 bytes per character so we may be allocating WAY to much memory here...
-		long	tmpRealLen = CHRunicode::charToUtf8(mBuffer, tmpLen, lvReturnStr);			
+		long	tmpLen = length();
+
+		mReturnStr = (qbyte *) MEMmalloc(UTF8_MAX_BYTES_PER_CHAR * (tmpLen+1));		
+		if (mReturnStr == 0) {
+			static char	emptyString[] = "";		
+			return emptyString;			
+		} else if (tmpLen == 0) {
+			mReturnStr[0]='\0'; // Make sure we zero terminate the string!
+		} else {
+			// a UTF8 string can be up to 6 bytes per character so we may be allocating WAY to much memory here...
+			long	tmpRealLen = CHRunicode::charToUtf8(mBuffer, tmpLen, mReturnStr);						
+			mReturnStr[tmpRealLen]='\0'; // Make sure we zero terminate the string!
+		};
 	
-		lvReturnStr[tmpRealLen]='\0'; // Make sure we zero terminate the string!
-	
-		return (char *) lvReturnStr;
+		return (char *) mReturnStr;
 #else	
 		return (char *) mBuffer; // it's already a c string...
 #endif
 	} else {
-		static char	emptyString[] = "";
-		
+		static char	emptyString[] = "";		
 		return emptyString;
 	};	
 };

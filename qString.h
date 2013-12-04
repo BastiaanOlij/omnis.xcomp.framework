@@ -19,7 +19,11 @@ class qstring {
 private:
 	qchar			*mBuffer;
 	qlong			mMaxSize;
-		
+#ifdef isunicode
+	qbyte			*mReturnStr;
+#endif
+	
+	void			init();												/* initialise members */
 	void			redim(qlong pSize, qbool pKeepData = qfalse);		/* resize the buffer */
 	void			copy(const char *pString);							/* copy an 8bit string */
 #ifdef isunicode
@@ -47,7 +51,7 @@ public:
 	static qshort	qstrcmp(const qchar *pA, const qchar *pB);
 
 	const qchar*	cString() const;
-	const char *	c_str() const;
+	const char *	c_str();
 	qlong			length() const;
 
 	qstring&		setFormattedString(const char *pFormat, ...);
