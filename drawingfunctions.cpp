@@ -24,11 +24,6 @@ void	oBaseVisComponent::drawEllipse(HDC pHDC, qrect pRect, qcol pTop, qcol pBott
 	pTop	= GDIgetRealColor(pTop);
 	pBottom = GDIgetRealColor(pBottom);
 	
-	// get our RGB components (might have swapped red and blue around but doesn't matter)
-	int		R1 = (pTop >> 16) & 0xFF,	R2 = (pBottom >> 16) & 0xFF;
-	int		G1 = (pTop >> 8) & 0xFF,	G2 = (pBottom >> 8) & 0xFF;
-	int		B1 = pTop & 0xFF,			B2 = pBottom & 0xFF;
-	
 	// create our pens
 	HPEN	fillPen = GDIcreatePen(1, pTop, patFill), borderPen;
 	HPEN	oldPen = GDIselectObject(pHDC, fillPen);
@@ -50,14 +45,31 @@ void	oBaseVisComponent::drawEllipse(HDC pHDC, qrect pRect, qcol pTop, qcol pBott
 			// delete our pen, change our color, and select new pen
 			GDIselectObject(pHDC, oldPen); // just in case our pen was seleted
 			GDIdeleteObject(fillPen); // delete the pen we no longer need
+
+			// mix our colours
+			qcol			gradient;
+			unsigned char	*Col1 = (unsigned char *)&pTop;
+			unsigned char	*Col2 = (unsigned char *)&pBottom;
+			unsigned char	*Grad = (unsigned char *)&gradient;
+
+			for (int cnt=0; cnt < sizeof(qcol); cnt++) {
+				if (*Col1==*Col2) {
+					*Grad = *Col1;
+				} else {
+					int		diff = *Col2 - *Col1;
+					diff = diff * Y;
+					diff = diff / height;
+					diff = diff + *Col1;
+					*Grad = diff & 0xFF;
+				};
+
+				Col1++;
+				Col2++;
+				Grad++;
+			};
 			
-			int R = R1 + (((R2 - R1) * Y) / height);
-			int G = G1 + (((G2 - G1) * Y) / height);
-			int B = B1 + (((B2 - B1) * Y) / height);
-			
-			pTop = (R << 16) + (G << 8) + B;
-			
-			GDIcreatePen(1, pTop, patFill);
+			// create a new pen with our new colour
+			fillPen = GDIcreatePen(1, gradient, patFill);
 			GDIselectObject(pHDC, fillPen);
 		};
 		
@@ -78,7 +90,7 @@ void	oBaseVisComponent::drawEllipse(HDC pHDC, qrect pRect, qcol pTop, qcol pBott
 		if (pBorder != -1) {
 			// select our border pen
 			GDIselectObject(pHDC, borderPen);
-			
+
 			// move to our starting position
 			if (Y==0) {
 				//    ---				

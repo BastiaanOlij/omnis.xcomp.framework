@@ -41,6 +41,7 @@ oBaseVisComponent::oBaseVisComponent(void) {
 // Initialize component
 qbool oBaseVisComponent::init(HWND pHWnd) {
 	mHWnd = pHWnd;
+	mMouseLButtonDown = false;
 	
 	return true;
 };
@@ -149,11 +150,33 @@ qcol	oBaseVisComponent::mixColors(qcol pQ1, qcol pQ2) {
 	pQ1	= GDIgetRealColor(pQ1);
 	pQ2	= GDIgetRealColor(pQ2);
 	
-	int R = ((((pQ1 >> 16) & 0xFF) + ((pQ2 >> 16) & 0xFF)) >> 1) & 0xFF;
-	int G = ((((pQ1 >> 8) & 0xFF) + ((pQ2 >> 8) & 0xFF)) >> 1) & 0xFF;
-	int B = (((pQ1 & 0xFF) + (pQ2 & 0xFF)) >> 1) & 0xFF;
-	
-	return (R << 16) + (G << 8) + B;
+	short			cnt;
+	qcol			res;
+	unsigned char	mix;
+	unsigned char	*cA = (unsigned char *)&pQ1; 
+	unsigned char	*cB = (unsigned char *)&pQ2;
+	unsigned char	*cR = (unsigned char *)&res;
+
+	// This should mix R, G, B and alpha independently of eachother...
+	for (cnt = 0; cnt < sizeof(qcol); cnt++) {
+		if (*cA==*cB) {
+			*cR = *cA;
+		} else if (*cB > *cA) {
+			mix = *cB - *cA;
+			mix = mix >> 1;
+			*cR = *cA + mix;
+		} else {
+			mix = *cA - *cB;
+			mix = mix >> 1;
+			*cR = *cB + mix;
+		};
+
+		cA++;
+		cB++;
+		cR++;
+	};
+
+	return res;
 };
 
 // Do our drawing in here
