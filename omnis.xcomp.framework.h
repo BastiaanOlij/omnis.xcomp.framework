@@ -29,6 +29,8 @@
 #include "qArray.h"
 #include "qString.h"
 #include "oBaseComponent.h"
+#include "oBaseNVComponent.h"
+#include "oBaseVisComponent.h"
 #include "oXCompLib.h"
 
 #endif

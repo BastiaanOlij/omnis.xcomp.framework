@@ -68,7 +68,7 @@ qstring::qstring(const EXTfldval &pExtFld) {
 };
 
 
-qstring * qstring::newStringFromFromat(const char *pFormat, ...)
+qstring * qstring::newStringFromFormat(const char *pFormat, ...)
 {
 	qstring *   retString;
 	char		tmpBuffer[2048]; // hopefully 2048 is large enough...

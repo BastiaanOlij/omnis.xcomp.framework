@@ -46,7 +46,7 @@ public:
 	qstring(const EXTfldval &pExtFld);
 	~qstring();
 
-	static qstring * newStringFromFromat(const char *pFormat, ...);
+	static qstring * newStringFromFormat(const char *pFormat, ...);
 	static qlong	qstrlen(const qchar *pString);
 	static qshort	qstrcmp(const qchar *pA, const qchar *pB);
 

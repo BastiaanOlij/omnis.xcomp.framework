@@ -35,4 +35,6 @@ typedef unsigned int uint;
 #include <stdlib.h>
 #include <math.h>
 
+#define PI 3.14159265
+
 #endif

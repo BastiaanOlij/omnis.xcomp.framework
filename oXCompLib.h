@@ -18,6 +18,9 @@
 
 // our base component library already includes everything else we need...
 #include "oBaseComponent.h"
+#include "oBaseNVComponent.h"
+#include "oBaseVisComponent.h"
+
 
 #ifndef xcomplibh
 #define xcomplibh
