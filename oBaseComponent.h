@@ -90,14 +90,16 @@ class oBaseVisComponent : public oBaseComponent {
 private:	
 	/*** only valid during drawing ***/
 	GDItextSpecStruct			mTextSpec;															// Info on how to draw text
-	qcol						mTextColor;															// Our text color
-	qpat						mBackpattern;														// Our back pattern
-	HBRUSH						mBackpatBrush;														// backpattern brush
-	qcol						mForecolor, mBackcolor;												// Our forecolor and backcolor
 	
 	void						setup(EXTCompInfo* pECI);											// setup our colors and fonts etc.
 
 protected:
+	qcol						mTextColor;															// Our text color
+	qpat						mBackpattern;														// Our back pattern
+	HBRUSH						mBackpatBrush;														// backpattern brush
+	qcol						mForecolor, mBackcolor;												// Our forecolor and backcolor
+	qulong						mBKTheme;															// Our background theme
+	
 	qbool						mDrawBuffer;														// If true (default) we'll setup our canvas buffer
 	HWND						mHWnd;																// Our main window handle (not applicable for NV objects)
 	qrect						mClientRect;														// Our client rect, gives the size of our visual component

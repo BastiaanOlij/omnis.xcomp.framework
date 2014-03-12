@@ -271,6 +271,7 @@ ECOproperty oBaseVisProperties[] = {
 	anumForecolor,			0,		fftInteger,		EXTD_FLAG_PROPAPP,		0,		0,			0,		// $forecolor
 	anumBackcolor,			0,		fftInteger,		EXTD_FLAG_PROPAPP,		0,		0,			0,		// $backcolor
 	anumBackpattern,		0,		fftInteger,		EXTD_FLAG_PROPAPP,		0,		0,			0,		// $backpattern
+	anumBackgroundTheme,	0,		fftInteger,		EXTD_FLAG_PROPAPP,		0,		0,			0,		// $bgtheme
 	
 	anumTextColor,			0,		fftInteger,		EXTD_FLAG_PROPTEXT,		0,		0,			0,		// $textcolor
 	anumFont,				0,		fftCharacter,	EXTD_FLAG_PROPTEXT,		0,		0,			0,		// $font
@@ -283,6 +284,7 @@ oBaseVisComponent::oBaseVisComponent(void) {
 	mForecolor = GDI_COLOR_QDEFAULT;
 	mBackcolor = GDI_COLOR_QDEFAULT;
 	mBackpattern = 0;
+	mBKTheme = WND_BK_NONE;
 	mDrawBuffer = true;
 };
 	
@@ -307,10 +309,14 @@ qProperties * oBaseVisComponent::properties(void) {
 qbool oBaseVisComponent::setProperty(qint pPropID,EXTfldval &pNewValue,EXTCompInfo* pECI) {
 	// most anum properties are managed by Omnis but some we need to do ourselves, no idea why...
 
+	addToTraceLog("Setting property %li",pPropID);
+
 	switch (pPropID) {
 		case anumForecolor:
 			mForecolor = pNewValue.getLong();
-			WNDinvalidateRect(mHWnd, NULL);	
+			WNDinvalidateRect(mHWnd, NULL);
+			
+			addToTraceLog("Changed color to %li",mForecolor);
 			
 			return 1L;
 			break;
@@ -322,6 +328,12 @@ qbool oBaseVisComponent::setProperty(qint pPropID,EXTfldval &pNewValue,EXTCompIn
 			break;
 		case anumBackpattern:
 			mBackpattern = (qpat) pNewValue.getLong();
+			WNDinvalidateRect(mHWnd, NULL);	
+			
+			return 1L;
+			break;
+		case anumBackgroundTheme:
+			mBKTheme = pNewValue.getLong();
 			WNDinvalidateRect(mHWnd, NULL);	
 			
 			return 1L;
@@ -345,6 +357,9 @@ void oBaseVisComponent::getProperty(qint pPropID,EXTfldval &pGetValue,EXTCompInf
 			break;
 		case anumBackpattern:
 			pGetValue.setLong(mBackpattern);
+			break;
+		case anumBackgroundTheme:
+			pGetValue.setLong(mBKTheme);
 			break;
 		default:
 			oBaseComponent::getProperty(pPropID, pGetValue, eci);
@@ -378,12 +393,13 @@ void	oBaseVisComponent::Resized() {
 // Do our drawing in here
 void oBaseVisComponent::doPaint(HDC pHDC) {
 	// override to implement drawing...
-	
-	// clear our drawing field
-	GDIsetTextColor(pHDC, mForecolor);
-	GDIfillRect(pHDC, &mClientRect, mBackpatBrush);
-	GDIsetTextColor(pHDC, mTextColor);
-}
+	if (!WNDdrawThemeBackground(mHWnd,pHDC,&mClientRect,mBKTheme)) {
+		// clear our drawing field
+		GDIsetTextColor(pHDC, mForecolor);
+		GDIfillRect(pHDC, &mClientRect, mBackpatBrush);
+		GDIsetTextColor(pHDC, mTextColor);		
+	};
+};
 
 // setup our fonts and brushes
 void oBaseVisComponent::setup(EXTCompInfo* pECI) {
