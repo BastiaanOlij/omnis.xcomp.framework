@@ -30,6 +30,7 @@ private:
 protected:
 	HWND						mHWnd;																// Our main window handle (not applicable for NV objects)
 	qpoint						mMouseAt;															// Last known location of the mouse as it hoovered over our control
+	EXTfldval					mPrimaryData;														// Copy of our primary data if default implementation is used
 	
 	qcol						mTextColor;															// Our text color
 	qpat						mBackpattern;														// Our back pattern
@@ -63,6 +64,13 @@ public:
 	static  qProperties *		properties(void);													// return array of property meta data
 	virtual qbool				setProperty(qint pPropID,EXTfldval &pNewValue,EXTCompInfo* eci);	// set the value of a property
 	virtual void				getProperty(qint pPropID,EXTfldval &pGetValue,EXTCompInfo* eci);	// get the value of a property
+
+	// $dataname
+	virtual qbool				setPrimaryData(EXTfldval &pNewValue);								// Changes our primary data
+	virtual void				getPrimaryData(EXTfldval &pGetValue);								// Retrieves our primary data
+	virtual qbool				cmpPrimaryData(EXTfldval &pWithValue);								// Compare with our primary data
+	virtual qlong				getPrimaryDataLen();												// Get our primary data size
+	virtual void				primaryDataHasChanged();											// Omnis is just letting us know our primary data has changed, this is especially handy if we do not keep a copy ourselves and thus ignore the other functions
 	
 	static  qMethods *			methods(void);														// return array of method meta data
 	static	qEvents *			events(void);														// return an array of events meta data

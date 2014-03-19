@@ -16,6 +16,10 @@
  oBaseVisComponent
  ********************************************************************************************************************************************/
 
+////////////////////////////////////////////////////////////////
+// Properties
+////////////////////////////////////////////////////////////////
+
 ECOproperty oBaseVisProperties[] = { 
 	//	ID						ResID	Type			Flags					ExFlags	EnumStart	EnumEnd
 	anumForecolor,			0,		fftInteger,		EXTD_FLAG_PROPAPP,		0,		0,			0,		// $forecolor
@@ -27,7 +31,7 @@ ECOproperty oBaseVisProperties[] = {
 	anumFont,				0,		fftCharacter,	EXTD_FLAG_PROPTEXT,		0,		0,			0,		// $font
 	anumFontsize,			0,		fftInteger,		EXTD_FLAG_PROPTEXT,		0,		0,			0,		// $fontsize
 	anumFontstyle,			0,		fftInteger,		EXTD_FLAG_PROPTEXT,		0,		0,			0,		// $fontstyle
-	anumAlign,				0,		fftInteger,		EXTD_FLAG_PROPTEXT,		0,		0,			0,		// $align
+	anumAlign,				0,		fftInteger,		EXTD_FLAG_PROPTEXT,		0,		0,			0,		// $align	
 };
 
 oBaseVisComponent::oBaseVisComponent(void) {
@@ -119,7 +123,69 @@ void oBaseVisComponent::getProperty(qint pPropID,EXTfldval &pGetValue,EXTCompInf
 			
 			break;
 	};
-};	
+};
+
+////////////////////////////////////////////////////////////////
+// $dataname property
+////////////////////////////////////////////////////////////////
+
+// Changes our primary data
+qbool	oBaseVisComponent::setPrimaryData(EXTfldval &pNewValue) {
+	return copyFldVal(pNewValue, mPrimaryData);
+};
+
+// Retrieves our primary data
+void	oBaseVisComponent::getPrimaryData(EXTfldval &pGetValue) {
+	copyFldVal(mPrimaryData, pGetValue);
+};
+
+// Compare with our primary data
+qbool	oBaseVisComponent::cmpPrimaryData(EXTfldval &pWithValue) {
+	if (pWithValue.compare(mPrimaryData)==0) {
+		return qtrue;
+	} else {
+		return qfalse;
+	}
+};
+
+// Get our primary data size
+qlong	oBaseVisComponent::getPrimaryDataLen() {
+	ffttype valuetype;
+	qshort  valuesubtype;
+	
+	mPrimaryData.getType(valuetype, &valuesubtype);
+	
+	switch (valuetype) {
+		case fftInteger:
+			return sizeof(qlong);
+			break;
+		case fftNumber:
+			return sizeof(qreal);
+			break;
+		case fftCharacter:
+			return mPrimaryData.getCharLen();
+			break;
+		case fftBinary:
+		case fftPicture:
+			return mPrimaryData.getBinLen();
+			break;
+		default:
+			return 0;
+			break;
+	}
+};
+
+// Omnis is just letting us know our primary data has changed, this is especially handy if we do not keep a copy ourselves and thus ignore the other functions
+void oBaseVisComponent::primaryDataHasChanged() {
+	// by default just trigger a redraw...
+	WNDinvalidateRect(mHWnd, NULL);
+};
+
+
+////////////////////////////////////////////////////////////////
+// Methods and events
+////////////////////////////////////////////////////////////////
+
 
 qMethods * oBaseVisComponent::methods(void) {
 	qMethods * lvMethods = oBaseComponent::methods();

@@ -87,6 +87,72 @@ void oBaseComponent::addToTraceLog(const char *pData, ...) {
 	ECOaddTraceLine(&lvAddText);	
 };
 
+// Copy the contents of one EXTFLDVAL into another EXTFLDVAL
+qbool	oBaseComponent::copyFldVal(EXTfldval &pSource, EXTfldval &pDest) {
+	// no idea why this isn't a standard function in Omnis.. or maybe I'm overlooking it...
+	
+	ffttype valuetype;
+	qshort  valuesubtype;
+	
+	pSource.getType(valuetype, &valuesubtype);
+	
+	if (pSource.isNull()) {
+		pDest.setNull(valuetype, valuesubtype);
+	} else if (pSource.isEmpty()) {
+		pDest.setEmpty(valuetype, valuesubtype);
+	} else {
+		switch (valuetype) {
+			case fftCharacter: {
+				qlong	len			= pSource.getCharLen();
+				qlong	reallen		= 0;
+				qchar	*buffer		= (qchar *)MEMmalloc(sizeof(qchar) * (len+1));
+				
+				if (buffer==NULL) {
+					return qfalse;
+				}
+				
+				// and copy!
+				pSource.getChar(len+1, buffer, reallen, qfalse);
+				pDest.setChar(buffer, reallen);
+				
+				MEMfree(buffer);				
+			}; break;
+			case fftInteger: {
+				pDest.setLong(pSource.getLong());				
+			}; break;
+			case fftNumber: {
+				qreal	number;
+				qbool	error;
+				pSource.getNum(number, valuesubtype, &error);
+				if (error!=qtrue) {
+					return qfalse;
+				};
+				pDest.setNum(number, valuesubtype);
+			}; break;
+			case fftBinary:
+			case fftPicture: {
+				qlong	len			= pSource.getBinLen();
+				qlong	reallen		= 0;
+				qbyte	*buffer		= (qbyte *)MEMmalloc(sizeof(qbyte) * (len+1));
+				
+				if (buffer == NULL) {
+					return qfalse;
+				};
+				
+				pSource.getBinary(len, buffer, reallen);
+				pDest.setBinary(valuetype, buffer, reallen, valuesubtype);
+				
+				MEMfree(buffer);
+			}; break;
+			default:
+				// for now we do not support the other data types
+				return qfalse;
+				break;
+		}
+	};
+	
+	return qtrue;
+};
 
 /*** Properties ***/
 

@@ -200,9 +200,9 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 		}; break;
 			
 		// ECM_SETPROPERTY: Assignment to a property
-		case ECM_SETPROPERTY:	{	
+		case ECM_SETPROPERTY:	{			
 			EXTParamInfo* lvNewParam = ECOfindParamNum( pECI, 1 );
-			
+
 			oBaseComponent* lvObject;
 			if (pHWND==0) {
 				lvObject = (oBaseComponent *)ECOfindNVObject(pECI->mOmnisInstance, lParam); // first try and see if this is an NV object
@@ -235,6 +235,72 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 			
 		}; break;
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Our special $dataname property
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		// ECM_SETPRIMARYDATA: The contents of our $dataname property has changed
+		case ECM_SETPRIMARYDATA: {
+			EXTParamInfo* lvNewParam = ECOfindParamNum( pECI, 1 );
+
+			oBaseVisComponent* lvObject = (oBaseComponent *)ECOfindObject( pECI, pHWND );
+			if ((lvObject != NULL) && (lvNewParam !=NULL)) {
+				EXTfldval lvValue( (qfldval)lvNewParam->mData );
+				
+				return lvObject->setPrimaryData(lvValue);
+			};			
+		}; break;
+			
+		// ECM_GETPRIMARYDATA: Omnis would like to get a copy of our data. 
+		case ECM_GETPRIMARYDATA: {
+			oBaseVisComponent* lvObject = (oBaseVisComponent *)ECOfindObject( pECI, pHWND );
+			if (lvObject != NULL) {
+				EXTfldval lvValue;
+				
+				lvObject->getPrimaryData(lvValue);
+				ECOaddParam(pECI, &lvValue);
+								
+				return 1L;
+			};			
+		}; break;
+			
+		// ECM_CMPPRIMARYDATA: Omnis would like to know if our copy of the data has changed
+		case ECM_CMPPRIMARYDATA: {
+			EXTParamInfo* lvNewParam = ECOfindParamNum( pECI, 1 );
+
+			oBaseVisComponent* lvObject = (oBaseVisComponent *)ECOfindObject( pECI, pHWND );
+			if ((lvObject != NULL) && (lvNewParam !=NULL)) {
+				EXTfldval lvValue( (qfldval)lvNewParam->mData );
+				if (lvObject->cmpPrimaryData(lvValue)) {
+					return DATA_CMPDATA_SAME;
+				} else {
+					return DATA_CMPDATA_DIFFER;
+				};
+			};			
+		}; break;
+			
+		// ECM_GETPRIMARYDATALEN: Omnis would like to know how big our copy of the data is
+		case ECM_GETPRIMARYDATALEN: {
+			oBaseVisComponent* lvObject = (oBaseVisComponent *)ECOfindObject( pECI, pHWND );
+			if (lvObject != NULL) {
+				EXTfldval lvValue;
+				
+				lvValue.setLong(lvObject->getPrimaryDataLen());
+				ECOaddParam(pECI, &lvValue);
+				
+				return 1L;
+			};			
+		}; break;
+			
+		// ECM_PRIMARYDATACHANGE: lets our component know the primary data has changed
+		case ECM_PRIMARYDATACHANGE: {
+			oBaseVisComponent* lvObject = (oBaseVisComponent *)ECOfindObject( pECI, pHWND );
+			if (lvObject != NULL) {
+				lvObject->primaryDataHasChanged();
+				return 1L;
+			};			
+			
+		}; break;
+			
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Methods
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

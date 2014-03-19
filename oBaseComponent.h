@@ -54,7 +54,8 @@ public:
 	qbool	init(qapp pApp);																		// initialize object
 
 /*** some nice support function ***/
-	void addToTraceLog(const char *pData, ...);														// Add formatted string to trace log
+	void						addToTraceLog(const char *pData, ...);								// Add formatted string to trace log
+	qbool						copyFldVal(EXTfldval &pSource, EXTfldval &pDest);					// Copy the contents of one EXTFLDVAL into another EXTFLDVAL
 	
 /*** Properties ***/
 	static  qProperties *		properties(void);													// return array of property meta data
