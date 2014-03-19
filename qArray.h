@@ -164,4 +164,9 @@ qArray<qElement> * qArray<qElement>::operator += (qElement pItem) {
 	return this;
 }
 
+// Some handy arrays
+typedef qArray<qrect>		qRectArray;			// array of rectangles
+
+
+
 #endif

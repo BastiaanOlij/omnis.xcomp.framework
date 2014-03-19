@@ -20,7 +20,7 @@ protected:
 	bool						mNeedRebuild;														// Set this to true if a rebuild of property/method definitions is required
 	
 public:
-	virtual	qbool				init(qobjinst pInst);												// Initialize component
+	virtual	qbool				init(qapp pApp, qobjinst pInst);									// Initialize component
 	
 	virtual void				copyObject(oBaseNVComponent *pCopy);								// create a copy of pCopy, this MUST be implemented in a subclass
 	

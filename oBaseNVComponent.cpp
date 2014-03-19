@@ -17,7 +17,9 @@
  ********************************************************************************************************************************************/
 
 // Initialize component
-qbool oBaseNVComponent::init(qobjinst pInst) {
+qbool oBaseNVComponent::init(qapp pApp, qobjinst pInst) {
+	oBaseComponent::init(pApp);
+	
 	mObjInst = pInst;
 	
 	return true;

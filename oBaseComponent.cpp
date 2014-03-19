@@ -26,6 +26,11 @@ oBaseComponent::~oBaseComponent(void) {
 	// nothing to do here just yet
 };
 
+// initialize object
+qbool	oBaseComponent::init(qapp pApp) {
+	mApp = pApp;
+};
+
 /*** some nice support function ***/
 
 // Add formatted string to trace log

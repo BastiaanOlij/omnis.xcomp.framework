@@ -39,7 +39,9 @@ oBaseVisComponent::oBaseVisComponent(void) {
 };
 
 // Initialize component
-qbool oBaseVisComponent::init(HWND pHWnd) {
+qbool oBaseVisComponent::init(qapp pApp, HWND pHWnd) {
+	oBaseComponent::init(pApp);
+	
 	mHWnd = pHWnd;
 	mMouseLButtonDown = false;
 	
@@ -60,14 +62,14 @@ qProperties * oBaseVisComponent::properties(void) {
 qbool oBaseVisComponent::setProperty(qint pPropID,EXTfldval &pNewValue,EXTCompInfo* pECI) {
 	// most anum properties are managed by Omnis but some we need to do ourselves, no idea why...
 	
-	addToTraceLog("Setting property %li",pPropID);
+//	addToTraceLog("Setting property %li",pPropID);
 	
 	switch (pPropID) {
 		case anumForecolor:
 			mForecolor = pNewValue.getLong();
 			WNDinvalidateRect(mHWnd, NULL);
 			
-			addToTraceLog("Changed color to %li",mForecolor);
+//			addToTraceLog("Changed color to %li",mForecolor);
 			
 			return 1L;
 			break;
@@ -180,13 +182,13 @@ qcol	oBaseVisComponent::mixColors(qcol pQ1, qcol pQ2) {
 };
 
 // Do our drawing in here
-void oBaseVisComponent::doPaint(HDC pHDC) {
+void oBaseVisComponent::doPaint() {
 	// override to implement drawing...
-	if (!WNDdrawThemeBackground(mHWnd,pHDC,&mClientRect,mBKTheme)) {
+	if (!WNDdrawThemeBackground(mHWnd,mHDC,&mClientRect,mBKTheme)) {
 		// clear our drawing field
-		GDIsetTextColor(pHDC, mForecolor);
-		GDIfillRect(pHDC, &mClientRect, mBackpatBrush);
-		GDIsetTextColor(pHDC, mTextColor);		
+		GDIsetTextColor(mHDC, mForecolor);
+		GDIfillRect(mHDC, &mClientRect, mBackpatBrush);
+		GDIsetTextColor(mHDC, mTextColor);		
 	};
 };
 
@@ -224,16 +226,65 @@ void oBaseVisComponent::setup(EXTCompInfo* pECI) {
 	if (fieldStyle[0]>0) {
 		ECOgetStyle( ECOgetApp(pECI->mInstLocp), &fieldStyle[1], fieldStyle[0], &mTextSpec );
 		
-		// !BAS! need to also see if we need to get our foreground color, background color and/or background pattern
+		// !BAS! need to also see if we need to get our foreground color, background color and/or background pattern from our style
+		// not sure if Omnis feeds this info back to us already
 	};	
+};
+
+// clipping
+void	oBaseVisComponent::clipRect(qrect pRect, bool pUnion) {
+	if (mHDC != 0) {
+		if (pUnion) {
+			qrect lvCliprect;
+			int lvStackSize = mClipStack.numberOfElements();
+			
+			if (lvStackSize > 0) {
+				lvCliprect = mClipStack[lvStackSize-1];
+			} else {
+				lvCliprect = mClientRect;
+			};
+			
+			// union the two rectangles so we clip only where the two rectangles overlap
+			// note that if the rectangles do not overlap left will be bigger then right or top below the bottom.
+			
+			pRect.left		= pRect.left > lvCliprect.left ? pRect.left : lvCliprect.left;
+			pRect.right		= pRect.right < lvCliprect.right ? pRect.right : lvCliprect.right;
+			pRect.top		= pRect.top > lvCliprect.top ? pRect.top : lvCliprect.top;
+			pRect.bottom	= pRect.bottom < lvCliprect.bottom ? pRect.bottom : lvCliprect.bottom;
+		};
+	
+		// clip
+		GDIsetClipRect(mHDC, &pRect);
+	
+		// now add our rectangle to our clipstack
+		mClipStack.push(pRect);
+	};
+};
+
+void	oBaseVisComponent::unClip() {
+	if (mHDC != 0) {
+		// remove the top one, that is our current clipping
+		mClipStack.pop();
+		
+		int lvStackSize = mClipStack.numberOfElements();
+		if (lvStackSize > 0) {
+			qrect lvCliprect = mClipStack[lvStackSize-1];
+			
+			GDIsetClipRect(mHDC, &lvCliprect);			
+		} else {
+			GDIclearClip(mHDC);
+		};
+	};
 };
 
 // paint message
 void oBaseVisComponent::wm_paint(EXTCompInfo* pECI) {
 	WNDpaintStruct	lvPaintStruct;
 	qrect			lvUpdateRect;
-	HDC				lvHDC;
 	void *			lvOffScreenPaint;
+	
+	// clear our clip stack
+	mClipStack.clear();
 	
 	// get current size info
 	WNDgetClientRect(mHWnd, &mClientRect);
@@ -243,32 +294,34 @@ void oBaseVisComponent::wm_paint(EXTCompInfo* pECI) {
 		WNDbeginPaint( mHWnd, &lvPaintStruct );
 		
 		lvUpdateRect = lvPaintStruct.rcPaint;
-		lvHDC = lvPaintStruct.hdc;
+		mHDC = lvPaintStruct.hdc;
 		
 		setup(pECI);
 		
 		// On windows this will do a double buffer trick, on Mac OSX the OS already does the offscreen painting:)
-		lvOffScreenPaint = GDIoffscreenPaintBegin(NULL, lvHDC, mClientRect, lvUpdateRect);
-		if (lvOffScreenPaint) {
+		// note that mHDC and mClienRect may be altered as a result of this call which is good!
+		lvOffScreenPaint = GDIoffscreenPaintBegin(NULL, mHDC, mClientRect, lvUpdateRect);
+		if (lvOffScreenPaint) {		
 			// setup defaults for GDI drawing..
 			HFONT		lvTextFont	= GDIcreateFont(&mTextSpec.mFnt, mTextSpec.mSty);
-			HFONT		lvOldFont	= GDIselectObject(lvHDC, lvTextFont); 
+			HFONT		lvOldFont	= GDIselectObject(mHDC, lvTextFont); 
 			
-			GDIsetBkColor(lvHDC, mBackcolor);
-			GDIsetTextColor(lvHDC, mTextColor);	// if we need our forecolor for drawing we will switch..
+			// default our colors
+			GDIsetBkColor(mHDC, mBackcolor);
+			GDIsetTextColor(mHDC, mTextColor);	// if we need our forecolor for drawing we will switch..
 			
 			// do our real drawing
-			doPaint(lvHDC);
+			doPaint();
 			
 			// If in design mode, then call drawDesignName, drawNumber & drawMultiKnobs to draw design
 			// name, numbers and multiknobs, if required.
 			if ( ECOisDesign(mHWnd) ) {
-				ECOdrawDesignName(mHWnd,lvHDC);
-				ECOdrawNumber(mHWnd,lvHDC);
-				ECOdrawMultiKnobs(mHWnd,lvHDC);
+				ECOdrawDesignName(mHWnd,mHDC);
+				ECOdrawNumber(mHWnd,mHDC);
+				ECOdrawMultiKnobs(mHWnd,mHDC);
 			}
 			
-			GDIselectObject(lvHDC, lvOldFont);
+			GDIselectObject(mHDC, lvOldFont);
 			GDIdeleteObject(lvTextFont);
 			
 			GDIdeleteObject(mBackpatBrush);
@@ -280,9 +333,13 @@ void oBaseVisComponent::wm_paint(EXTCompInfo* pECI) {
 		// And finish paint...
 		WNDendPaint( mHWnd, &lvPaintStruct );	
 	} else {		
-		// component must fully implement...
-		doPaint(0);
+		// component must fully implement and is responsible for setting HDC...
+		mHDC = 0;
+		doPaint();
 	}
+	
+	// Just free up memory..
+	mClipStack.clear();
 };
 
 // Component resize/repos message

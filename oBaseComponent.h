@@ -40,6 +40,8 @@ class oBaseComponent {
 private:
 	
 protected:
+	qapp						mApp;																// our application (assuming this is static)
+	
 	/*** Parameters ***/
 	qstring	*					newStringFromParam(int pParamNo, EXTCompInfo* pECI);				// get string from parameter, call needs to delete returned object
 	long						getLongFromParam(int pParamNo, EXTCompInfo* pECI);					// get long from parameter
@@ -49,6 +51,7 @@ protected:
 public:
 	oBaseComponent(void);																			// constructor
 	virtual ~oBaseComponent(void);																	// destructor
+	qbool	init(qapp pApp);																		// initialize object
 
 /*** some nice support function ***/
 	void addToTraceLog(const char *pData, ...);														// Add formatted string to trace log

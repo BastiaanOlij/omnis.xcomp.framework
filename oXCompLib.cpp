@@ -135,12 +135,12 @@ oBaseComponent * oXCompLib::instantiateComponent(long pCompID
 
 			if (lvComponent.componentType == cObjType_NVObject) {
 				oBaseNVComponent * lvNVObject = (oBaseNVComponent *) lvObject;
-				lvNVObject->init((qobjinst) pParam);
+				lvNVObject->init(ECOgetApp(pECI->mInstLocp), (qobjinst) pParam);
 				
 				ECOinsertNVObject( pECI->mOmnisInstance, pParam, (void*)lvObject );				
 			} else {
 				oBaseVisComponent * lvVisObject = (oBaseVisComponent *) lvObject;
-				lvVisObject->init(pHWND);
+				lvVisObject->init(ECOgetApp(pECI->mInstLocp), pHWND);
 
 				ECOinsertObject( pECI, pHWND, (void*)lvObject );
 			}
