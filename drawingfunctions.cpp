@@ -39,13 +39,13 @@ qdim	oBaseVisComponent::getTextWidth(const qchar *pText, qshort pLen, bool pStyl
 */
 	
 	// this will not work properly if we have styled text...
-	qdim width = GDItextWidth(mHDC, (qchar *) pText, pLen);
+	qdim width = GDItextWidth(mHDC, (qchar *) pText, pLen) + 2;
 	
 	return width;
 };
 
 // Get the heigth of text
-qdim	oBaseVisComponent::getTextHeight(const qchar *pText, qshort pLen, qdim pWidth, bool pStyled, bool pWrap) {
+qdim	oBaseVisComponent::getTextHeight(const qchar *pText, qdim pWidth, bool pStyled, bool pWrap) {
 	qdim	fontheight	= GDIfontHeight(mHDC);
 	qshort	len			= OMstrlen(pText);
 	qshort	pos			= 0;
@@ -61,7 +61,7 @@ qdim	oBaseVisComponent::getTextHeight(const qchar *pText, qshort pLen, qdim pWid
 	while (pos <= len) {
 		if ((pText[pos] == 0x00) || (pText[pos] == newline[0])) {
 			if (pos > start) {
-				qdim	width = pWrap ? getTextWidth((qchar *)pText[start], pos - start, pStyled) : 0;
+				qdim	width = pWrap ? getTextWidth(&pText[start], pos - start, pStyled) : 0;
 				
 				if (width > pWidth) {
 					// wrap our text
@@ -76,7 +76,7 @@ qdim	oBaseVisComponent::getTextHeight(const qchar *pText, qshort pLen, qdim pWid
 								// nothing yet to draw, keep on going..
 							} else {
 								// we either found the start of a new word or the end of our text
-								width = getTextWidth((qchar *)pText[start], wordpos - start, pStyled);
+								width = getTextWidth(&pText[start], wordpos - start, pStyled);
 								
 								if (width>pWidth) {									
 									if (lastpos==start) {
@@ -244,6 +244,23 @@ qdim	oBaseVisComponent::drawText(const qchar *pText, qrect pWhere, qcol pColor, 
 	
 	return top;
 };
+
+// Draws a line between two points using the current selected pen
+void	oBaseVisComponent::drawLine(qpoint pFrom, qpoint pTo) {
+	GDImoveTo(mHDC, &pFrom);
+	GDIlineTo(mHDC, &pTo);	
+};
+
+// Draws a line between two points
+void	oBaseVisComponent::drawLine(qpoint pFrom, qpoint pTo, qdim pWidth, qcol pCol, qpat pPat) {
+	HPEN	newPen = GDIcreatePen(pWidth, pCol, pPat);
+	HPEN	oldPen = GDIselectObject(mHDC, newPen);
+
+	drawLine(pFrom, pTo);
+	
+	GDIselectObject(mHDC, oldPen);
+};
+
 
 // Draws a filled ellipse within the rectangle with a gradient color from top to bottom
 void	oBaseVisComponent::drawEllipse(qrect pRect, qcol pTop, qcol pBottom, qcol pBorder, qint pSpacing) {

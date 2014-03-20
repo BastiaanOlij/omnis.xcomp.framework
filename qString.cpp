@@ -40,20 +40,20 @@ qstring::qstring(const qstring& pCopy) {
 	*this = pCopy;
 };
 
+#ifdef isunicode
+// On non-unicode qchar and char are the same thing so this is not needed
 qstring::qstring(const char *pString) {
 	init();
 	
 	copy(pString);
 };
+#endif
 
-#ifdef isunicode
-// On non-unicode qchar and char are the same thing so this is not needed
 qstring::qstring(const qchar *pString) {
 	init();
 	
 	copy(pString);
 };
-#endif
 
 qstring::qstring(const qchar *pString, qlong pSize) {
 	init();
@@ -77,8 +77,12 @@ qstring * qstring::newStringFromFormat(const char *pFormat, ...)
 	va_start( arglist, pFormat );
 	vsprintf( tmpBuffer, pFormat, arglist );
 	va_end( arglist );
-	
-	retString = new qstring(tmpBuffer);
+
+#ifdef isunicode
+	retString = new qstring(tmpBuffer); // this will call our conversion from UTF-8 => UTF-32
+#else
+	retString = new qstring((qchar *)tmpBuffer); // qchar = char
+#endif
 	
 	return retString;
 };
@@ -237,6 +241,7 @@ void	qstring::redim(qlong pSize, qbool pKeepData) {
 	};
 };
 
+#ifdef isunicode
 void	qstring::copy(const char *pString){
 	qlong		len = strlen(pString);
 		
@@ -245,7 +250,6 @@ void	qstring::copy(const char *pString){
 			mBuffer[0]=0;
 		};
 	} else {
-#ifdef isunicode
 		/* 
 		 on unicode we need to convert our 8bit string!
 		 Use CHRconvFromBytes, assumes UTF-8 content 
@@ -253,20 +257,10 @@ void	qstring::copy(const char *pString){
 		CHRconvFromBytes	newString((qbyte *)pString, strlen(pString));
 		
 		copy(newString.dataPtr(), newString.len());
-#else
-		// on non-unicode we can just copy it old style!
-		if ((len+1)>mMaxSize) { /* not enough space? Redim! */
-			redim(len+1);
-		};
-		
-		if ((len+1)<=mMaxSize) { /* double check just in case the redim failed... */
-			strcpy((char *)mBuffer, pString);
-		};
-#endif
 	};
 };
+#endif
 
-#ifdef isunicode
 // on non-unicode char and qchar are the same so we don't need this...
 void	qstring::copy(const qchar *pString){
 	qlong		len = qstring::qstrlen(pString);
@@ -276,10 +270,13 @@ void	qstring::copy(const qchar *pString){
 			mBuffer[0]=0;
 		};
 	} else {
+		if ((len+1)>mMaxSize) { /* not enough space? Redim! */
+			redim(len+1);
+		};
+		
 		OMstrcpy(mBuffer, pString);
 	};
 };
-#endif
 
 void	qstring::copy(const qchar *pString, qlong pSize) {
 	if (pString==mBuffer) {
@@ -327,8 +324,12 @@ qstring& qstring::setFormattedString(const char *pFormat, ...) {
 	vsprintf( tmpBuffer, pFormat, arglist );
 	va_end( arglist );
 	
+#ifdef isunicode	
 	*this = tmpBuffer;
-	
+#else
+	*this = (qchar *)tmpBuffer;
+#endif
+
 	return *this; // return ourselves
 };
 
@@ -370,7 +371,11 @@ qstring& qstring::appendFormattedString(const char *pFormat, ...) {
 	vsprintf( tmpBuffer, pFormat, arglist );
 	va_end( arglist );
 	
+#ifdef isunicode	
 	*this += tmpBuffer;
+#else
+	*this += (qchar *)tmpBuffer;
+#endif
 	
 	return *this; // return ourselves
 };
@@ -383,7 +388,12 @@ qstring& qstring::appendBinary(const qbyte *pBuffer, qlong pLen) {
 		
 		sprintf(hex, "%02X", byte);
 		
+#ifdef isunicode	
 		*this += hex;
+#else
+		*this += (qchar *)hex;
+#endif
+		
 	};
 
 	return *this;
@@ -423,7 +433,7 @@ qstring& qstring::appendFldVal(const EXTfldval &value){
 					
 					MEMfree(tmpBuffer);				
 				} else {
-					*this += "???";	
+					*this += QTEXT("???");	
 				};
 			};
 			break;
@@ -506,6 +516,26 @@ qstring&	qstring::operator+=(const qstring& pAdd) {
 	return *this;
 };
 
+qstring&	qstring::operator+=(const qchar pAdd) {
+	qlong	ourLen = this->length();
+	qlong	addLen = 1;
+	
+	// Append together
+		
+	if ((ourLen+addLen+1)>mMaxSize) {
+		// make space for our complete buffer
+		redim(ourLen+addLen+1,qtrue);
+	};
+		
+	if ((ourLen+addLen+1)<=mMaxSize) { // always verify if our redim succeeded
+		// we use copy mem, this should also be safe if we're adding ourselves to ourselves..
+		mBuffer[ourLen] = pAdd;
+		mBuffer[ourLen+1] = '\0';
+	};
+	
+	return *this;
+};
+
 qstring&	qstring::operator+=(const qchar* pAdd) {
 	qlong	ourLen = this->length();
 	qlong	addLen = qstring::qstrlen(pAdd);
@@ -538,6 +568,22 @@ qstring&	qstring::operator+=(const EXTfldval& pAdd) {
 	return *this;
 };
 
+bool	qstring::operator==(const qchar * pCompare) const {
+	const qchar	*strA = this->cString();
+	qlong cmp;
+	
+	if ((strA==0) && (pCompare==0)) {
+		cmp = 0;
+	} else if (strA==0) {
+		cmp = 1;
+	} else if (pCompare==0) {
+		cmp = -1;
+	} else {
+		qlong cmp = qstring::qstrcmp(strA, pCompare);
+	};
+	
+	return cmp==0;
+};
 
 bool	qstring::operator==(const qstring& pCompare) const {
 	const qchar	*strA = this->cString();
@@ -551,7 +597,7 @@ bool	qstring::operator==(const qstring& pCompare) const {
 	} else if (strB==0) {
 		cmp = -1;
 	} else {
-		qlong cmp = qstring::qstrcmp(strA, strB);		
+		qlong cmp = qstring::qstrcmp(strA, strB);
 	};
 	
 	return cmp==0;

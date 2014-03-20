@@ -242,7 +242,7 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 		case ECM_SETPRIMARYDATA: {
 			EXTParamInfo* lvNewParam = ECOfindParamNum( pECI, 1 );
 
-			oBaseVisComponent* lvObject = (oBaseComponent *)ECOfindObject( pECI, pHWND );
+			oBaseVisComponent* lvObject = (oBaseVisComponent *)ECOfindObject( pECI, pHWND );
 			if ((lvObject != NULL) && (lvNewParam !=NULL)) {
 				EXTfldval lvValue( (qfldval)lvNewParam->mData );
 				
@@ -366,7 +366,74 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 // window messaging
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-		// WM_LBUTTONDOWN - standard left mouse button down event
+		// WM_HSCROLL, WM_VSCROLL - scrollbar position has changed
+		case WM_HSCROLL:
+		case WM_VSCROLL: {
+			// This should only be called on visual object
+			oBaseVisComponent* lvObject = (oBaseVisComponent*)ECOfindObject( pECI, pHWND );
+			if (lvObject!=NULL) {
+				qdim		min, max, page, oldPos, newPos, otherPos, stepSize;
+				
+				if (pMsg == WM_HSCROLL) {
+					stepSize = lvObject->getHorzStepSize();
+					WNDgetScrollPos( pHWND, SB_HORZ, &oldPos ); 
+					WNDgetScrollPos( pHWND, SB_VERT, &otherPos ); 
+					WNDgetScrollRange( pHWND, SB_HORZ, &min, &max, &page );					
+				} else {
+					stepSize = lvObject->getVertStepSize();
+					WNDgetScrollPos( pHWND, SB_VERT, &oldPos ); 
+					WNDgetScrollPos( pHWND, SB_HORZ, &otherPos ); 
+					WNDgetScrollRange( pHWND, SB_VERT, &min, &max, &page );
+				};
+				
+				switch ( wParam ) {
+					case SB_LINEDOWN: 
+						newPos = oldPos + stepSize; 
+						break;
+					case SB_LINEUP: 
+						newPos = oldPos - stepSize; 
+						break;
+					case SB_PAGEDOWN: 
+						newPos = oldPos + page; 
+						break;
+					case SB_PAGEUP: 
+						newPos = oldPos - page; 
+						break;
+					case SB_TOP:	
+						newPos = min;
+						break;
+					case SB_BOTTOM: 
+						newPos = max; 
+						break;
+					case SB_THUMBPOSITION: 
+					case SB_THUMBTRACK: {
+						// handle sign extension correctly
+						qshort shortNewPos = LOWORD( lParam ); 
+						newPos = shortNewPos; 
+						break;
+					};
+					case SB_ENDSCROLL:
+					default:
+						newPos = oldPos;
+						break;
+				};
+				
+				if (newPos!=oldPos) {	
+					if (newPos < min) newPos=min;
+					if (newPos > max) newPos=max;
+					
+					if (pMsg == WM_HSCROLL) {
+						lvObject->evWindowScrolled(newPos, otherPos);
+					} else {
+						lvObject->evWindowScrolled(otherPos, newPos);						
+					};
+				};
+				
+				return 1L;
+			};			
+		}; break;
+			
+			// WM_LBUTTONDOWN - standard left mouse button down event
 		case WM_LBUTTONDOWN: {
 			// This should only be called on visual object
 			oBaseVisComponent* lvObject = (oBaseVisComponent*)ECOfindObject( pECI, pHWND );

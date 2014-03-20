@@ -35,11 +35,13 @@ ECOproperty oBaseVisProperties[] = {
 };
 
 oBaseVisComponent::oBaseVisComponent(void) {
-	mForecolor = GDI_COLOR_QDEFAULT;
-	mBackcolor = GDI_COLOR_QDEFAULT;
-	mBackpattern = 0;
-	mBKTheme = WND_BK_NONE;
-	mDrawBuffer = true;
+	mForecolor		= GDI_COLOR_QDEFAULT;
+	mBackcolor		= GDI_COLOR_QDEFAULT;
+	mOffsetX		= 0;
+	mOffsetY		= 0;
+	mBackpattern	= 0;
+	mBKTheme		= WND_BK_NONE;
+	mDrawBuffer		= true;
 };
 
 // Initialize component
@@ -48,6 +50,9 @@ qbool oBaseVisComponent::init(qapp pApp, HWND pHWnd) {
 	
 	mHWnd = pHWnd;
 	mMouseLButtonDown = false;
+
+	WNDsetScrollRange(mHWnd, SB_HORZ, 0, 0, 1, qfalse);
+	WNDsetScrollRange(mHWnd, SB_VERT, 0, 0, 1, qfalse);
 	
 	return true;
 };
@@ -206,7 +211,8 @@ qEvents *	oBaseVisComponent::events(void) {
 
 
 void	oBaseVisComponent::Resized() {
-	
+	// probably not needed but....
+	WNDinvalidateRect(mHWnd, NULL);	
 };
 
 ////////////////////////////////////////////////////////////////
@@ -248,7 +254,7 @@ qcol	oBaseVisComponent::mixColors(qcol pQ1, qcol pQ2) {
 };
 
 // Do our drawing in here
-void oBaseVisComponent::doPaint() {
+void oBaseVisComponent::doPaint(EXTCompInfo* pECI) {
 	// override to implement drawing...
 	if (!WNDdrawThemeBackground(mHWnd,mHDC,&mClientRect,mBKTheme)) {
 		// clear our drawing field
@@ -377,7 +383,7 @@ void oBaseVisComponent::wm_paint(EXTCompInfo* pECI) {
 			GDIsetTextColor(mHDC, mTextColor);	// if we need our forecolor for drawing we will switch..
 			
 			// do our real drawing
-			doPaint();
+			doPaint(pECI);
 			
 			// If in design mode, then call drawDesignName, drawNumber & drawMultiKnobs to draw design
 			// name, numbers and multiknobs, if required.
@@ -401,7 +407,7 @@ void oBaseVisComponent::wm_paint(EXTCompInfo* pECI) {
 	} else {		
 		// component must fully implement and is responsible for setting HDC...
 		mHDC = 0;
-		doPaint();
+		doPaint(pECI);
 	}
 	
 	// Just free up memory..
@@ -412,6 +418,43 @@ void oBaseVisComponent::wm_paint(EXTCompInfo* pECI) {
 void	oBaseVisComponent::wm_windowposchanged(EXTCompInfo* pECI, WNDwindowPosStruct * pPos) {
 	Resized();
 };
+
+////////////////////////////////////////////////////////////////////////////////////////
+// Scrollbar related functions
+////////////////////////////////////////////////////////////////////////////////////////
+
+// get our horizontal step size
+qdim	oBaseVisComponent::getHorzStepSize(void) {
+	return 8;
+};
+
+// get our vertical step size
+qdim	oBaseVisComponent::getVertStepSize(void) {
+	return 8;	
+};
+
+// window was scrolled
+void	oBaseVisComponent::evWindowScrolled(qdim pNewX, qdim pNewY) {
+	if ((mOffsetX!=pNewX) || (mOffsetY!=pNewY)) {
+		WNDsetScrollPos(mHWnd, SB_HORZ, pNewX, qfalse); 
+		WNDsetScrollPos(mHWnd, SB_VERT, pNewY, qfalse);
+		
+		// we may not need to do this..
+		WNDscrollWindow(mHWnd, mOffsetX - pNewX, mOffsetY-pNewY);
+
+		// redraw the whole thing...
+		WNDinvalidateRect(mHWnd, NULL);
+
+		if (mMouseLButtonDown) {
+			mMouseDownAt.h += pNewX-mOffsetX;
+			mMouseDownAt.v += pNewY-mOffsetY;
+		};	
+
+		mOffsetX = pNewX;
+		mOffsetY = pNewY;
+	};
+};
+
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // mouse related functions

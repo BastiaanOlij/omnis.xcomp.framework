@@ -38,12 +38,15 @@ protected:
 	qcol						mForecolor, mBackcolor;												// Our forecolor and backcolor
 	qulong						mBKTheme;															// Our background theme
 
+	/*** scrollbar related ***/
+	qdim						mOffsetX;															// Horizontal offset (scrollbar), this is not automatically taken into account when drawing (yet)!
+	qdim						mOffsetY;															// Vertical offset (scrollbar)
+
 	/*** only valid during drawing ***/
 	qbool						mDrawBuffer;														// If true (default) we'll setup our canvas buffer
 	qrect						mClientRect;														// Our client rect, gives the size of our visual component
 	HDC							mHDC;																// Current HDC for drawing
-	
-	
+		
 	// colour functions
 	qcol						mixColors(qcol pQ1, qcol pQ2);										// Mix two colors together
 	
@@ -53,8 +56,10 @@ protected:
 	
 	// drawing functions (in drawingfunctions.cpp)
 	qdim						getTextWidth(const qchar *pText, qshort pLen, bool pStyled = true);	// Get the width of text
-	qdim						getTextHeight(const qchar *pText, qshort pLen, qdim pWidth, bool pStyled = true, bool pWrap = true);	// Get the heigth of text if wrapped
+	qdim						getTextHeight(const qchar *pText, qdim pWidth, bool pStyled = true, bool pWrap = true);	// Get the heigth of text if wrapped
 	qdim						drawText(const qchar *pText, qrect pWhere, qcol pColor, qjst pJst = jstLeft, bool pStyled = true, bool pWrap = true);			// Draws the text clipped within the specified rectangle 
+	void						drawLine(qpoint pFrom, qpoint pTo);		// Draws a line between two points using the current selected pen
+	void						drawLine(qpoint pFrom, qpoint pTo, qdim pWidth, qcol pCol, qpat pPat);		// Draws a line between two points
 	void						drawEllipse(qrect pRect, qcol pTop, qcol pBottom, qcol pBorder = -1, qint pSpacing = 0);					// Draws a filled ellipse within the rectangle with a gradient color from top to bottom
 	
 public:
@@ -75,7 +80,7 @@ public:
 	static  qMethods *			methods(void);														// return array of method meta data
 	static	qEvents *			events(void);														// return an array of events meta data
 	
-	virtual void				doPaint();															// Do our drawing in here
+	virtual void				doPaint(EXTCompInfo* pECI);											// Do our drawing in here
 	virtual void				Resized();															// Our component was resized
 	
 	virtual void				evMouseMoved(qpoint pMovedTo);										// mouse moved to this location while mouse button is not down
@@ -84,6 +89,11 @@ public:
 	virtual void				evDragging(qpoint pFrom, qpoint pAt);								// mouse being dragged
 	virtual void				evEndDrag(qpoint pFrom, qpoint pTop);								// mouse dragged from - to	
 	virtual void				evCancelledDrag();													// cancelled dragging
+
+	// scrollbar functions
+	virtual qdim				getHorzStepSize(void);												// get our horizontal step size
+	virtual qdim				getVertStepSize(void);												// get our vertical step size
+	virtual void				evWindowScrolled(qdim pNewX, qdim pNewY);							// window was scrolled
 	
 	// called from our WndProc, don't override these directly
 	void						wm_lbutton(qpoint pAt, bool pDown);									// left mouse button

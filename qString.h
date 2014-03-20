@@ -25,10 +25,10 @@ private:
 	
 	void			init();												/* initialise members */
 	void			redim(qlong pSize, qbool pKeepData = qfalse);		/* resize the buffer */
-	void			copy(const char *pString);							/* copy an 8bit string */
 #ifdef isunicode
-	void			copy(const qchar *pString);							/* copy zero terminated omnis string */
+	void			copy(const char *pString);							/* copy an 8bit string */
 #endif
+	void			copy(const qchar *pString);							/* copy zero terminated omnis string */
 	void			copy(const qchar *pString, qlong pSize);			/* copy an omnis string */
 	void			copy(const EXTfldval &pExtFld);						/* copy an omnis field value */
 	
@@ -38,10 +38,10 @@ public:
 	qstring();
 	qstring(qlong pSize);
 	qstring(const qstring& pCopy);
-	qstring(const char* pCopy);
 #ifdef isunicode
-	qstring(const qchar* pCopy);
+	qstring(const char* pCopy);
 #endif
+	qstring(const qchar* pCopy);
 	qstring(const qchar *pString, qlong pSize);
 	qstring(const EXTfldval &pExtFld);
 	~qstring();
@@ -68,6 +68,7 @@ public:
 	qstring&		operator=(const EXTfldval& pCopy);
 	
 	qstring&		operator+=(const qstring& pAdd);
+	qstring&		operator+=(const qchar pAdd);
 	qstring&		operator+=(const qchar* pAdd);
 	qstring&		operator+=(const EXTfldval& pAdd);
 
@@ -78,6 +79,7 @@ public:
 		return result;
 	};
 	
+	bool			operator==(const qchar * pCompare) const;	
 	bool			operator==(const qstring& pCompare) const;	
 	bool			operator!=(const qstring& pCompare) const;	
 	bool			operator<=(const qstring& pCompare) const;

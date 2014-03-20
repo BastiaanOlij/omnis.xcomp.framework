@@ -35,6 +35,8 @@ public:
 	void *			getArray();				// return a pointer to our array
 	unsigned long	numberOfElements(void);	// get the number of elements in our array
 	void			addElements(qElement * pItems, unsigned long pNumberOfItems); // add an (static) array of elements
+	void			remElementAtIndex(unsigned long pIndex);	// remove an element at this index.
+	void			setElementAtIndex(unsigned long pIndex, qElement pItem);	// change an element at this index.
 	
 	// push/pop to use array as a stack
 	void			clear(void);			// remove all elements from our array
@@ -99,6 +101,39 @@ void qArray<qElement>::addElements(qElement * pItems, unsigned long pNumberOfIte
 		push(pItems[i]);
 	}
 }
+
+// remove an element at this index.
+template<class qElement>
+void	qArray<qElement>::remElementAtIndex(unsigned long pIndex) {
+	if (mArray == NULL) {
+		throw BufferNotInitialized;
+	}
+
+	if (pIndex>=mNumberOfElements) {
+		throw IndexOutOfBounds;
+	}
+
+	for (unsigned long i = pIndex +1; i<mNumberOfElements; i++) {
+		mArray[i-1] = mArray[i];
+	}
+	
+	mNumberOfElements--;
+};	
+
+// change an element at this index.
+template<class qElement>
+void	qArray<qElement>::setElementAtIndex(unsigned long pIndex, qElement pItem) {
+	if (mArray == NULL) {
+		throw BufferNotInitialized;
+	}
+	
+	if (pIndex>=mNumberOfElements) {
+		throw IndexOutOfBounds;
+	}
+
+	mArray[pIndex] = pItem;
+};
+
 
 // remove all elements from our array, if our array contains pointers this does NOT free up the memory being pointed too!
 template<class qElement>
@@ -165,8 +200,9 @@ qArray<qElement> * qArray<qElement>::operator += (qElement pItem) {
 }
 
 // Some handy arrays
-typedef qArray<qrect>		qRectArray;			// array of rectangles
-
-
+typedef qArray<qlong>			qlongArray;			// array of longs
+typedef qArray<qdim>			qdimArray;			// array of qdims
+typedef qArray<qrect>			qRectArray;			// array of rectangles
+typedef qArray<EXTfldval *>		EXTfldvalArray;		// array of EXTfldval *, note that YOU are responsible for freeing up the instances being pointed to!!!
 
 #endif

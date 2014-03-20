@@ -227,7 +227,7 @@ qstring	* oBaseComponent::newStringFromParam(int pParamNo, EXTCompInfo* pECI) {
 		
 		return tmpNewString;		
 	} else {
-		qstring	*			tmpNewString = new qstring("");
+		qstring	*			tmpNewString = new qstring(QTEXT(""));
 		
 		return tmpNewString;
 	};
