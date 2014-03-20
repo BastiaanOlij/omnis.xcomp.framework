@@ -1,4 +1,4 @@
-The MIT License (MIT)
+omnis.xcomp.framework
 
 Copyright (c) 2014 Bastiaan Olij
 
