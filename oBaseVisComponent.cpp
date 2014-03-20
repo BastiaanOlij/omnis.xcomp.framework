@@ -68,7 +68,7 @@ qProperties * oBaseVisComponent::properties(void) {
 };
 
 // set the value of a property
-qbool oBaseVisComponent::setProperty(qint pPropID,EXTfldval &pNewValue,EXTCompInfo* pECI) {
+qbool oBaseVisComponent::setProperty(qlong pPropID,EXTfldval &pNewValue,EXTCompInfo* pECI) {
 	// most anum properties are managed by Omnis but some we need to do ourselves, no idea why...
 	
 //	addToTraceLog("Setting property %li",pPropID);
@@ -107,7 +107,7 @@ qbool oBaseVisComponent::setProperty(qint pPropID,EXTfldval &pNewValue,EXTCompIn
 };
 
 // get the value of a property
-void oBaseVisComponent::getProperty(qint pPropID,EXTfldval &pGetValue,EXTCompInfo* eci) {
+void oBaseVisComponent::getProperty(qlong pPropID,EXTfldval &pGetValue,EXTCompInfo* eci) {
 	// most anum properties are managed by Omnis but some we need to do ourselves...
 	
 	switch (pPropID) {

@@ -29,6 +29,8 @@ oBaseComponent::~oBaseComponent(void) {
 // initialize object
 qbool	oBaseComponent::init(qapp pApp) {
 	mApp = pApp;
+
+	return qtrue;
 };
 
 /*** some nice support function ***/

@@ -67,8 +67,8 @@ public:
 	virtual	qbool				init(qapp pApp, HWND pHWnd);										// Initialize component
 	
 	static  qProperties *		properties(void);													// return array of property meta data
-	virtual qbool				setProperty(qint pPropID,EXTfldval &pNewValue,EXTCompInfo* eci);	// set the value of a property
-	virtual void				getProperty(qint pPropID,EXTfldval &pGetValue,EXTCompInfo* eci);	// get the value of a property
+	virtual qbool				setProperty(qlong pPropID,EXTfldval &pNewValue,EXTCompInfo* eci);	// set the value of a property
+	virtual void				getProperty(qlong pPropID,EXTfldval &pGetValue,EXTCompInfo* eci);	// get the value of a property
 
 	// $dataname
 	virtual qbool				setPrimaryData(EXTfldval &pNewValue);								// Changes our primary data

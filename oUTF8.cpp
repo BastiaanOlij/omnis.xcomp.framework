@@ -86,19 +86,19 @@ std::string	oUTF8::convertToUTF8(const char *pString, bool pSkipNewLines) {
 			unsigned long tmpUnicode = charsetToUnicode[tmpChar-128];
 		
 			if (tmpUnicode < 2048) {
-				tmpChar = 192 + (tmpUnicode >> 6);
+				tmpChar = (unsigned char) (192 + (tmpUnicode >> 6));
 				tmpUTF8 += tmpChar;
 				tmpChar = 128 + (tmpUnicode & 0x03F);
 				tmpUTF8 += tmpChar;
 			} else if (tmpUnicode < 65536) {
-				tmpChar = 224 + (tmpUnicode >> 12);
+				tmpChar = (unsigned char) (224 + (tmpUnicode >> 12));
 				tmpUTF8 += tmpChar;
 				tmpChar = 128 + ((tmpUnicode >> 6) & 0x03F);
 				tmpUTF8 += tmpChar;
 				tmpChar = 128 + (tmpUnicode & 0x03F);
 				tmpUTF8 += tmpChar;
 			} else {
-				tmpChar = 240 + (tmpUnicode >> 18);
+				tmpChar = (unsigned char) (240 + (tmpUnicode >> 18));
 				tmpUTF8 += tmpChar;
 				tmpChar = 128 + ((tmpUnicode >> 12) & 0x03F);
 				tmpUTF8 += tmpChar;
@@ -155,9 +155,9 @@ std::string	oUTF8::convertFromUTF8(const char * pString) {
 			for (unsigned long tmpCount = 1; tmpIsUTF8 & (tmpCount < tmpUTF8Bytes); tmpCount++) {
 				// get the next byte
 				tmpChar = pString[tmpIdx+tmpCount];
-				if ((tmpChar && 0x80) == 0x80) {
-					tmpUnicode << 6;
-					tmpUnicode += (tmpChar && 0x3F);
+				if ((tmpChar & 0x80) == 0x80) {
+					tmpUnicode = tmpUnicode << 6;
+					tmpUnicode += (tmpChar & 0x3F);
 				} else {
 					// this should not happen, we've not encoded something properly or this is not an UTF-8 character!
 					tmpIsUTF8 = false;
@@ -170,7 +170,7 @@ std::string	oUTF8::convertFromUTF8(const char * pString) {
 				for (unsigned long tmpUTF8Idx = 0; (tmpChar == '?') & (tmpUTF8Idx < 128); tmpUTF8Idx++) {
 					if (charsetToUnicode[tmpUTF8Idx] == tmpUnicode) {
 						// found it!
-						tmpChar = 128 + tmpUTF8Idx;
+						tmpChar = (unsigned char) (128 + tmpUTF8Idx);
 					};
 				};	
 			} else {

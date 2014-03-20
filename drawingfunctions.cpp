@@ -47,7 +47,7 @@ qdim	oBaseVisComponent::getTextWidth(const qchar *pText, qshort pLen, bool pStyl
 // Get the heigth of text
 qdim	oBaseVisComponent::getTextHeight(const qchar *pText, qdim pWidth, bool pStyled, bool pWrap) {
 	qdim	fontheight	= GDIfontHeight(mHDC);
-	qshort	len			= OMstrlen(pText);
+	qlong	len			= OMstrlen(pText);
 	qshort	pos			= 0;
 	qshort	start		= 0;
 	qdim	top			= 0;
@@ -122,7 +122,7 @@ qdim	oBaseVisComponent::drawText(const qchar *pText, qrect pWhere, qcol pColor, 
 	};
 	
 	qcol	wascol		= GDIgetTextColor(mHDC);
-	qshort	len			= OMstrlen(pText);
+	qlong	len			= OMstrlen(pText);
 	qdim	fontheight	= GDIfontHeight(mHDC);
 	qshort	pos			= 0;
 	qshort	start		= 0;
@@ -265,10 +265,10 @@ void	oBaseVisComponent::drawLine(qpoint pFrom, qpoint pTo, qdim pWidth, qcol pCo
 // Draws a filled ellipse within the rectangle with a gradient color from top to bottom
 void	oBaseVisComponent::drawEllipse(qrect pRect, qcol pTop, qcol pBottom, qcol pBorder, qint pSpacing) {
 	int		height		= pRect.bottom - pRect.top + 1;
-	float	fHeight		= height;
+	float	fHeight		= (float) height;
 	float	fHalfHeight	= fHeight / 2;
 	int		midX		= (pRect.right - pRect.left + 1 - pSpacing) >> 1;
-	float	fMidX		= midX;
+	float	fMidX		= (float) midX;
 	int		lastX		= 0;
 	
 	// get real colors...
@@ -286,11 +286,11 @@ void	oBaseVisComponent::drawEllipse(qrect pRect, qcol pTop, qcol pBottom, qcol p
 	for (int Y = 0; Y < height+1; Y++) {
 		float   fX;
 		
-		fX = Y;
+		fX = (float) Y;
 		fX = (fX - fHalfHeight) / fHalfHeight;
 		fX = fMidX * sin(acos(fX));
 		
-		int X = fX;
+		int X = (int) fX;
 		
 		if ((pTop != pBottom) && (Y!=0)){
 			// delete our pen, change our color, and select new pen
