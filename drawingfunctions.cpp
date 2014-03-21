@@ -53,13 +53,12 @@ qdim	oBaseVisComponent::getTextHeight(const qchar *pText, qdim pWidth, bool pSty
 	qdim	top			= 0;
 
 	// Need to find a better way to get a unicode character :)
-	qchar		newline[2], space[2];
-	OMstrcpy(newline, (qchar *) QTEXT("\n"));
-	OMstrcpy(space, (qchar *) QTEXT(" "));
+	qchar		newline	= '\n';
+	qchar		space	= ' ';
 	
 	// now loop through to find our lines or until we're below our drawing rectangle.
 	while (pos <= len) {
-		if ((pText[pos] == 0x00) || (pText[pos] == newline[0])) {
+		if ((pText[pos] == 0x00) || (pText[pos] == newline)) {
 			if (pos > start) {
 				qdim	width = pWrap ? getTextWidth(&pText[start], pos - start, pStyled) : 0;
 				
@@ -69,7 +68,7 @@ qdim	oBaseVisComponent::getTextHeight(const qchar *pText, qdim pWidth, bool pSty
 					qshort lastpos = start;
 					
 					while (wordpos <= pos) {
-						if ((pText[wordpos]==0x00) || (pText[wordpos]==space[0])) {
+						if ((pText[wordpos]==0x00) || (pText[wordpos]==space)) {
 							// found a new word or the end of our text..
 							
 							if (wordpos == start) {
@@ -133,9 +132,8 @@ qdim	oBaseVisComponent::drawText(const qchar *pText, qrect pWhere, qcol pColor, 
 	
 	
 	// Need to find a better way to get a unicode character :)
-	qchar		newline[2], space[2];
-	OMstrcpy(newline, (qchar *) QTEXT("\n"));
-	OMstrcpy(space, (qchar *) QTEXT(" "));
+	qchar		newline	= '\n';
+	qchar		space	= ' ';
 	
 	// clip our rectangle and set our text color
 	clipRect(pWhere);
@@ -149,7 +147,7 @@ qdim	oBaseVisComponent::drawText(const qchar *pText, qrect pWhere, qcol pColor, 
 	
 	// now loop through to find our lines or until we're below our drawing rectangle.
 	while ((pos <= len) && (top < pWhere.bottom)) {
-		if ((pText[pos] == 0x00) || (pText[pos] == newline[0])) {
+		if ((pText[pos] == 0x00) || (pText[pos] == newline)) {
 			if (pos > start) {
 				// draw our text...
 				
@@ -175,7 +173,7 @@ qdim	oBaseVisComponent::drawText(const qchar *pText, qrect pWhere, qcol pColor, 
 					qshort lastpos = start;
 					
 					while (wordpos <= pos) {
-						if ((pText[wordpos]==0x00) || (pText[wordpos]==space[0])) {
+						if ((pText[wordpos]==0x00) || (pText[wordpos]==space)) {
 							// found a new word or the end of our text..
 							
 							if (wordpos == start) {

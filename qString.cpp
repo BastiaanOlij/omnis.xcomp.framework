@@ -16,6 +16,7 @@
  * Construct/copy/delete
  ********************************************************************************************************************************/
 
+// initialise members
 void	qstring::init() {
 	mBuffer=0;
 	mMaxSize=0;
@@ -24,16 +25,19 @@ void	qstring::init() {
 #endif
 };
 
+// Initialize as empty string
 qstring::qstring() {
 	init();
 };
 
+// Initialize as empty string with a buffer of size pSize
 qstring::qstring(qlong pSize) {
 	init();
 	
 	redim(pSize);
 };
 
+// Initialize and copy from another qstring
 qstring::qstring(const qstring& pCopy) {
 	init();
 	
@@ -41,33 +45,66 @@ qstring::qstring(const qstring& pCopy) {
 };
 
 #ifdef isunicode
-// On non-unicode qchar and char are the same thing so this is not needed
+// On non-unicode qchar and char are the same thing so these are not needed
+
+// Initialize and copy from a UTF-8 string (zero terminated)
 qstring::qstring(const char *pString) {
 	init();
 	
 	copy(pString);
 };
-#endif
 
-qstring::qstring(const qchar *pString) {
+// Initialize and copy from a native platform string (usually UTF-16, zero terminated)
+qstring::qstring(const qoschar *pString) {
 	init();
 	
 	copy(pString);
 };
 
+#endif
+
+// Initialize and copy from an omnis string (zero terminated)
+qstring::qstring(const qchar *pString) {
+	init();
+	
+	str255 msg(QTEXT("string"));
+	ECOaddTraceLine(&msg);
+	
+	copy(pString);
+};
+
+// Initialize and copy from an omnis string with specific length
 qstring::qstring(const qchar *pString, qlong pSize) {
 	init();
 	
 	copy(pString, pSize);
 };
-
+// Initialize and copy an omnis field value
 qstring::qstring(const EXTfldval &pExtFld) {
 	init();
 	
 	copy(pExtFld);	
 };
 
+// Free up memory and destruct
+qstring::~qstring() {
+	if (mBuffer!=0) {
+		MEMfree(mBuffer);
+		
+		mBuffer=0;
+		mMaxSize=0;
+	};
+	
+#ifdef isunicode
+	if (mReturnStr!=0) {
+		MEMfree(mReturnStr);
+		mReturnStr = 0;
+	};
+#endif
+	
+};
 
+// Create a new qstring instance based on a formatted string
 qstring * qstring::newStringFromFormat(const char *pFormat, ...)
 {
 	qstring *   retString;
@@ -87,23 +124,20 @@ qstring * qstring::newStringFromFormat(const char *pFormat, ...)
 	return retString;
 };
 
-qstring::~qstring() {
-	if (mBuffer!=0) {
-		MEMfree(mBuffer);
-
-		mBuffer=0;
-		mMaxSize=0;
-	};
-
-#ifdef isunicode
-	if (mReturnStr!=0) {
-		MEMfree(mReturnStr);
-		mReturnStr = 0;
-	};
-#endif
+// Get the length of a qoschar string (UTF-16)
+qlong qstring::qosstrlen(const qoschar *pString) {
+	qlong len = 0;
 	
+	if (pString != 0) { // ignore NULL pointers
+		while (pString[len]!=0x00) {
+			len++;
+		};		
+	};
+	
+	return len;	
 };
 
+// Get the length of an omnis string
 qlong qstring::qstrlen(const qchar *pString){
 	qlong len = 0;
 	
@@ -116,6 +150,7 @@ qlong qstring::qstrlen(const qchar *pString){
 	return len;
 };
 
+// Compare two omnis strings
 qshort qstring::qstrcmp(const qchar *pA, const qchar *pB) {
 	qlong pos = 0;
 	
@@ -140,8 +175,7 @@ qshort qstring::qstrcmp(const qchar *pA, const qchar *pB) {
 		return -1;
 	} else {
 		return 1;
-	}
-	
+	};
 };
 
 
@@ -149,6 +183,7 @@ qshort qstring::qstrcmp(const qchar *pA, const qchar *pB) {
  * Info
  ********************************************************************************************************************************/
 
+// return a pointer to our string (UTF-32)
 const qchar*	qstring::cString() const {
 	if (mBuffer!=0) {
 		return mBuffer;
@@ -161,6 +196,7 @@ const qchar*	qstring::cString() const {
 	};
 };
 
+// return a pointer to our string (UTF-8)
 const char *	qstring::c_str() {
 	if (mBuffer!=0) {
 #ifdef isunicode
@@ -193,6 +229,7 @@ const char *	qstring::c_str() {
 	};	
 };
 
+// return the length our our string in characters
 qlong	qstring::length() const {
 	if (mBuffer!=0) {
 		return qstring::qstrlen(mBuffer); 
@@ -205,6 +242,7 @@ qlong	qstring::length() const {
  * Modifications
  ********************************************************************************************************************************/
 
+// resize the buffer
 void	qstring::redim(qlong pSize, qbool pKeepData) {
 	if (pSize==0) {
 		// Nothing to store?? free up our memory!
@@ -242,6 +280,9 @@ void	qstring::redim(qlong pSize, qbool pKeepData) {
 };
 
 #ifdef isunicode
+// on non-unicode char and qchar are the same so we don't need this...
+
+// copy a UTF-8 string (zero terminated)
 void	qstring::copy(const char *pString){
 	qlong		len = strlen(pString);
 		
@@ -254,16 +295,35 @@ void	qstring::copy(const char *pString){
 		 on unicode we need to convert our 8bit string!
 		 Use CHRconvFromBytes, assumes UTF-8 content 
 		*/
-		CHRconvFromBytes	newString((qbyte *)pString, strlen(pString));
+		CHRconvFromBytes	newString((qbyte *)pString, len);
+		
+		copy(newString.dataPtr(), newString.len());
+	};
+};
+
+// copy a native platform string (usually UTF-16, zero terminated)
+void	qstring::copy(const qoschar *pString){
+	qlong		len = qstring::qosstrlen(pString);
+	
+	if (len==0) {
+		if (mBuffer!=0) {
+			mBuffer[0]=0;
+		};
+	} else {
+		/* 
+		 on unicode we need to convert our platform string!
+		 Use CHRconvFromOs, assumes UTF-16 content 
+		 */
+		CHRconvFromOs	newString((qoschar *)pString, len);
 		
 		copy(newString.dataPtr(), newString.len());
 	};
 };
 #endif
 
-// on non-unicode char and qchar are the same so we don't need this...
+// copy an omnis string (zero terminated)
 void	qstring::copy(const qchar *pString){
-	qlong		len = qstring::qstrlen(pString);
+	qlong		len = qstring::qstrlen(pString); // could have used OMstrlen...
 	
 	if (len==0) {
 		if (mBuffer!=0) {
@@ -278,6 +338,7 @@ void	qstring::copy(const qchar *pString){
 	};
 };
 
+// copy an omnis string of specific length
 void	qstring::copy(const qchar *pString, qlong pSize) {
 	if (pString==mBuffer) {
 		// Copying ourselves into ourselves? ignore!
@@ -297,6 +358,7 @@ void	qstring::copy(const qchar *pString, qlong pSize) {
 	};
 };
 
+// copy an omnis field value
 void	qstring::copy(const EXTfldval &pExtFld) {
 	qlong				tmpLen, tmpRealLen;
 
@@ -316,6 +378,7 @@ void	qstring::copy(const EXTfldval &pExtFld) {
 	};
 };
 
+// Sets the contents of our string to a formatted string
 qstring& qstring::setFormattedString(const char *pFormat, ...) {
 	char		tmpBuffer[2048]; // hopefully 2048 is large enough...
 	va_list		arglist;
@@ -333,7 +396,34 @@ qstring& qstring::setFormattedString(const char *pFormat, ...) {
 	return *this; // return ourselves
 };
 
+// append an omnis string of specific length
+qstring&	qstring::appendString(const qchar *pString, qlong pSize) {
+	qlong	ourLen = this->length();
+	
+	if (pSize==0) {
+		// ignore, there is nothing to add..
+	} else if (ourLen==0) {
+		// just copy...
+		copy(pString, pSize);		
+	} else {
+		// Append together
+		
+		if ((ourLen+pSize+1)>mMaxSize) {
+			// make space for our complete buffer
+			redim(ourLen+pSize+1,qtrue);
+		};
+		
+		if ((ourLen+pSize+1)<=mMaxSize) { /* always verify if our redim succeeded */
+			// we use copy mem, this should also be safe if we're adding ourselves to ourselves..
+			memcpy(&mBuffer[ourLen], pString, pSize * sizeof(qchar));
+			mBuffer[ourLen+pSize] = 0x00;
+		};		
+	};
+	
+	return *this;
+};
 
+// Adds an Omnis style character into our string (like style(...) in omnis)
 qstring&	qstring::appendStyle(qchar pStyle, qulong pValue) {
 	qlong	len = this->length();
 	
@@ -363,6 +453,7 @@ qstring&	qstring::appendStyle(qchar pStyle, qulong pValue) {
 	return *this; // return ourselves
 };
 
+// Append a formatted string to our string
 qstring& qstring::appendFormattedString(const char *pFormat, ...) {
 	char		tmpBuffer[2048]; // hopefully 2048 is large enough...
 	va_list		arglist;
@@ -380,6 +471,7 @@ qstring& qstring::appendFormattedString(const char *pFormat, ...) {
 	return *this; // return ourselves
 };
 
+// Append a binary to our string (as 0x0123456789ABCDEF)
 qstring& qstring::appendBinary(const qbyte *pBuffer, qlong pLen) {
 	char hex[10];
 	
@@ -399,6 +491,7 @@ qstring& qstring::appendBinary(const qbyte *pBuffer, qlong pLen) {
 	return *this;
 };
 
+// Append an omnis field value to our string
 qstring& qstring::appendFldVal(const EXTfldval &value){
 	qbyte *	tmpBuffer;
 	qchar	data[2048];
@@ -450,6 +543,7 @@ qstring& qstring::appendFldVal(const EXTfldval &value){
  * Operators
  ********************************************************************************************************************************/
 
+// Get a pointer to character at a specific location
 qchar*	qstring::operator[](qlong pIndex) {
 	static qchar returnChar;		// we return this only if our index is out of bounds. Protects against crashes, does nothing against bugs :)
 	
@@ -467,7 +561,7 @@ qchar*	qstring::operator[](qlong pIndex) {
 	};
 };
 
-
+// Copy a string into our string
 qstring&	qstring::operator=(const qstring& pCopy) {
 	if (this!=&pCopy) {
 		// no need to copy ourselves...
@@ -477,97 +571,87 @@ qstring&	qstring::operator=(const qstring& pCopy) {
 	return *this;
 };
 
+#ifdef isunicode
+// Copy a UTF-8 string into our string
+qstring&	qstring::operator=(const char* pCopy) {
+	copy(pCopy);
+	
+	return *this;
+};
+
+// Copy a platform string into our string
+qstring&	qstring::operator=(const qoschar* pCopy) {
+	copy(pCopy);
+	
+	return *this;
+};
+#endif
+
+// Copy an Omnis string into our string
 qstring&	qstring::operator=(const qchar* pCopy) {
 	copy(pCopy, qstring::qstrlen(pCopy));		
 	
 	return *this;
 };
 
+// Copy an Omnis field value to our string
 qstring&	qstring::operator=(const EXTfldval& pCopy) {
 	copy(pCopy);
 	
 	return *this;
 };
 
-
+// Append a string to our string
 qstring&	qstring::operator+=(const qstring& pAdd) {
-	qlong	ourLen = this->length();
-	qlong	addLen = pAdd.length();
-		
-	if (addLen==0) {
-		// ignore, there is nothing to add..
-	} else if (ourLen==0) {
-		// just copy...
-		copy(pAdd.cString(), addLen);		
-	} else {
-		// Append together
-		
-		if ((ourLen+addLen+1)>mMaxSize) {
-			// make space for our complete buffer
-			redim(ourLen+addLen+1,qtrue);
-		};
-		
-		if ((ourLen+addLen+1)<=mMaxSize) { /* always verify if our redim succeeded */
-			// we use copy mem, this should also be safe if we're adding ourselves to ourselves..
-			memcpy(&mBuffer[ourLen], pAdd.cString(), (addLen+1) * sizeof(qchar));
-		};		
-	};
+	appendString(pAdd.cString(), pAdd.length());
 	
 	return *this;
 };
 
+// Append a character to our string
 qstring&	qstring::operator+=(const qchar pAdd) {
-	qlong	ourLen = this->length();
-	qlong	addLen = 1;
-	
-	// Append together
-		
-	if ((ourLen+addLen+1)>mMaxSize) {
-		// make space for our complete buffer
-		redim(ourLen+addLen+1,qtrue);
-	};
-		
-	if ((ourLen+addLen+1)<=mMaxSize) { // always verify if our redim succeeded
-		// we use copy mem, this should also be safe if we're adding ourselves to ourselves..
-		mBuffer[ourLen] = pAdd;
-		mBuffer[ourLen+1] = '\0';
-	};
+	appendString(&pAdd, 1);
 	
 	return *this;
 };
 
+#ifdef isunicode
+// Append a UTF-8 string to our string
+qstring&	qstring::operator+=(const char* pAdd) {
+	qstring	addstring(pAdd);
+	
+	appendString(addstring.cString(), addstring.length());
+	
+	return *this;
+};
+
+// Append a platform string to our string
+qstring&	qstring::operator+=(const qoschar* pAdd) {
+	qstring	addstring(pAdd);
+	
+	appendString(addstring.cString(), addstring.length());
+		
+	return *this;
+};
+#endif
+
+// Append an omnis string to our string
 qstring&	qstring::operator+=(const qchar* pAdd) {
-	qlong	ourLen = this->length();
 	qlong	addLen = qstring::qstrlen(pAdd);
-	
-	if (addLen==0) {
-		// ignore, there is nothing to add..
-	} else if (ourLen==0) {
-		// just copy...
-		copy(pAdd, addLen);		
-	} else {
-		// Append together
-		
-		if ((ourLen+addLen+1)>mMaxSize) {
-			// make space for our complete buffer
-			redim(ourLen+addLen+1,qtrue);
-		};
-		
-		if ((ourLen+addLen+1)<=mMaxSize) { // always verify if our redim succeeded
-			// we use copy mem, this should also be safe if we're adding ourselves to ourselves..
-			memcpy(&mBuffer[ourLen], pAdd, (addLen+1) * sizeof(qchar));
-		};
-	};
+
+	appendString(pAdd, addLen);
 	
 	return *this;
 };
 
+// Append an omnis field value to our string
 qstring&	qstring::operator+=(const EXTfldval& pAdd) {
 	appendFldVal(pAdd);
 	
 	return *this;
 };
 
+// Compare if our string is the same as an omnis string
 bool	qstring::operator==(const qchar * pCompare) const {
 	const qchar	*strA = this->cString();
 	qlong cmp;
@@ -585,6 +669,7 @@ bool	qstring::operator==(const qchar * pCompare) const {
 	return cmp==0;
 };
 
+// Compare if our string is the same as another string
 bool	qstring::operator==(const qstring& pCompare) const {
 	const qchar	*strA = this->cString();
 	const qchar	*strB = pCompare.cString();
@@ -603,30 +688,35 @@ bool	qstring::operator==(const qstring& pCompare) const {
 	return cmp==0;
 };
 
+// Compare if our string isn't the same as another string
 bool	qstring::operator!=(const qstring& pCompare) const {
 	qlong cmp = qstring::qstrcmp(this->cString(), pCompare.cString());
 	
 	return cmp!=0;
 };
 
+// Compare if our string is "smaller" then or the same as another string
 bool	qstring::operator<=(const qstring& pCompare) const {
 	qlong cmp = qstring::qstrcmp(this->cString(), pCompare.cString());
 	
 	return cmp<=0;	
 };
 
+// Compare if our string is "bigger" then or the same as another string
 bool	qstring::operator>=(const qstring& pCompare) const {
 	qlong cmp = qstring::qstrcmp(this->cString(), pCompare.cString());
 	
 	return cmp<0;	
 };
 
+// Compare if our string is "smaller" then another string
 bool	qstring::operator<(const qstring& pCompare) const {
 	qlong cmp = qstring::qstrcmp(this->cString(), pCompare.cString());
 	
 	return cmp>=0;		
 };
 
+// Compare if our string is "bigger" then another string
 bool	qstring::operator>(const qstring& pCompare) const {
 	qlong cmp = qstring::qstrcmp(this->cString(), pCompare.cString());
 	

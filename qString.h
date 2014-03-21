@@ -7,6 +7,9 @@
  *
  *  Bastiaan Olij
  *
+ *  Todos:
+ *  - rewrite our formatted string functions to take qchar as a string and be able to input both char, qchar and qstring parameters
+ *
  *  https://github.com/BastiaanOlij/omnis.xcomp.framework
  */
 
@@ -17,60 +20,72 @@
 
 class qstring {
 private:
-	qchar			*mBuffer;
-	qlong			mMaxSize;
+	qchar			*mBuffer;											// Our buffer in native Omnis char (UTF-32)
+	qlong			mMaxSize;											// Size of our buffer
 #ifdef isunicode
-	qbyte			*mReturnStr;
+	qbyte			*mReturnStr;										// Buffer for return string when converting
 #endif
 	
-	void			init();												/* initialise members */
-	void			redim(qlong pSize, qbool pKeepData = qfalse);		/* resize the buffer */
+	void			init();												// initialise members 
+	void			redim(qlong pSize, qbool pKeepData = qfalse);		// resize the buffer
 #ifdef isunicode
-	void			copy(const char *pString);							/* copy an 8bit string */
+	void			copy(const char *pString);							// copy a UTF-8 string (zero terminated)
+	void			copy(const qoschar *pString);						// copy a native platform string (usually UTF-16, zero terminated)
 #endif
-	void			copy(const qchar *pString);							/* copy zero terminated omnis string */
-	void			copy(const qchar *pString, qlong pSize);			/* copy an omnis string */
-	void			copy(const EXTfldval &pExtFld);						/* copy an omnis field value */
+	void			copy(const qchar *pString);							// copy an omnis string (zero terminated)
+	void			copy(const qchar *pString, qlong pSize);			// copy an omnis string of specific length
+	void			copy(const EXTfldval &pExtFld);						// copy an omnis field value
 	
 protected:
 	
 public:
-	qstring();
-	qstring(qlong pSize);
-	qstring(const qstring& pCopy);
+	qstring();															// Initialize as empty string
+	qstring(qlong pSize);												// Initialize as empty string with a buffer of size pSize
+	qstring(const qstring& pCopy);										// Initialize and copy from another qstring
 #ifdef isunicode
-	qstring(const char* pCopy);
+	qstring(const char* pCopy);											// Initialize and copy from a UTF-8 string (zero terminated)
+	qstring(const qoschar* pCopy);										// Initialize and copy from a native platform string (usually UTF-16, zero terminated)
 #endif
-	qstring(const qchar* pCopy);
-	qstring(const qchar *pString, qlong pSize);
-	qstring(const EXTfldval &pExtFld);
-	~qstring();
+	qstring(const qchar* pCopy);										// Initialize and copy from an omnis string (zero terminated)
+	qstring(const qchar *pString, qlong pSize);							// Initialize and copy from an omnis string with specific length
+	qstring(const EXTfldval &pExtFld);									// Initialize and copy an omnis field value
+	~qstring();															// Free up memory and destruct
 
-	static qstring * newStringFromFormat(const char *pFormat, ...);
-	static qlong	qstrlen(const qchar *pString);
-	static qshort	qstrcmp(const qchar *pA, const qchar *pB);
+	static qstring * newStringFromFormat(const char *pFormat, ...);		// Create a new qstring instance based on a formatted string
+	static qlong	qosstrlen(const qoschar *pString);					// Get the length of a qoschar string
+	static qlong	qstrlen(const qchar *pString);						// Get the length of an omnis string
+	static qshort	qstrcmp(const qchar *pA, const qchar *pB);			// Compare two omnis strings
 
-	const qchar*	cString() const;
-	const char *	c_str();
-	qlong			length() const;
+	const qchar*	cString() const;									// return a pointer to our string (UTF-32)
+	const char *	c_str();											// return a pointer to our string (UTF-8)
+	qlong			length() const;										// return the length our our string in characters
 
-	qstring&		setFormattedString(const char *pFormat, ...);
+	qstring&		setFormattedString(const char *pFormat, ...);		// Sets the contents of our string to a formatted string
 	
-	qstring&		appendStyle(qchar pStyle, qulong pValue);
-	qstring&		appendFormattedString(const char *pFormat, ...);
-	qstring&		appendBinary(const qbyte *pBuffer, qlong pLen);
-	qstring&		appendFldVal(const EXTfldval &value);
+	qstring&		appendString(const qchar *pString, qlong pSize);		// Append an omnis string of specific length
+	qstring&		appendStyle(qchar pStyle, qulong pValue);			// Adds an Omnis style character into our string (like style(...) in omnis)
+	qstring&		appendFormattedString(const char *pFormat, ...);	// Append a formatted string to our string
+	qstring&		appendBinary(const qbyte *pBuffer, qlong pLen);		// Append a binary to our string (as 0x0123456789ABCDEF)
+	qstring&		appendFldVal(const EXTfldval &value);				// Append an omnis field value to our string
 	
-	qchar*			operator[](qlong pIndex);
+	qchar*			operator[](qlong pIndex);							// Get a pointer to character at a specific location
 
-	qstring&		operator=(const qstring& pCopy);
-	qstring&		operator=(const qchar* pCopy);
-	qstring&		operator=(const EXTfldval& pCopy);
+	qstring&		operator=(const qstring& pCopy);					// Copy a string into our string
+#ifdef isunicode
+	qstring&		operator=(const char* pCopy);						// Copy a UTF-8 string into our string
+	qstring&		operator=(const qoschar* pCopy);					// Copy a platform string into our string
+#endif
+	qstring&		operator=(const qchar* pCopy);						// Copy an Omnis string into our string
+	qstring&		operator=(const EXTfldval& pCopy);					// Copy an Omnis field value to our string
 	
-	qstring&		operator+=(const qstring& pAdd);
-	qstring&		operator+=(const qchar pAdd);
-	qstring&		operator+=(const qchar* pAdd);
-	qstring&		operator+=(const EXTfldval& pAdd);
+	qstring&		operator+=(const qstring& pAdd);					// Append a string to our string
+	qstring&		operator+=(const qchar pAdd);						// Append a character to our string
+#ifdef isunicode
+	qstring&		operator+=(const char* pAdd);						// Append a UTF-8 string to our string
+	qstring&		operator+=(const qoschar* pAdd);					// Append a platform string to our string
+#endif
+	qstring&		operator+=(const qchar* pAdd);						// Append an omnis string to our string
+	qstring&		operator+=(const EXTfldval& pAdd);					// Append an omnis field value to our string
 
 	/* Some inline operators */
 	const qstring	operator+(const qstring& pAdd) const {
@@ -79,13 +94,13 @@ public:
 		return result;
 	};
 	
-	bool			operator==(const qchar * pCompare) const;	
-	bool			operator==(const qstring& pCompare) const;	
-	bool			operator!=(const qstring& pCompare) const;	
-	bool			operator<=(const qstring& pCompare) const;
-	bool			operator>=(const qstring& pCompare) const;
-	bool			operator<(const qstring& pCompare) const;
-	bool			operator>(const qstring& pCompare) const;
+	bool			operator==(const qchar * pCompare) const;			// Compare if our string is the same as an omnis string
+	bool			operator==(const qstring& pCompare) const;			// Compare if our string is the same as another string
+	bool			operator!=(const qstring& pCompare) const;			// Compare if our string isn't the same as another string
+	bool			operator<=(const qstring& pCompare) const;			// Compare if our string is "smaller" then or the same as another string
+	bool			operator>=(const qstring& pCompare) const;			// Compare if our string is "bigger" then or the same as another string
+	bool			operator<(const qstring& pCompare) const;			// Compare if our string is "smaller" then another string
+	bool			operator>(const qstring& pCompare) const;			// Compare if our string is "bigger" then another string
 };
 
 #endif
