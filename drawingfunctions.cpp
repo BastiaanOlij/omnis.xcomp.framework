@@ -7,10 +7,27 @@
  *
  *  Bastiaan Olij
  *
+ *  Todos:
+ *  - Document functions 
+ *  - Add more drawing functions
+ *
  *  https://github.com/BastiaanOlij/omnis.xcomp.framework
  */
 
 #include "oBaseVisComponent.h"
+
+// passthrought to GDIdrawTextJst with clipping
+void	oBaseVisComponent::drawTextJst(GDIdrawTextStruct * pTextInfo, qrect pClipRect) {
+	if (pClipRect.left < pTextInfo->mX) pClipRect.left = pTextInfo->mX;
+	if (pClipRect.top < pTextInfo->mY) pClipRect.top = pTextInfo->mY;
+	
+	if (clipRect(pClipRect)) {
+		GDIdrawTextJst(pTextInfo);
+
+		unClip();
+	};
+};
+
 
 // Get the width of text
 qdim	oBaseVisComponent::getTextWidth(const qchar *pText, qshort pLen, bool pStyled) {
@@ -18,9 +35,8 @@ qdim	oBaseVisComponent::getTextWidth(const qchar *pText, qshort pLen, bool pStyl
 		return 0;
 	}
 	
-/*
-	!BAS! Disabled for now, it seems that on the OS4 SDK atleast GDItextWidthJst gives a wrong result on a retina display
- 
+#ifdef isunicode 
+	// It seems that on the OS4 SDK GDItextWidthJst gives a wrong result on a retina display, so only using it in unicode
 	GDIdrawTextStruct drawinfo(
 							   mHDC,
 							   0,
@@ -35,11 +51,11 @@ qdim	oBaseVisComponent::getTextWidth(const qchar *pText, qshort pLen, bool pStyl
 							   0						// pColumnJsts
 	);
 	
-	qdim width = GDItextWidthJst(&drawinfo);
-*/
-	
+	qdim width = GDItextWidthJst(&drawinfo) + 2;
+#else
 	// this will not work properly if we have styled text...
 	qdim width = GDItextWidth(mHDC, (qchar *) pText, pLen) + 2;
+#endif
 	
 	return width;
 };
@@ -135,8 +151,7 @@ qdim	oBaseVisComponent::drawText(const qchar *pText, qrect pWhere, qcol pColor, 
 	qchar		newline	= '\n';
 	qchar		space	= ' ';
 	
-	// clip our rectangle and set our text color
-	clipRect(pWhere);
+	// Set our text color
 	GDIsetTextColor(mHDC, pColor);
 	
 	// setup our columns
@@ -152,19 +167,19 @@ qdim	oBaseVisComponent::drawText(const qchar *pText, qrect pWhere, qcol pColor, 
 				// draw our text...
 				
 				GDIdrawTextStruct drawinfo(
-					mHDC,
-					left,
-					top,
-					(qchar *)&pText[start],		// for some reason Omnis never declared this a constant but it doesn't change the buffer (i hope)..
-					pos-start,
-					&mTextSpec,
-					columns,					// pColumnArray
-					1,							// pColumnCount
-					pStyled ? 1 : 0,			// pFlags: 1 = styled text
-					mApp,
-					jsts						// pColumnJsts
-				);
-
+										   mHDC,
+										   left,
+										   top,
+										   (qchar *)&pText[start],		// for some reason Omnis never declared this a constant but it doesn't change the buffer (i hope)..
+										   pos-start,
+										   &mTextSpec,
+										   columns,					// pColumnArray
+										   1,							// pColumnCount
+										   pStyled ? 1 : 0,			// pFlags: 1 = styled text
+										   mApp,
+										   jsts						// pColumnJsts
+										   );
+				
 				qdim	width = pWrap ? getTextWidth(drawinfo.mText, drawinfo.mTextLen, pStyled) : 0;
 				
 				if (width > columns[1]) {
@@ -193,7 +208,7 @@ qdim	oBaseVisComponent::drawText(const qchar *pText, qrect pWhere, qcol pColor, 
 									
 									drawinfo.mTextLen = lastpos - start;
 									if (drawinfo.mTextLen>0) {
-										GDIdrawTextJst(&drawinfo);
+										drawTextJst(&drawinfo, pWhere);
 									};
 									
 									// advance...
@@ -213,17 +228,17 @@ qdim	oBaseVisComponent::drawText(const qchar *pText, qrect pWhere, qcol pColor, 
 								};
 							};							
 						};
-							
+						
 						wordpos++;
 					};
 					
 					// draw any remainder?
 					if (drawinfo.mTextLen>0) {
-						GDIdrawTextJst(&drawinfo);						
+						drawTextJst(&drawinfo, pWhere);
 					};
 				} else {
 					// draw the whole text
-					GDIdrawTextJst(&drawinfo);					
+					drawTextJst(&drawinfo, pWhere);
 				};
 			};
 			
@@ -236,12 +251,49 @@ qdim	oBaseVisComponent::drawText(const qchar *pText, qrect pWhere, qcol pColor, 
 		pos++;
 	};
 	
-	// restore..
-	unClip();
+	// restore our text color
 	GDIsetTextColor(mHDC, wascol);
 	
 	return top;
 };
+
+// Draw a icon at this position
+void	oBaseVisComponent::drawIcon(qlong pIconId, qpoint pAt) {
+	EXTBMPref	tmpIcon(pIconId);
+	qrect		iconRect;
+	qdim		pxsize = 16;
+	ePicSize	picsize = tmpIcon.getBmpSize(pIconId);
+	qjst		imgjst = jstCenter;
+	
+	switch (picsize) {
+		case ePic16:
+			pxsize = 16;
+			break;
+		case ePic32:
+			pxsize = 32;
+			break;
+		case ePic48:
+			pxsize = 48;
+			break;
+		default:
+			// don't know the size...
+			pxsize = 48;
+			imgjst = jstLeft;
+			break;
+	};
+	
+	iconRect.left	= pAt.h;
+	iconRect.top	= pAt.v;
+	iconRect.right	= iconRect.left + pxsize;
+	iconRect.bottom	= iconRect.top + pxsize;
+	
+	if (clipRect(iconRect, true)) {
+		tmpIcon.draw (mHDC, &iconRect, picsize, picNormal, qfalse, colNone, qfalse, imgjst, imgjst);		
+		
+		unClip();
+	};
+};
+
 
 // Draws a line between two points using the current selected pen
 void	oBaseVisComponent::drawLine(qpoint pFrom, qpoint pTo) {

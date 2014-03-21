@@ -7,6 +7,9 @@
  *
  *  Bastiaan Olij
  *
+ *  Todos:
+ *  - Generally complete this implementation
+ *
  *  https://github.com/BastiaanOlij/omnis.xcomp.framework
  */
 

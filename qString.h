@@ -7,9 +7,6 @@
  *
  *  Bastiaan Olij
  *
- *  Todos:
- *  - rewrite our formatted string functions to take qchar as a string and be able to input both char, qchar and qstring parameters
- *
  *  https://github.com/BastiaanOlij/omnis.xcomp.framework
  */
 

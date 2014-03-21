@@ -26,7 +26,10 @@ private:
 	qRectArray					mClipStack;															// Our clip stack
 	
 	void						setup(EXTCompInfo* pECI);											// setup our colors and fonts etc.
-	
+
+	// passthrough drawing functions
+	void						drawTextJst(GDIdrawTextStruct * pTextInfo, qrect pClipRect);		// passthrought to GDIdrawTextJst with clipping
+
 protected:
 	HWND						mHWnd;																// Our main window handle (not applicable for NV objects)
 	qpoint						mMouseAt;															// Last known location of the mouse as it hoovered over our control
@@ -51,13 +54,14 @@ protected:
 	qcol						mixColors(qcol pQ1, qcol pQ2);										// Mix two colors together
 	
 	// clipping functions
-	void						clipRect(qrect pRect, bool pUnion = true);							// Clip drawing to a rectangle on screen, optionaly union with current clipping. Adds it to our clip stack
-	void						unClip();															// Pop our last clipping rectangle off the stack
-	
+	bool						clipRect(qrect pRect, bool pUnion = true);							// Clip to given rectangle and put on stack, will optionally union with the current clipping. Will return false if we can't draw in the resulting rectangle and we could thus not clip.
+	void						unClip();															// Pop our last clipping rectangle off the stack, do not call if clipRect returned false!
+		
 	// drawing functions (in drawingfunctions.cpp)
 	qdim						getTextWidth(const qchar *pText, qshort pLen, bool pStyled = true);	// Get the width of text
 	qdim						getTextHeight(const qchar *pText, qdim pWidth, bool pStyled = true, bool pWrap = true);	// Get the heigth of text if wrapped
 	qdim						drawText(const qchar *pText, qrect pWhere, qcol pColor, qjst pJst = jstLeft, bool pStyled = true, bool pWrap = true);			// Draws the text clipped within the specified rectangle 
+	void						drawIcon(qlong pIconId, qpoint pAt);								// Draw a icon at this position
 	void						drawLine(qpoint pFrom, qpoint pTo);		// Draws a line between two points using the current selected pen
 	void						drawLine(qpoint pFrom, qpoint pTo, qdim pWidth, qcol pCol, qpat pPat);		// Draws a line between two points
 	void						drawEllipse(qrect pRect, qcol pTop, qcol pBottom, qcol pBorder = -1, qint pSpacing = 0);					// Draws a filled ellipse within the rectangle with a gradient color from top to bottom
@@ -81,7 +85,7 @@ public:
 	static	qEvents *			events(void);														// return an array of events meta data
 	
 	virtual void				doPaint(EXTCompInfo* pECI);											// Do our drawing in here
-	virtual void				Resized();															// Our component was resized
+	virtual void				resized();															// Our component was resized
 	
 	virtual void				evMouseMoved(qpoint pMovedTo);										// mouse moved to this location while mouse button is not down
 	virtual void				evClick(qpoint pAt);												// mouse click at this location

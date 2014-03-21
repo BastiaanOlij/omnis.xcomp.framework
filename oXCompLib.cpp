@@ -9,6 +9,8 @@
  *
  *  Bastiaan Olij
  *
+ *  Todos:
+ *  - finish implementation of static methods
  *
  *  https://github.com/BastiaanOlij/omnis.xcomp.framework
  */

@@ -209,10 +209,8 @@ qEvents *	oBaseVisComponent::events(void) {
 	return lvEvents;
 };
 
-
-void	oBaseVisComponent::Resized() {
-	// probably not needed but....
-	WNDinvalidateRect(mHWnd, NULL);	
+void	oBaseVisComponent::resized() {
+	//	WNDinvalidateRect(mHWnd, NULL);	
 };
 
 ////////////////////////////////////////////////////////////////
@@ -303,8 +301,8 @@ void oBaseVisComponent::setup(EXTCompInfo* pECI) {
 	};	
 };
 
-// clipping
-void	oBaseVisComponent::clipRect(qrect pRect, bool pUnion) {
+// Clip to given rectangle and put on stack, will optionally union with the current clipping. Will return false if we can't draw in the resulting rectangle and we could thus not clip.
+bool	oBaseVisComponent::clipRect(qrect pRect, bool pUnion) {
 	if (mHDC != 0) {
 		if (pUnion) {
 			qrect lvCliprect;
@@ -325,11 +323,19 @@ void	oBaseVisComponent::clipRect(qrect pRect, bool pUnion) {
 			pRect.bottom	= pRect.bottom < lvCliprect.bottom ? pRect.bottom : lvCliprect.bottom;
 		};
 	
-		// clip
-		GDIsetClipRect(mHDC, &pRect);
-	
-		// now add our rectangle to our clipstack
-		mClipStack.push(pRect);
+		if ((pRect.left < pRect.right) && (pRect.top < pRect.bottom)) {
+			// clip
+			GDIsetClipRect(mHDC, &pRect);
+			
+			// now add our rectangle to our clipstack
+			mClipStack.push(pRect);
+			
+			return true;
+		} else {
+			return false;
+		};
+	} else {
+		return false;
 	};
 };
 
@@ -416,7 +422,7 @@ void oBaseVisComponent::wm_paint(EXTCompInfo* pECI) {
 
 // Component resize/repos message
 void	oBaseVisComponent::wm_windowposchanged(EXTCompInfo* pECI, WNDwindowPosStruct * pPos) {
-	Resized();
+	resized();
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////
