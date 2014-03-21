@@ -663,7 +663,7 @@ bool	qstring::operator==(const qchar * pCompare) const {
 	} else if (pCompare==0) {
 		cmp = -1;
 	} else {
-		qlong cmp = qstring::qstrcmp(strA, pCompare);
+		cmp = qstring::qstrcmp(strA, pCompare);
 	};
 	
 	return cmp==0;
@@ -682,7 +682,7 @@ bool	qstring::operator==(const qstring& pCompare) const {
 	} else if (strB==0) {
 		cmp = -1;
 	} else {
-		qlong cmp = qstring::qstrcmp(strA, strB);
+		cmp = qstring::qstrcmp(strA, strB);
 	};
 	
 	return cmp==0;
