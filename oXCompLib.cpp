@@ -32,6 +32,12 @@ oXCompLib::~oXCompLib(void) {
 		if (lvComponent.mProperties!=0) {
 			delete lvComponent.mProperties;
 		};
+		if (lvComponent.mMethods!=0) {
+			delete lvComponent.mMethods;
+		};
+		if (lvComponent.mEvents!=0) {
+			delete lvComponent.mEvents;
+		};
 	};
 	
 	mECOobjects.clear();
@@ -105,9 +111,9 @@ OXFcomponent oXCompLib::componentByIndex(uint pIndex) {
 
 // return component by component ID
 OXFcomponent oXCompLib::componentByID(long pCompID) {
-	OXFcomponent lvEmpty;
+	static OXFcomponent lvEmpty;
 	
-	for (uint i=0;i<mComponents.numberOfElements();i++) {
+	for (uint i = 0; i<mComponents.numberOfElements(); i++) {
 		OXFcomponent lvComponent = mComponents[i];
 		if (lvComponent.componentID == pCompID) {
 			return lvComponent;
@@ -123,7 +129,6 @@ oBaseComponent * oXCompLib::instantiateComponent(long pCompID
 													, EXTCompInfo* pECI
 													, HWND pHWND
 													, LPARAM pParam) {
-	
 	// Once we redo how we handle parameters and methods we can remove pCompID and use pECI->mCompId instead
 	OXFcomponent lvComponent = componentByID(pCompID);
 	
