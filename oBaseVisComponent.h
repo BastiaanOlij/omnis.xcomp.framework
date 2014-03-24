@@ -71,14 +71,14 @@ public:
 	virtual	qbool				init(qapp pApp, HWND pHWnd);										// Initialize component
 	
 	static  qProperties *		properties(void);													// return array of property meta data
-	virtual qbool				setProperty(qlong pPropID,EXTfldval &pNewValue,EXTCompInfo* eci);	// set the value of a property
-	virtual void				getProperty(qlong pPropID,EXTfldval &pGetValue,EXTCompInfo* eci);	// get the value of a property
+	virtual qbool				setProperty(qlong pPropID,EXTfldval &pNewValue,EXTCompInfo* pECI);	// set the value of a property
+	virtual void				getProperty(qlong pPropID,EXTfldval &pGetValue,EXTCompInfo* pECI);	// get the value of a property
 
 	// $dataname
 	virtual qbool				setPrimaryData(EXTfldval &pNewValue);								// Changes our primary data
-	virtual void				getPrimaryData(EXTfldval &pGetValue);								// Retrieves our primary data
-	virtual qbool				cmpPrimaryData(EXTfldval &pWithValue);								// Compare with our primary data
-	virtual qlong				getPrimaryDataLen();												// Get our primary data size
+	virtual qbool				getPrimaryData(EXTfldval &pGetValue);								// Retrieves our primary data, return false if we do not manage a copy
+	virtual qlong				cmpPrimaryData(EXTfldval &pWithValue);								// Compare with our primary data, return DATA_CMPDATA_SAME if same, DATA_CMPDATA_DIFFER if different, 0 if not implemented
+	virtual qlong				getPrimaryDataLen();												// Get our primary data size, return negative if not supported
 	virtual void				primaryDataHasChanged();											// Omnis is just letting us know our primary data has changed, this is especially handy if we do not keep a copy ourselves and thus ignore the other functions
 	
 	static  qMethods *			methods(void);														// return array of method meta data
@@ -87,12 +87,17 @@ public:
 	virtual void				doPaint(EXTCompInfo* pECI);											// Do our drawing in here
 	virtual void				resized();															// Our component was resized
 	
-	virtual void				evMouseMoved(qpoint pMovedTo);										// mouse moved to this location while mouse button is not down
-	virtual void				evClick(qpoint pAt);												// mouse click at this location
-	virtual void				evStartDrag(qpoint pFrom);											// mouse started dragged
-	virtual void				evDragging(qpoint pFrom, qpoint pAt);								// mouse being dragged
-	virtual void				evEndDrag(qpoint pFrom, qpoint pTop);								// mouse dragged from - to	
-	virtual void				evCancelledDrag();													// cancelled dragging
+	// mouse related
+	virtual HCURSOR				getCursor(qpoint pAt, qword2 pHitTest);								// return the mouse cursor we should show
+	virtual void				evMouseLDown(qpoint pDownAt);										// mouse left button pressed down
+	virtual void				evMouseLUp(qpoint pDownAt);											// mouse left button released
+	virtual void				evMouseMoved(qpoint pMovedTo);										// mouse moved to this location while we are not dragging
+	virtual void				evClick(qpoint pAt,EXTCompInfo* pECI);								// mouse click at this location
+	
+	// drag/drop related
+	virtual bool				canDrag(qpoint pFrom);												// Can we drag from this location? Return false if we can't
+	virtual qlong				evStartDrag(FLDdragDrop *pDragInfo);								// Started dragged, return -1 if we leave it up to Omnis to handle this
+	virtual qlong				evEndDrag(FLDdragDrop *pDragInfo);									// Ended dragging, return -1 if we leave it up to Omnis to handle this
 
 	// scrollbar functions
 	virtual qdim				getHorzStepSize(void);												// get our horizontal step size
@@ -100,8 +105,9 @@ public:
 	virtual void				evWindowScrolled(qdim pNewX, qdim pNewY);							// window was scrolled
 	
 	// called from our WndProc, don't override these directly
-	void						wm_lbutton(qpoint pAt, bool pDown);									// left mouse button
-	void						wm_mousemove(qpoint pAt);											// mouse is being moved
+	void						wm_lbutton(qpoint pAt, bool pDown,EXTCompInfo* pECI);				// left mouse button
+	void						wm_mousemove(qpoint pAt, EXTCompInfo* pECI);						// mouse is being moved
+	qlong						wm_dragdrop(WPARAM wParam, LPARAM lParam, EXTCompInfo* pECI);		// drag and drop handling, return -1 if we're not handling this and want default omnis logic to run
 	void						wm_paint(EXTCompInfo* pECI);										// Paint message
 	void						wm_windowposchanged(EXTCompInfo* pECI, WNDwindowPosStruct * pPos);	// Component resize/repos message
 };

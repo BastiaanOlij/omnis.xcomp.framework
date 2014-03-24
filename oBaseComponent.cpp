@@ -149,6 +149,24 @@ qbool	oBaseComponent::copyFldVal(EXTfldval &pSource, EXTfldval &pDest) {
 				
 				MEMfree(buffer);
 			}; break;
+			case fftRow: {
+				EXTqlist *copyList = pSource.getList(qtrue); // create a copy
+				if (copyList==NULL) {
+					pDest.setEmpty(valuetype, valuesubtype);					
+				} else {
+					pDest.setList(copyList, qtrue, qtrue);
+					delete copyList; // destruct our object BUT do not assign qnil as our EXTfldval now owns it
+				};				
+			}; break;
+			case fftList: {
+				EXTqlist *copyList = pSource.getList(qtrue); // create a copy
+				if (copyList==NULL) {
+					pDest.setEmpty(valuetype, valuesubtype);					
+				} else {
+					pDest.setList(copyList, qtrue, qfalse);
+					delete copyList; // destruct our object BUT do not assign qnil as our EXTfldval now owns it
+				};				
+			}; break;
 			default:
 				// for now we do not support the other data types
 				return qfalse;

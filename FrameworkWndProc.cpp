@@ -9,6 +9,9 @@
  *
  *  Bastiaan Olij
  *
+ *  Todos:
+ *  - find a way to prevent having to pass ECI along to everything
+ *
  *  https://github.com/BastiaanOlij/omnis.xcomp.framework
  */
 
@@ -238,6 +241,7 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Our special $dataname property
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+			
 		// ECM_SETPRIMARYDATA: The contents of our $dataname property has changed
 		case ECM_SETPRIMARYDATA: {
 			EXTParamInfo* lvNewParam = ECOfindParamNum( pECI, 1 );
@@ -246,7 +250,11 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 			if ((lvObject != NULL) && (lvNewParam !=NULL)) {
 				EXTfldval lvValue( (qfldval)lvNewParam->mData );
 				
-				return lvObject->setPrimaryData(lvValue);
+				if (lvObject->setPrimaryData(lvValue) == qtrue) {
+					return 1L;
+				} else {
+					return 0L;
+				};
 			};			
 		}; break;
 			
@@ -256,10 +264,12 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 			if (lvObject != NULL) {
 				EXTfldval lvValue;
 				
-				lvObject->getPrimaryData(lvValue);
-				ECOaddParam(pECI, &lvValue);
-								
-				return 1L;
+				if (lvObject->getPrimaryData(lvValue) == qtrue) {
+					ECOaddParam(pECI, &lvValue);								
+					return 1L;					
+				} else {
+					return 0L;
+				};
 			};			
 		}; break;
 			
@@ -270,11 +280,7 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 			oBaseVisComponent* lvObject = (oBaseVisComponent *)ECOfindObject( pECI, pHWND );
 			if ((lvObject != NULL) && (lvNewParam !=NULL)) {
 				EXTfldval lvValue( (qfldval)lvNewParam->mData );
-				if (lvObject->cmpPrimaryData(lvValue)) {
-					return DATA_CMPDATA_SAME;
-				} else {
-					return DATA_CMPDATA_DIFFER;
-				};
+				return lvObject->cmpPrimaryData(lvValue);
 			};			
 		}; break;
 			
@@ -282,12 +288,17 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 		case ECM_GETPRIMARYDATALEN: {
 			oBaseVisComponent* lvObject = (oBaseVisComponent *)ECOfindObject( pECI, pHWND );
 			if (lvObject != NULL) {
-				EXTfldval lvValue;
-				
-				lvValue.setLong(lvObject->getPrimaryDataLen());
-				ECOaddParam(pECI, &lvValue);
-				
-				return 1L;
+				qlong datalen = lvObject->getPrimaryDataLen();
+				if (datalen>=0) {					
+					EXTfldval lvValue;
+					
+					lvValue.setLong(datalen);
+					ECOaddParam(pECI, &lvValue);
+					
+					return 1L;
+				} else {
+					return 0L;
+				};
 			};			
 		}; break;
 			
@@ -432,8 +443,27 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 				return 1L;
 			};			
 		}; break;
+		
+		// WM_SETCURSOR - gets sent when the mouse is above our control and Omnis wants to know what cursor to show
+		case WM_SETCURSOR: {
+			// This should only be called on visual object
+			oBaseVisComponent* lvObject = (oBaseVisComponent*)ECOfindObject( pECI, pHWND );
+			if (lvObject!=NULL) {
+				qword2	hittest = LOWORD(lParam);
+				qpoint	pt;
+				
+				// get our mouse position and map it to our control so 0,0 is the left-top of our control
+				WNDgetCursorPos(&pt);
+				WNDmapWindowPoint(HWND_DESKTOP, pHWND, &pt);
+				
+				HCURSOR	cursor = lvObject->getCursor(pt, hittest);
+				WNDsetCursor(cursor);
+				
+				return 1L;
+			};
+		}; break;
 			
-			// WM_LBUTTONDOWN - standard left mouse button down event
+		// WM_LBUTTONDOWN - standard left mouse button down event
 		case WM_LBUTTONDOWN: {
 			// This should only be called on visual object
 			oBaseVisComponent* lvObject = (oBaseVisComponent*)ECOfindObject( pECI, pHWND );
@@ -448,9 +478,9 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 				qpoint pt; 
 				WNDmakePoint( lParam, &pt );
 								
-				lvObject->wm_lbutton(pt, true);
+				lvObject->wm_lbutton(pt, true, pECI);
 				
-				return 1L;
+				return 0L;
 			}			
 		} break;
 			
@@ -466,9 +496,9 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 					qpoint pt; 
 					WNDmakePoint( lParam, &pt );
 
-					lvObject->wm_lbutton(pt, false);
+					lvObject->wm_lbutton(pt, false, pECI);
 					
-					return 1L;
+					return 0L;
 				};	
 			};
 		} break;
@@ -482,11 +512,25 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 				qpoint pt; 
 				WNDmakePoint( lParam, &pt );
 		
-				lvObject->wm_mousemove(pt);
+				lvObject->wm_mousemove(pt, pECI);
 				
-				return 1L;
+				return 0L;
 			};	
-		} break;	
+		} break;
+			
+		// WM_DRAGDROP - events related to dragging and dropping
+		case WM_DRAGDROP: {
+			// only handle if we're not in design mode, else leave it up to Omnis.
+			if (!ECOisDesign(pHWND)) {
+				oBaseVisComponent* lvObject = (oBaseVisComponent*)ECOfindObject( pECI, pHWND );
+				if (lvObject!=NULL) {
+					qlong retval = lvObject->wm_dragdrop(wParam, lParam, pECI);
+					if (retval != -1) {
+						return retval;
+					};
+				};
+			};
+		}; break;
 			
 		// WM_PAINT - standard paint message
 		case WM_PAINT: {
@@ -528,7 +572,7 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 		}; break;	
 	};
 	
-	// As a final result this must ALWAYS be called. It handles all other messages that this component
+	// As a final result, if we haven't handled our message this must be called. It handles all other messages that this component
 	// decided to ignore.
 	return WNDdefWindowProc(pHWND,pMsg,wParam,lParam,pECI);
 }

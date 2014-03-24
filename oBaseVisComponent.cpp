@@ -2,10 +2,14 @@
  *  omnis.xcomp.framework
  *  =====================
  *
- *  oBaseNVComponent.cpp
+ *  oBaseVisComponent.cpp
  *  Base class for our visual component
  *
  *  Bastiaan Olij
+ *
+ *  Todos:
+ *  - See if we can put our drawing functions into a separate context object
+ *  - Implement a way to create a snapshot bitmap
  *
  *  https://github.com/BastiaanOlij/omnis.xcomp.framework
  */
@@ -35,13 +39,15 @@ ECOproperty oBaseVisProperties[] = {
 };
 
 oBaseVisComponent::oBaseVisComponent(void) {
-	mForecolor		= GDI_COLOR_QDEFAULT;
-	mBackcolor		= GDI_COLOR_QDEFAULT;
-	mOffsetX		= 0;
-	mOffsetY		= 0;
-	mBackpattern	= 0;
-	mBKTheme		= WND_BK_NONE;
-	mDrawBuffer		= true;
+	mForecolor			= GDI_COLOR_QDEFAULT;
+	mBackcolor			= GDI_COLOR_QDEFAULT;
+	mOffsetX			= 0;
+	mOffsetY			= 0;
+	mBackpattern		= 0;
+	mBKTheme			= WND_BK_NONE;
+	mDrawBuffer			= true;
+	mMouseLButtonDown	= false;
+	mMouseDragging		= false;
 };
 
 // Initialize component
@@ -49,7 +55,6 @@ qbool oBaseVisComponent::init(qapp pApp, HWND pHWnd) {
 	oBaseComponent::init(pApp);
 	
 	mHWnd = pHWnd;
-	mMouseLButtonDown = false;
 
 	WNDsetScrollRange(mHWnd, SB_HORZ, 0, 0, 1, qfalse);
 	WNDsetScrollRange(mHWnd, SB_VERT, 0, 0, 1, qfalse);
@@ -107,7 +112,7 @@ qbool oBaseVisComponent::setProperty(qlong pPropID,EXTfldval &pNewValue,EXTCompI
 };
 
 // get the value of a property
-void oBaseVisComponent::getProperty(qlong pPropID,EXTfldval &pGetValue,EXTCompInfo* eci) {
+void oBaseVisComponent::getProperty(qlong pPropID,EXTfldval &pGetValue,EXTCompInfo* pECI) {
 	// most anum properties are managed by Omnis but some we need to do ourselves...
 	
 	switch (pPropID) {
@@ -124,7 +129,7 @@ void oBaseVisComponent::getProperty(qlong pPropID,EXTfldval &pGetValue,EXTCompIn
 			pGetValue.setLong(mBKTheme);
 			break;
 		default:
-			oBaseComponent::getProperty(pPropID, pGetValue, eci);
+			oBaseComponent::getProperty(pPropID, pGetValue, pECI);
 			
 			break;
 	};
@@ -140,16 +145,16 @@ qbool	oBaseVisComponent::setPrimaryData(EXTfldval &pNewValue) {
 };
 
 // Retrieves our primary data
-void	oBaseVisComponent::getPrimaryData(EXTfldval &pGetValue) {
-	copyFldVal(mPrimaryData, pGetValue);
+qbool	oBaseVisComponent::getPrimaryData(EXTfldval &pGetValue) {
+	return copyFldVal(mPrimaryData, pGetValue);
 };
 
-// Compare with our primary data
-qbool	oBaseVisComponent::cmpPrimaryData(EXTfldval &pWithValue) {
+// Compare with our primary data, return DATA_CMPDATA_SAME if same, DATA_CMPDATA_DIFFER if different
+qlong	oBaseVisComponent::cmpPrimaryData(EXTfldval &pWithValue) {
 	if (pWithValue.compare(mPrimaryData)==0) {
-		return qtrue;
+		return DATA_CMPDATA_SAME;
 	} else {
-		return qfalse;
+		return DATA_CMPDATA_DIFFER;
 	}
 };
 
@@ -174,6 +179,10 @@ qlong	oBaseVisComponent::getPrimaryDataLen() {
 		case fftPicture:
 			return mPrimaryData.getBinLen();
 			break;
+		case fftRow:
+		case fftList:
+			return mPrimaryData.getBinLen(); // not sure if this makes sense...
+			break;			
 		default:
 			return 0;
 			break;
@@ -466,85 +475,149 @@ void	oBaseVisComponent::evWindowScrolled(qdim pNewX, qdim pNewY) {
 // mouse related functions
 ////////////////////////////////////////////////////////////////////////////////////////
 
+// return the mouse cursor we should show
+HCURSOR	oBaseVisComponent::getCursor(qpoint pAt, qword2 pHitTest) {
+	return WND_CURS_DEFAULT;
+};
 
+// mouse left button pressed down
+void	oBaseVisComponent::evMouseLDown(qpoint pDownAt) {
+	// stub
+};
+
+// mouse left button released
+void	oBaseVisComponent::evMouseLUp(qpoint pDownAt) {
+	// stub
+};
+
+// mouse moved to this location while we are not dragging
 void	oBaseVisComponent::evMouseMoved(qpoint pAt) {
 	// stub	
 };
 
-void	oBaseVisComponent::evClick(qpoint pAt) {
+// mouse click at this location
+void	oBaseVisComponent::evClick(qpoint pAt, EXTCompInfo* pECI) {
 	// stub
 };	
 
-void	oBaseVisComponent::evStartDrag(qpoint pFrom) {
-	// stub
-};
-
-void	oBaseVisComponent::evDragging(qpoint pFrom, qpoint pAt) {
-	// stub
-};
-
-void	oBaseVisComponent::evEndDrag(qpoint pFrom, qpoint pTop) {
-	// stub	
-};
-
-void	oBaseVisComponent::evCancelledDrag() {
-	// stub
-};
-
-void	oBaseVisComponent::wm_lbutton(qpoint pAt, bool pDown) {
+void	oBaseVisComponent::wm_lbutton(qpoint pAt, bool pDown, EXTCompInfo* pECI) {
 	mMouseAt = pAt; /* store a copy of our mouse location */
 	
 	if (pDown) {
+		addToTraceLog("Mouse down");
+		
 		mMouseLButtonDown = true;
 		mMouseDragging = false;
 		mMouseDownAt = pAt;
+		
+		this->evMouseLDown(pAt);
 	} else {
 		mMouseLButtonDown = false;
-		if (mMouseDragging) {
-			this->evEndDrag(mMouseDownAt, pAt);
-		} else {
-			this->evClick(pAt);
+		if (!mMouseDragging) {
+			addToTraceLog("Click");
+
+			this->evClick(pAt, pECI);
 		};
+		this->evMouseLUp(pAt);
 	};	
 };
 
-void	oBaseVisComponent::wm_mousemove(qpoint pMovedTo) {
+void	oBaseVisComponent::wm_mousemove(qpoint pMovedTo, EXTCompInfo* pECI) {
 	mMouseAt = pMovedTo; /* store a copy of our mouse location */
 	
-	if (!WNDmouseLeftButtonDown() && mMouseLButtonDown) {
-		// I guess we missed a button up somewhere...
-		
-		if (mMouseDragging) {
-			mMouseDragging = false;
-			this->evCancelledDrag();
-		};
-		
-		this->wm_lbutton(mMouseAt, false);
-	};
-	
-	if (mMouseLButtonDown) {
-		if (!mMouseDragging) {
-			qlong distance = mMouseAt.h > mMouseDownAt.h ? mMouseAt.h - mMouseDownAt.h : mMouseDownAt.h - mMouseAt.h;
-			distance += mMouseAt.v > mMouseDownAt.v ? mMouseAt.v - mMouseDownAt.v : mMouseDownAt.v - mMouseAt.v;
-			
-			if (distance > 5) {
-				// need to move the mouse more then 5 pixels to start dragging..
-				mMouseDragging = qtrue;
-				this->evStartDrag(mMouseDownAt);
-				this->evDragging(mMouseDownAt, mMouseAt);				
-			};
-		} else {
-			this->evDragging(mMouseDownAt, mMouseAt);
-		};
+	if (mMouseDragging) {
+		// for now we ignore this...
 	} else {
-		if (mMouseDragging) {
-			// somehow we have an unfinished drag..
-			mMouseDragging = qfalse;
-			this->evCancelledDrag();
-		};
-		
-		this->evMouseMoved(mMouseAt);
+		this->evMouseMoved(mMouseAt);		
 	};
 };
 
+////////////////////////////////////////////////////////////////////////////////////////
+// drag and drop
+////////////////////////////////////////////////////////////////////////////////////////
+
+// Can we drag from this location? Return false if we can't
+bool	oBaseVisComponent::canDrag(qpoint pFrom) {
+	// stub
+	return true;
+};
+
+// started dragged, return -1 if we leave it up to Omnis to handle this
+qlong	oBaseVisComponent::evStartDrag(FLDdragDrop * pDragInfo) {
+	// stub
+
+	return false;
+};
+
+// mouse dragged from - to, -1 false if we leave it up to Omnis to handle this
+qlong	oBaseVisComponent::evEndDrag(FLDdragDrop * pDragInfo) {
+	// stub	
+	
+	return -1;
+};
+
+// drag and drop handling, return -1 if we're not handling this and want default omnis logic to run
+qlong	oBaseVisComponent::wm_dragdrop(WPARAM wParam, LPARAM lParam, EXTCompInfo* pECI) {
+	switch (wParam) {
+		// DD_CANDRAG_ON_DOWN - Enquiry on whether dragging can be started by a mouse button down action. 
+		// Return true or false, or simply ignore the message. LParam will contain a pointer to a qpoint structure which will contain the mouse position. 
+		// The point is local to the client area of the window which receives these messages.
+		case DD_CANDRAG_ON_DOWN: {
+			qpoint pt = *((qpoint *)lParam);
+			if (this->canDrag(pt)) {
+				return qtrue;
+			} else {
+				return qfalse;
+			};			
+		}; break;
+			
+		// DD_CANDRAG_ON_MOVE -	Enquiry on whether dragging can be started by a mouse move action. 
+		// Return true or false, or simply ignore the message. LParam will contain a pointer to a qpoint structure which will contain the mouse position. 
+		// The point is local to the client area of the window which receives these messages.
+		case DD_CANDRAG_ON_MOVE: {
+			qpoint pt = *((qpoint *)lParam);
+			if (this->canDrag(pt)) {
+				return qtrue;
+			} else {
+				return qfalse;
+			};
+		}; break;
+			
+		// DD_STARTDRAG - Indicates that the drag process is starting. Normally this message is ignored. 
+		// LParam will contain a pointer to the FLDdragDrop structure.
+		case DD_STARTDRAG: {
+			FLDdragDrop *	dragInfo = (FLDdragDrop *)lParam;
+			return this->evStartDrag(dragInfo);
+		}; break;
+			
+		// DD_ENDDRAG - Indicates that the drag process is finishing. Normally this message is ignored. 
+		// LParam will contain a pointer to the FLDdragDrop structure.
+		case DD_ENDDRAG: {
+			FLDdragDrop *	dragInfo = (FLDdragDrop *)lParam;
+			return this->evEndDrag(dragInfo);			
+		};
+	
+		// we'll implement more soon, here is the info from the SDK for the messages we receive here:
+			
+		// DD_CHILD_STARTDRAG - Indicates that the drag process is starting. Sent to the parent of the dragging window. LParam will contain a pointer to the FLDdragDrop structure.
+		// DD_CHILD_ENDDRAG - Indicates that the drag process is finishing. Sent to the parent of the dragging window. LParam will contain a pointer to the FLDdragDrop structure.	
+		// DD_CANDROP - Sent to the drop control and it can return qtrue if drop action is allowed. LParam will contain a pointer to the FLDdragDrop structure and member mDropPoint may be used to establish drop position.
+		// DD_CANDROP_OVER - Sent to the drop control and it can return qtrue if dropping is allowed. LParam will contain a pointer to the FLDdragDrop structure and member mDropPoint may be used to establish mouse position.
+		// DD_CANDROPPARENT - Sent to the parent of the drop control and it can return qtrue if dropping is allowed. LParam will contain a pointer to the FLDdragDrop structure and member mDropPoint may be used to establish mouse position.
+		// DD_HILITE - Request to the current dropping control to hilite its acceptance to allow dropping. LParam will contain a pointer to the FLDdragDrop structure.
+		// DD_UNHILITE - Request to the current dropping control to unhilite itself. LParam will contain a pointer to the FLDdragDrop structure.
+		// DD_ALWAYS_HILITE - Request to the current dropping control to establish whether highlighting is required. Return qtrue or qfalse. LParam will contain a pointer to the FLDdragDrop structure
+		// DD_SHOWDRAGSHAPE - Message to show the drag shape. Normally this is ignored. LParam will contain a pointer to the FLDdragDrop structure.
+		// DD_HIDEDRAGSHAPE - Message to hide the drag shape. Normally this is ignored. LParam will contain a pointer to the FLDdragDrop structure.
+		// DD_MOVEDRAGSHAPE - Message to move the drag shape. Normally this is ignored. LParam will contain a pointer to the FLDdragDrop structure.
+		// DD_CANSCROLL - Request to the current dropping control to establish whether scroll is required. Return qtrue or qfalse. If qtrue is returned then DD_DRAGDROPSCROLL will be sent. LParam will contain a pointer to the FLDdragDrop structure.
+		// DD_GETSCROLLRECT - Request to the current dropping control for it to adjust the scrolling rectangle, if required. Return qtrue if processed. lParam will contain a pointer to the qrect which can be adjusted.
+		// DD_DRAGDROPSCROLL - Request to the current dropping control for it to scroll, if required. Return qtrue if processed. lParam will contain a pointer to the qpoint which can be used to ensure that the point is inside the control.
+		// DD_SETDRAGVALUE - Request for control to set the drag value and can be used, for example, to set the drag value to a selection of text. LParam will contain a pointer to the FLDdragDrop structure.	
+
+		default:
+			return -1;
+			break;
+	};
+};
 
