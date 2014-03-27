@@ -10,6 +10,7 @@
  *  Todos:
  *  - See if we can put our drawing functions into a separate context object
  *  - Implement a way to create a snapshot bitmap
+ *  - Complete drag and drop interface
  *
  *  https://github.com/BastiaanOlij/omnis.xcomp.framework
  */
@@ -71,6 +72,19 @@ qProperties * oBaseVisComponent::properties(void) {
 	
 	return lvProperties;
 };
+
+// get list for $dataname
+EXTqlist *	oBaseVisComponent::getDataList(EXTCompInfo* pECI) {
+	EXTfldval	listFld;
+	str255		listName;
+	
+	ECOgetProperty(mHWnd, anumFieldname, listFld);
+	listFld.getChar(listName);		
+	EXTfldval	dataField(listName, qfalse, pECI->mLocLocp);
+	
+	return dataField.getList(qfalse);
+};
+
 
 // set the value of a property
 qbool oBaseVisComponent::setProperty(qlong pPropID,EXTfldval &pNewValue,EXTCompInfo* pECI) {
@@ -504,7 +518,7 @@ void	oBaseVisComponent::wm_lbutton(qpoint pAt, bool pDown, EXTCompInfo* pECI) {
 	mMouseAt = pAt; /* store a copy of our mouse location */
 	
 	if (pDown) {
-		addToTraceLog("Mouse down");
+		// addToTraceLog("Mouse down");
 		
 		mMouseLButtonDown = true;
 		mMouseDragging = false;
@@ -514,7 +528,7 @@ void	oBaseVisComponent::wm_lbutton(qpoint pAt, bool pDown, EXTCompInfo* pECI) {
 	} else {
 		mMouseLButtonDown = false;
 		if (!mMouseDragging) {
-			addToTraceLog("Click");
+			// addToTraceLog("Click");
 
 			this->evClick(pAt, pECI);
 		};
@@ -533,12 +547,21 @@ void	oBaseVisComponent::wm_mousemove(qpoint pMovedTo, EXTCompInfo* pECI) {
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////
+// keyboard
+////////////////////////////////////////////////////////////////////////////////////////
+
+// let us know a key was pressed. Return true if Omnis should not do anything with this keypress
+bool	oBaseVisComponent::evKeyPressed(qkey *pKey, bool pDown, EXTCompInfo* pECI) {
+	// stub
+	return false;
+};
+
+////////////////////////////////////////////////////////////////////////////////////////
 // drag and drop
 ////////////////////////////////////////////////////////////////////////////////////////
 
 // Can we drag from this location? Return false if we can't
-bool	oBaseVisComponent::canDrag(qpoint pFrom) {
-	// stub
+bool	oBaseVisComponent::canDrag(qpoint pFrom) {	// stub
 	return true;
 };
 
@@ -549,9 +572,16 @@ qlong	oBaseVisComponent::evStartDrag(FLDdragDrop * pDragInfo) {
 	return false;
 };
 
-// mouse dragged from - to, -1 false if we leave it up to Omnis to handle this
+// mouse dragged from - to, return -1 if we leave it up to Omnis to handle this
 qlong	oBaseVisComponent::evEndDrag(FLDdragDrop * pDragInfo) {
 	// stub	
+	
+	return -1;
+};
+
+// Set drag value, update the pDragInfo structure with information about what we are dragging, return -1 if we leave it up to Omnis to handle this
+qlong	oBaseVisComponent::evSetDragValue(FLDdragDrop *pDragInfo, EXTCompInfo* pECI) {
+	// stub
 	
 	return -1;
 };
@@ -563,12 +593,16 @@ qlong	oBaseVisComponent::wm_dragdrop(WPARAM wParam, LPARAM lParam, EXTCompInfo* 
 		// Return true or false, or simply ignore the message. LParam will contain a pointer to a qpoint structure which will contain the mouse position. 
 		// The point is local to the client area of the window which receives these messages.
 		case DD_CANDRAG_ON_DOWN: {
-			qpoint pt = *((qpoint *)lParam);
+			// need to move before we start dragging, we may implement this differently some day if we make a control that requires to drag right away...
+			
+/*			qpoint pt = *((qpoint *)lParam);
 			if (this->canDrag(pt)) {
 				return qtrue;
 			} else {
 				return qfalse;
-			};			
+			}; */
+			
+			return qfalse;
 		}; break;
 			
 		// DD_CANDRAG_ON_MOVE -	Enquiry on whether dragging can be started by a mouse move action. 
@@ -597,6 +631,14 @@ qlong	oBaseVisComponent::wm_dragdrop(WPARAM wParam, LPARAM lParam, EXTCompInfo* 
 			return this->evEndDrag(dragInfo);			
 		};
 	
+		// DD_SETDRAGVALUE
+		// Request for control to set the drag value and can be used, for example, 
+		// to set the drag value to a selection of text. LParam will contain a pointer to the FLDdragDrop structure.	
+		case DD_SETDRAGVALUE: {
+			FLDdragDrop *	dragInfo = (FLDdragDrop *)lParam;
+			return this->evSetDragValue(dragInfo, pECI);
+		}; break;
+
 		// we'll implement more soon, here is the info from the SDK for the messages we receive here:
 			
 		// DD_CHILD_STARTDRAG - Indicates that the drag process is starting. Sent to the parent of the dragging window. LParam will contain a pointer to the FLDdragDrop structure.
@@ -613,8 +655,9 @@ qlong	oBaseVisComponent::wm_dragdrop(WPARAM wParam, LPARAM lParam, EXTCompInfo* 
 		// DD_CANSCROLL - Request to the current dropping control to establish whether scroll is required. Return qtrue or qfalse. If qtrue is returned then DD_DRAGDROPSCROLL will be sent. LParam will contain a pointer to the FLDdragDrop structure.
 		// DD_GETSCROLLRECT - Request to the current dropping control for it to adjust the scrolling rectangle, if required. Return qtrue if processed. lParam will contain a pointer to the qrect which can be adjusted.
 		// DD_DRAGDROPSCROLL - Request to the current dropping control for it to scroll, if required. Return qtrue if processed. lParam will contain a pointer to the qpoint which can be used to ensure that the point is inside the control.
-		// DD_SETDRAGVALUE - Request for control to set the drag value and can be used, for example, to set the drag value to a selection of text. LParam will contain a pointer to the FLDdragDrop structure.	
-
+		// DD_GETDRAGCONTAINER - Request for control to set the drag source HWND (FLDdragDrop member mDragSourceHwnd). Normally this is ignored but can be useful for complex controls that allow dragging of multiple HWNDs. LParam will contain a pointer to the FLDdragDrop structure.
+		// DD_BUTTONDOWN - Message that the button is down during drag move. Normally this is ignored but it can be used to change drop tabs on a tabbed pane control, for example. LParam will contain a pointer to the FLDdragDrop structure.
+		// DD_BUTTONUP - Message that the button is up during drag move. Normally this is ignored but it can be used to change drop tabs on a tabbed pane control, for example. LParam will contain a pointer to the FLDdragDrop structure.
 		default:
 			return -1;
 			break;

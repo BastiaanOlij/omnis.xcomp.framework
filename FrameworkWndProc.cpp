@@ -360,7 +360,7 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 		case ECM_GETEVENTMETHOD: {
 			unsigned int lvID = gXCompLib->eventMethodID(pECI->mCompId);
 			if (lvID>0) {
-				//  return ECOreturnEventMethod(gInstLib, pECI, lvID);
+				return ECOreturnEventMethod(gInstLib, pECI, lvID);
 			};
 		}; break;
 			
@@ -376,7 +376,21 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // window messaging
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+			
+		case WM_KEYDOWN:
+		case WM_KEYUP: {
+			// This should only be called on visual object
+			oBaseVisComponent* lvObject = (oBaseVisComponent*)ECOfindObject( pECI, pHWND );
+			if (lvObject!=NULL) {
+				qkey *	keyMessage = (qkey *) lParam;
+				if (lvObject->evKeyPressed(keyMessage, pMsg==WM_KEYDOWN, pECI)) {
+					return 0L;
+				} else {
+					return 1L;
+				};
+			};
+		}; break;
+			
 		// WM_HSCROLL, WM_VSCROLL - scrollbar position has changed
 		case WM_HSCROLL:
 		case WM_VSCROLL: {

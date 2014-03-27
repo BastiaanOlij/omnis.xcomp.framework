@@ -66,13 +66,15 @@ protected:
 	void						drawLine(qpoint pFrom, qpoint pTo, qdim pWidth, qcol pCol, qpat pPat);		// Draws a line between two points
 	void						drawEllipse(qrect pRect, qcol pTop, qcol pBottom, qcol pBorder = -1, qint pSpacing = 0);					// Draws a filled ellipse within the rectangle with a gradient color from top to bottom
 	
+	// handy Omnis functions
+	EXTqlist *					getDataList(EXTCompInfo* pECI);										// get list for $dataname
 public:
 	oBaseVisComponent(void);																		// constructor
 	virtual	qbool				init(qapp pApp, HWND pHWnd);										// Initialize component
 	
 	static  qProperties *		properties(void);													// return array of property meta data
-	virtual qbool				setProperty(qlong pPropID,EXTfldval &pNewValue,EXTCompInfo* pECI);	// set the value of a property
-	virtual void				getProperty(qlong pPropID,EXTfldval &pGetValue,EXTCompInfo* pECI);	// get the value of a property
+	virtual qbool				setProperty(qlong pPropID,EXTfldval &pNewValue, EXTCompInfo* pECI);	// set the value of a property
+	virtual void				getProperty(qlong pPropID,EXTfldval &pGetValue, EXTCompInfo* pECI);	// get the value of a property
 
 	// $dataname
 	virtual qbool				setPrimaryData(EXTfldval &pNewValue);								// Changes our primary data
@@ -97,12 +99,16 @@ public:
 	// drag/drop related
 	virtual bool				canDrag(qpoint pFrom);												// Can we drag from this location? Return false if we can't
 	virtual qlong				evStartDrag(FLDdragDrop *pDragInfo);								// Started dragged, return -1 if we leave it up to Omnis to handle this
+	virtual qlong				evSetDragValue(FLDdragDrop *pDragInfo, EXTCompInfo* pECI);			// Set drag value, update the pDragInfo structure with information about what we are dragging, return -1 if we leave it up to Omnis to handle this
 	virtual qlong				evEndDrag(FLDdragDrop *pDragInfo);									// Ended dragging, return -1 if we leave it up to Omnis to handle this
 
 	// scrollbar functions
 	virtual qdim				getHorzStepSize(void);												// get our horizontal step size
 	virtual qdim				getVertStepSize(void);												// get our vertical step size
 	virtual void				evWindowScrolled(qdim pNewX, qdim pNewY);							// window was scrolled
+
+	// keyboard	
+	virtual bool				evKeyPressed(qkey *pKey, bool pDown, EXTCompInfo* pECI);			// let us know a key was pressed. Return true if Omnis should not do anything with this keypress
 	
 	// called from our WndProc, don't override these directly
 	void						wm_lbutton(qpoint pAt, bool pDown,EXTCompInfo* pECI);				// left mouse button

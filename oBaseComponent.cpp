@@ -8,7 +8,8 @@
  *  Bastiaan Olij
  *
  *  Todos:
- *  - Generally complete this implementation
+ *  - Complete this implementation
+ *  - Make addToTraceLog work with qchar (or make a version thereof)
  *
  *  https://github.com/BastiaanOlij/omnis.xcomp.framework
  */
@@ -175,6 +176,27 @@ qbool	oBaseComponent::copyFldVal(EXTfldval &pSource, EXTfldval &pDest) {
 	};
 	
 	return qtrue;
+};
+
+// initialize calculation
+EXTfldval *	oBaseComponent::newCalculation(qstring &pCalculation, EXTCompInfo *pECI) {
+	qlong		error1,error2;
+	EXTfldval *	calcFld = new EXTfldval;
+	
+	qret ret = calcFld->setCalculation(pECI->mLocLocp, ctyCalculation, (qchar *)pCalculation.cString(), pCalculation.length(), &error1, &error2);
+	if (ret != 0) {
+		// error1 => error2 will be the substring of the part of the calculation that is wrong. 
+		
+		char errorstr[16000];
+		strcpy(errorstr, pCalculation.c_str());
+		errorstr[error2+1]=0x00;
+		addToTraceLog("Error in calculation : %s",&errorstr[error1]);
+			
+		delete calcFld;
+		return NULL;
+	} else {
+		return calcFld;
+	};
 };
 
 /*** Properties ***/
