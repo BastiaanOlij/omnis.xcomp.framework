@@ -81,6 +81,14 @@ EXTqlist *	oBaseVisComponent::getDataList(EXTCompInfo* pECI) {
 	ECOgetProperty(mHWnd, anumFieldname, listFld);
 	listFld.getChar(listName);		
 	EXTfldval	dataField(listName, qfalse, pECI->mLocLocp);
+
+	ffttype		datatype;
+	qshort		datasubtype;
+	
+	dataField.getType(datatype, &datasubtype);
+	qstring		msg = QTEXT("Data type $dataname: ");
+	msg += fldTypeName(datatype);
+	addToTraceLog(msg.c_str());	
 	
 	return dataField.getList(qfalse);
 };

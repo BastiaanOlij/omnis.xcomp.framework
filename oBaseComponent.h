@@ -51,6 +51,7 @@ public:
 	void						addToTraceLog(const char *pData, ...);								// Add formatted string to trace log
 	qbool						copyFldVal(EXTfldval &pSource, EXTfldval &pDest);					// Copy the contents of one EXTFLDVAL into another EXTFLDVAL
 	EXTfldval *					newCalculation(qstring &pCalculation, EXTCompInfo *pECI);			// initialize calculation
+	const qoschar *				fldTypeName(ffttype pType);											// get our type
 	
 /*** Properties ***/
 	static  qProperties *		properties(void);													// return array of property meta data

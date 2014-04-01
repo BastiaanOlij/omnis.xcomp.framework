@@ -168,6 +168,16 @@ qbool	oBaseComponent::copyFldVal(EXTfldval &pSource, EXTfldval &pDest) {
 					delete copyList; // destruct our object BUT do not assign qnil as our EXTfldval now owns it
 				};				
 			}; break;
+			case fftItemref: {
+//				addToTraceLog("Using an item reference as $dataname is not yet implemented, coming to an external near you soon!");
+				
+				// !BAS! need to implement this soon and figure out the best way to do so. 
+				
+				// hopefully this works..
+				pDest.setFldVal(pSource.getFldVal());
+				pDest.setOmnisData(pSource.isOmnisData());
+				pDest.setReadOnly(pSource.isReadOnly());				
+			}; break;
 			default:
 				// for now we do not support the other data types
 				return qfalse;
@@ -176,6 +186,85 @@ qbool	oBaseComponent::copyFldVal(EXTfldval &pSource, EXTfldval &pDest) {
 	};
 	
 	return qtrue;
+};
+
+// get our type
+const qoschar *	oBaseComponent::fldTypeName(ffttype pType) {
+		switch (pType) {
+			case fftNone:
+				return QTEXT("None");
+				break;
+			case fftCharacter:
+				return QTEXT("Character");
+				break;
+			case fftBoolean:
+				return QTEXT("Boolean");
+				break;
+			case fftDate:
+				return QTEXT("Date");
+				break;
+			case fftNumber:
+				return QTEXT("Number");
+				break;
+			case fftInteger:
+				return QTEXT("Integer");
+				break;
+			case fftPicture:
+				return QTEXT("Picture");
+				break;
+			case fftBinary:
+				return QTEXT("Binary");
+				break;
+			case fftList:
+				return QTEXT("List");
+				break;				
+			case fftCrb:
+				return QTEXT("CRB");
+				break;
+			case fftCalc:
+				return QTEXT("Calculation");
+				break;
+			case fftConstant:
+				return QTEXT("Constant");
+				break;
+			case fftRow:
+				return QTEXT("Row");
+				break;
+			case fftObject:
+				return QTEXT("Object");
+				break;
+			case fftObjref:
+				return QTEXT("Object reference");
+				break;
+			// THE FOLLOWING TYPES ARE FOR INTERNAL USE ONLY.
+			case fftLong:
+				return QTEXT("Long");
+				break;				
+			case fftSequence:
+				return QTEXT("Sequence");
+				break;				
+			case fftRdef:
+				return QTEXT("Record definition");
+				break;				
+			case fftFieldname:
+				return QTEXT("Fieldname");
+				break;				
+			case fftItemref:
+				return QTEXT("Item reference");
+				break;
+			case fftUnknown:
+				return QTEXT("Unknown");
+				break;				
+			case fftQuickest:
+				return QTEXT("Quickest");
+				break;				
+			case fftNegative:
+				return QTEXT("Negative");
+				break;
+			default:
+				return QTEXT("???");
+				break;
+		};
 };
 
 // initialize calculation
