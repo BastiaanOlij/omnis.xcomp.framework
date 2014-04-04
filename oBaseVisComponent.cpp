@@ -386,6 +386,21 @@ void	oBaseVisComponent::unClip() {
 	};
 };
 
+// erase our background message
+void	oBaseVisComponent::wm_erasebkgnd(EXTCompInfo* pECI) {
+	/* 
+		The SDK specifies we need to draw the background here and then draw whatever foreground stuff we have in wm_paint.
+
+		This is an old optimalisation from the early Windows days where drawing stuff was CPU expensive but it also leads
+		to alot of flickering of the screen.
+
+		In our wm_paint we now use a buffer to draw too which is then blitted to the screen. In drawing that buffer we also
+		draw the background.
+
+		So we're going to cheat here, and ignore the erase background.. ;)
+	*/
+};
+
 // paint message
 void oBaseVisComponent::wm_paint(EXTCompInfo* pECI) {
 	WNDpaintStruct	lvPaintStruct;

@@ -114,6 +114,7 @@ public:
 	void						wm_lbutton(qpoint pAt, bool pDown,EXTCompInfo* pECI);				// left mouse button
 	void						wm_mousemove(qpoint pAt, EXTCompInfo* pECI);						// mouse is being moved
 	qlong						wm_dragdrop(WPARAM wParam, LPARAM lParam, EXTCompInfo* pECI);		// drag and drop handling, return -1 if we're not handling this and want default omnis logic to run
+	void						wm_erasebkgnd(EXTCompInfo* pECI);									// erase our background message
 	void						wm_paint(EXTCompInfo* pECI);										// Paint message
 	void						wm_windowposchanged(EXTCompInfo* pECI, WNDwindowPosStruct * pPos);	// Component resize/repos message
 };

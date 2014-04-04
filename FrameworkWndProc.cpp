@@ -545,6 +545,17 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 				};
 			};
 		}; break;
+
+		// WM_ERASEBKGND - erase the background
+		case WM_ERASEBKGND: {
+			 // This should only be called on visual object
+			 oBaseVisComponent* lvObject = (oBaseVisComponent*)ECOfindObject( pECI, pHWND );
+			 // and if its good, call the erase function
+			 if (lvObject!=NULL) {
+				 lvObject->wm_erasebkgnd(pECI); 
+				 return 1L;
+			 } 
+		} break;
 			
 		// WM_PAINT - standard paint message
 		case WM_PAINT: {
