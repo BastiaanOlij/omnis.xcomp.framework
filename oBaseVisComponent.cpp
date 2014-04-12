@@ -75,22 +75,47 @@ qProperties * oBaseVisComponent::properties(void) {
 
 // get list for $dataname
 EXTqlist *	oBaseVisComponent::getDataList(EXTCompInfo* pECI) {
-	EXTfldval	listFld;
-	str255		listName;
-	
-	ECOgetProperty(mHWnd, anumFieldname, listFld);
-	listFld.getChar(listName);		
-	EXTfldval	dataField(listName, qfalse, pECI->mLocLocp);
-
+	EXTfldval	dataNameFld;
+	str255		dataName;
 	ffttype		datatype;
 	qshort		datasubtype;
 	
-	dataField.getType(datatype, &datasubtype);
-	qstring		msg = QTEXT("Data type $dataname: ");
-	msg += fldTypeName(datatype);
-	addToTraceLog(msg.c_str());	
+	ECOgetProperty(mHWnd, anumFieldname, dataNameFld);
+	dataName = dataNameFld.getChar();
+	EXTfldval	dataField(dataName, qfalse, pECI->mLocLocp);
 	
-	return dataField.getList(qfalse);
+	dataField.getType(datatype, &datasubtype);
+	if (datatype==fftItemref) {
+		/* this is an item reference, lets parse the item reference, thanks to TL tech support */
+		EXTfldval	calc, result;
+
+		/* Add .$name to our reference */
+		dataName.concat(str255(QTEXT(".$fullname")));
+		
+		/* execute this as a calculation to get the name of the variable our reference points at */
+		calc.setCalculation(pECI->mInstLocp, ctyCalculation, &dataName[1], dataName[0]);
+		calc.evalCalculation(result, pECI->mInstLocp);
+		dataName = result.getChar();
+
+		// ECOaddTraceLine(&dataName);
+		
+		/* and now get our real data variable */
+		EXTfldval	referencedField(dataName, qfalse, pECI->mLocLocp);
+		referencedField.getType(datatype, &datasubtype);
+		if ((datatype==fftList) || (datatype==fftRow)) {
+			/* list or row? return the list */
+			return referencedField.getList(qfalse);
+		} else {
+			addToTraceLog("Item reference isn't a list or row");
+			return NULL;
+		};		
+	} else if ((datatype==fftList) || (datatype==fftRow)) {
+		/* list or row? return the list */
+		return dataField.getList(qfalse);
+	} else {
+		addToTraceLog("Dataname isn't a list or row");
+		return NULL;
+	};
 };
 
 
