@@ -22,22 +22,8 @@
  ********************************************************************************************************************************************/
 
 ////////////////////////////////////////////////////////////////
-// Properties
+// Construct / destruct / init
 ////////////////////////////////////////////////////////////////
-
-ECOproperty oBaseVisProperties[] = { 
-	//	ID						ResID	Type			Flags					ExFlags	EnumStart	EnumEnd
-	anumForecolor,			0,		fftInteger,		EXTD_FLAG_PROPAPP,		0,		0,			0,		// $forecolor
-	anumBackcolor,			0,		fftInteger,		EXTD_FLAG_PROPAPP,		0,		0,			0,		// $backcolor
-	anumBackpattern,		0,		fftInteger,		EXTD_FLAG_PROPAPP,		0,		0,			0,		// $backpattern
-	anumBackgroundTheme,	0,		fftInteger,		EXTD_FLAG_PROPAPP,		0,		0,			0,		// $bgtheme
-	
-	anumTextColor,			0,		fftInteger,		EXTD_FLAG_PROPTEXT,		0,		0,			0,		// $textcolor
-	anumFont,				0,		fftCharacter,	EXTD_FLAG_PROPTEXT,		0,		0,			0,		// $font
-	anumFontsize,			0,		fftInteger,		EXTD_FLAG_PROPTEXT,		0,		0,			0,		// $fontsize
-	anumFontstyle,			0,		fftInteger,		EXTD_FLAG_PROPTEXT,		0,		0,			0,		// $fontstyle
-	anumAlign,				0,		fftInteger,		EXTD_FLAG_PROPTEXT,		0,		0,			0,		// $align	
-};
 
 oBaseVisComponent::oBaseVisComponent(void) {
 	mForecolor			= GDI_COLOR_QDEFAULT;
@@ -56,11 +42,29 @@ qbool oBaseVisComponent::init(qapp pApp, HWND pHWnd) {
 	oBaseComponent::init(pApp);
 	
 	mHWnd = pHWnd;
-
+	
 	WNDsetScrollRange(mHWnd, SB_HORZ, 0, 0, 1, qfalse);
 	WNDsetScrollRange(mHWnd, SB_VERT, 0, 0, 1, qfalse);
 	
 	return true;
+};
+
+////////////////////////////////////////////////////////////////
+// Properties
+////////////////////////////////////////////////////////////////
+
+ECOproperty oBaseVisProperties[] = { 
+	//	ID						ResID	Type			Flags					ExFlags	EnumStart	EnumEnd
+	anumForecolor,			0,		fftInteger,		EXTD_FLAG_PROPAPP,		0,		0,			0,		// $forecolor
+	anumBackcolor,			0,		fftInteger,		EXTD_FLAG_PROPAPP,		0,		0,			0,		// $backcolor
+	anumBackpattern,		0,		fftInteger,		EXTD_FLAG_PROPAPP,		0,		0,			0,		// $backpattern
+	anumBackgroundTheme,	0,		fftInteger,		EXTD_FLAG_PROPAPP,		0,		0,			0,		// $bgtheme
+	
+	anumTextColor,			0,		fftInteger,		EXTD_FLAG_PROPTEXT,		0,		0,			0,		// $textcolor
+	anumFont,				0,		fftCharacter,	EXTD_FLAG_PROPTEXT,		0,		0,			0,		// $font
+	anumFontsize,			0,		fftInteger,		EXTD_FLAG_PROPTEXT,		0,		0,			0,		// $fontsize
+	anumFontstyle,			0,		fftInteger,		EXTD_FLAG_PROPTEXT,		0,		0,			0,		// $fontstyle
+	anumAlign,				0,		fftInteger,		EXTD_FLAG_PROPTEXT,		0,		0,			0,		// $align	
 };
 
 // Add properties for visual componect
@@ -72,58 +76,6 @@ qProperties * oBaseVisComponent::properties(void) {
 	
 	return lvProperties;
 };
-
-// get list for $dataname
-EXTqlist *	oBaseVisComponent::getDataList(EXTCompInfo* pECI) {
-	EXTfldval	dataNameFld;
-	str255		dataName;
-	ffttype		datatype;
-	qshort		datasubtype;
-	
-	ECOgetProperty(mHWnd, anumFieldname, dataNameFld);
-	dataName = dataNameFld.getChar();
-	EXTfldval	dataField(dataName, qfalse, pECI->mLocLocp);
-	
-	dataField.getType(datatype, &datasubtype);
-	if (datatype==fftItemref) {
-		/* this is an item reference, lets parse the item reference, thanks to TL tech support */
-		EXTfldval	calc, result;
-
-		/* Add .$name to our reference */
-		dataName.concat(str255(QTEXT(".$fullname")));
-		
-		/* execute this as a calculation to get the name of the variable our reference points at */
-		calc.setCalculation(pECI->mInstLocp, ctyCalculation, &dataName[1], dataName[0]);
-		calc.evalCalculation(result, pECI->mInstLocp);
-		dataName = result.getChar();
-		
-		// now our variable could be an instance variable for a subwindow. Our $fullname reference actually doesn't work then.. So lets check for this situation..
-		qshort ivarspos = dataName.pos(str255(QTEXT(".$ivars.")));
-		qshort objspos = dataName.pos(str255(QTEXT(".$objs.")));
-		if ((ivarspos!=0) && (objspos!=0)) {
-			// if we're dealing with an instance variable and we have $objs in our dataname this must be a subwindow, we need to add $subinst..
-			dataName.insert(str255(QTEXT(".$subinst()")), ivarspos);
-		};
-
-		/* and now get our real data variable */
-		EXTfldval	referencedField(dataName, qfalse, pECI->mLocLocp);
-		referencedField.getType(datatype, &datasubtype);
-		if ((datatype==fftList) || (datatype==fftRow)) {
-			/* list or row? return the list */
-			return referencedField.getList(qfalse);
-		} else {
-			addToTraceLog("Item reference isn't a list or row");
-			return NULL;
-		};		
-	} else if ((datatype==fftList) || (datatype==fftRow)) {
-		/* list or row? return the list */
-		return dataField.getList(qfalse);
-	} else {
-		addToTraceLog("Dataname isn't a list or row");
-		return NULL;
-	};
-};
-
 
 // set the value of a property
 qbool oBaseVisComponent::setProperty(qlong pPropID,EXTfldval &pNewValue,EXTCompInfo* pECI) {
@@ -192,6 +144,66 @@ void oBaseVisComponent::getProperty(qlong pPropID,EXTfldval &pGetValue,EXTCompIn
 // $dataname property
 ////////////////////////////////////////////////////////////////
 
+// Get list variable used for $dataname
+EXTqlist *	oBaseVisComponent::getDataList(EXTCompInfo* pECI) {
+	EXTfldval	dataNameFld;
+	str255		dataName;
+	ffttype		datatype;
+	qshort		datasubtype;
+	
+	/* get the value of $dataname, i.e. "ivList" */
+	ECOgetProperty(mHWnd, anumFieldname, dataNameFld);
+	dataName = dataNameFld.getChar();
+	
+	/* and now get the field related to this.. */
+	EXTfldval	dataField(dataName, qfalse, pECI->mLocLocp);
+	
+	/* check the type of our variable */
+	dataField.getType(datatype, &datasubtype);
+	if (datatype==fftItemref) {
+		/* this is an item reference, lets parse the item reference, thanks to TL tech support */
+		EXTfldval	calc, result;
+		
+		/* Add .$fullname to our reference */
+		dataName.concat(str255(QTEXT(".$fullname")));
+		
+		/* execute this as a calculation to get the name of the variable our reference points at */
+		calc.setCalculation(pECI->mInstLocp, ctyCalculation, &dataName[1], dataName[0]);
+		calc.evalCalculation(result, pECI->mInstLocp);
+		dataName = result.getChar(); /* this will return something like $root.$iwindows.myWindow.$objs.mySubWindow.$ivars.ivList */
+		
+		/* now our variable could be an instance variable for a subwindow. Our $fullname reference actually doesn't work then.. So lets check for this situation.. */
+		qshort ivarspos = dataName.pos(str255(QTEXT(".$ivars.")));
+		qshort objspos = dataName.pos(str255(QTEXT(".$objs.")));
+		if ((ivarspos!=0) && (objspos!=0)) {
+			/*
+			 if we're dealing with an instance variable and we have $objs in our dataname this must be a subwindow, we need to add $subinst..
+			 
+			 so it becomes $root.$iwindows.myWindow.$objs.mySubWindow.$subinst().$ivars.ivList
+			 */
+			
+			dataName.insert(str255(QTEXT(".$subinst()")), ivarspos);
+		};
+		
+		/* and now get our real data variable */
+		EXTfldval	referencedField(dataName, qfalse, pECI->mLocLocp);
+		referencedField.getType(datatype, &datasubtype);
+		if ((datatype==fftList) || (datatype==fftRow)) {
+			/* list or row? return the list */
+			return referencedField.getList(qfalse);
+		} else {
+			addToTraceLog("Item reference isn't a list or row");
+			return NULL;
+		};		
+	} else if ((datatype==fftList) || (datatype==fftRow)) {
+		/* list or row? return the list */
+		return dataField.getList(qfalse);
+	} else {
+		addToTraceLog("Dataname isn't a list or row");
+		return NULL;
+	};
+};
+
 // Changes our primary data
 qbool	oBaseVisComponent::setPrimaryData(EXTfldval &pNewValue) {
 	return copyFldVal(pNewValue, mPrimaryData);
@@ -248,11 +260,9 @@ void oBaseVisComponent::primaryDataHasChanged() {
 	WNDinvalidateRect(mHWnd, NULL);
 };
 
-
 ////////////////////////////////////////////////////////////////
 // Methods and events
 ////////////////////////////////////////////////////////////////
-
 
 qMethods * oBaseVisComponent::methods(void) {
 	qMethods * lvMethods = oBaseComponent::methods();
@@ -401,6 +411,7 @@ bool	oBaseVisComponent::clipRect(qrect pRect, bool pUnion) {
 	};
 };
 
+// Pop our last clipping rectangle off the stack, do not call if clipRect returned false!
 void	oBaseVisComponent::unClip() {
 	if (mHDC != 0) {
 		// remove the top one, that is our current clipping

@@ -67,7 +67,7 @@ protected:
 	void						drawEllipse(qrect pRect, qcol pTop, qcol pBottom, qcol pBorder = -1, qint pSpacing = 0);					// Draws a filled ellipse within the rectangle with a gradient color from top to bottom
 	
 	// handy Omnis functions
-	EXTqlist *					getDataList(EXTCompInfo* pECI);										// get list for $dataname
+	EXTqlist *					getDataList(EXTCompInfo* pECI);										// Get list variable used for $dataname
 public:
 	oBaseVisComponent(void);																		// constructor
 	virtual	qbool				init(qapp pApp, HWND pHWnd);										// Initialize component
