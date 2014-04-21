@@ -96,9 +96,15 @@ EXTqlist *	oBaseVisComponent::getDataList(EXTCompInfo* pECI) {
 		calc.setCalculation(pECI->mInstLocp, ctyCalculation, &dataName[1], dataName[0]);
 		calc.evalCalculation(result, pECI->mInstLocp);
 		dataName = result.getChar();
-
-		// ECOaddTraceLine(&dataName);
 		
+		// now our variable could be an instance variable for a subwindow. Our $fullname reference actually doesn't work then.. So lets check for this situation..
+		qshort ivarspos = dataName.pos(str255(QTEXT(".$ivars.")));
+		qshort objspos = dataName.pos(str255(QTEXT(".$objs.")));
+		if ((ivarspos!=0) && (objspos!=0)) {
+			// if we're dealing with an instance variable and we have $objs in our dataname this must be a subwindow, we need to add $subinst..
+			dataName.insert(str255(QTEXT(".$subinst()")), ivarspos);
+		};
+
 		/* and now get our real data variable */
 		EXTfldval	referencedField(dataName, qfalse, pECI->mLocLocp);
 		referencedField.getType(datatype, &datasubtype);
