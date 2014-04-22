@@ -569,6 +569,12 @@ void	oBaseVisComponent::evMouseLUp(qpoint pDownAt) {
 	// stub
 };
 
+// mouse left button double clicked (return true if we finished handling this, false if we want Omnis internal logic)
+bool	oBaseVisComponent::evDoubleClick(qpoint pAt, EXTCompInfo* pECI) {
+	// stub
+	return false;
+};
+
 // mouse right button pressed down (return true if we finished handling this, false if we want Omnis internal logic)
 bool	oBaseVisComponent::evMouseRDown(qpoint pDownAt, EXTCompInfo* pECI) {
 	// stub
@@ -612,6 +618,12 @@ void	oBaseVisComponent::wm_lbutton(qpoint pAt, bool pDown, EXTCompInfo* pECI) {
 		this->evMouseLUp(pAt);
 	};	
 };
+
+// left mouse button double click (return true if we finished handling this, false if we want Omnis internal logic)
+bool	oBaseVisComponent::wm_lbDblClick(qpoint pAt, EXTCompInfo* pECI) {
+	return this->evDoubleClick(pAt, pECI);
+};
+
 
 // right mouse button (return true if we finished handling this, false if we want Omnis internal logic)
 bool	oBaseVisComponent::wm_rbutton(qpoint pAt, bool pDown, EXTCompInfo* pECI) {

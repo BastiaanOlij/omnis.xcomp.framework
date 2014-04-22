@@ -516,6 +516,21 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 				};	
 			};
 		} break;
+			
+		// WM_LBUTTONDBLCLK - user double clicked
+		case WM_LBUTTONDBLCLK: {
+			// This should only be called on visual object
+			oBaseVisComponent* lvObject = (oBaseVisComponent*)ECOfindObject( pECI, pHWND );
+			// and if its good, call the function
+			if (lvObject!=NULL) {
+				qpoint pt; 
+				WNDmakePoint( lParam, &pt );
+				
+				if (lvObject->wm_lbDblClick(pt, pECI)) {
+					return 0L;					
+				};
+			}
+		}; break;
 
 		// WM_RBUTTONDOWN - standard right mouse button down event
 		case WM_RBUTTONDOWN:
