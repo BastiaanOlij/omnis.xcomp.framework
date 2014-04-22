@@ -211,14 +211,9 @@ void	qstring::vAppendFormattedString(qstring &appendTo, qstring &pFormat, va_lis
 						};
 					}; break;
 					default: { // anything else, leave it up to vsprintf to handle this properly...
-						va_list	lvArgList;
 						char	lvBuffer[1024*16];
 						
-						// make a copy or vsprintf may cause some issues.
-						va_copy(lvArgList, pArgList);
-						vsprintf(lvBuffer, lvFormat.c_str(), lvArgList);
-						va_end(lvArgList);
-						
+						vsprintf(lvBuffer, lvFormat.c_str(), pArgList);						
 						appendTo += lvBuffer;
 						
 						// and discard it for ourselves
