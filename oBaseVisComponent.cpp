@@ -581,7 +581,6 @@ bool	oBaseVisComponent::evMouseRUp(qpoint pUpAt, EXTCompInfo* pECI) {
 	return false;
 };
 
-
 // mouse moved to this location while we are not dragging
 void	oBaseVisComponent::evMouseMoved(qpoint pAt) {
 	// stub	

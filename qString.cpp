@@ -147,8 +147,32 @@ void	qstring::vAppendFormattedString(qstring &appendTo, qstring &pFormat, va_lis
 			} else {
 				qstring	lvFormat("%");
 				
-				while ((lvChar!=' ') && (lvPos < lvLen)) {
-					lvFormat += lvChar;
+				// should really change this to a regex or something.. poor mans implementation to detect %[flags][width][.precision][length]specifier
+				// we do NOT support * (multi parameter formatted strings)!
+				bool	lvIsPrefix	= true;	
+				bool	lvIsFirst	= true;
+				
+				while (lvPos < lvLen) {
+					if (lvIsFirst && ((lvChar=='-') || (lvChar=='+') || (lvChar==' ') || (lvChar == '#'))) {
+						// first character is a flag? that is allowed!
+						lvFormat += lvChar;
+					} else if (lvIsPrefix && lvChar == '.') {
+						lvFormat += lvChar;
+					} else if (lvIsPrefix && lvChar >= '0' && lvChar <= '9') {
+						lvFormat += lvChar;
+					} else if (lvChar >= 'a' && lvChar <= 'z') {
+						lvFormat += lvChar;
+						lvIsPrefix = false;
+					} else if (lvChar >= 'A' && lvChar <= 'Z') {
+						lvFormat += lvChar;
+						lvIsPrefix = false;
+					} else {
+						// we found the end
+						break;
+					};
+					
+					// on to the next character
+					lvIsFirst = false;
 					lvPos++;
 					lvChar = *pFormat[lvPos];
 				};
