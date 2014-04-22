@@ -49,6 +49,11 @@ public:
 	~qstring();															// Free up memory and destruct
 
 	static qstring * newStringFromFormat(const char *pFormat, ...);		// Create a new qstring instance based on a formatted string
+#ifdef isunicode
+	static void		vAppendFormattedString(qstring &appendTo, qstring &pFormat, va_list &pArgList);
+	static qstring * newStringFromFormat(const qoschar *pFormat, ...);	// Create a new qstring instance based on a formatted string
+	static qstring * newStringFromFormat(qstring &pFormat, ...);	// Create a new qstring instance based on a formatted string
+#endif
 	static qlong	qosstrlen(const qoschar *pString);					// Get the length of a qoschar string
 	static qlong	qstrlen(const qchar *pString);						// Get the length of an omnis string
 	static qshort	qstrcmp(const qchar *pA, const qchar *pB);			// Compare two omnis strings
@@ -59,9 +64,13 @@ public:
 
 	qstring&		setFormattedString(const char *pFormat, ...);		// Sets the contents of our string to a formatted string
 	
-	qstring&		appendString(const qchar *pString, qlong pSize);		// Append an omnis string of specific length
+	qstring&		appendString(const qchar *pString, qlong pSize);	// Append an omnis string of specific length
 	qstring&		appendStyle(qchar pStyle, qulong pValue);			// Adds an Omnis style character into our string (like style(...) in omnis)
 	qstring&		appendFormattedString(const char *pFormat, ...);	// Append a formatted string to our string
+#ifdef isunicode
+	qstring&		appendFormattedString(const qoschar *pFormat, ...);	// Append a formatted string to our string
+	qstring&		appendFormattedString(qstring &pFormat, ...);		// Append a formatted string to our string
+#endif
 	qstring&		appendBinary(const qbyte *pBuffer, qlong pLen);		// Append a binary to our string (as 0x0123456789ABCDEF)
 	qstring&		appendFldVal(const EXTfldval &value);				// Append an omnis field value to our string
 	

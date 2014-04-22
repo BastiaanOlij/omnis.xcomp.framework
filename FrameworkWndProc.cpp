@@ -481,7 +481,7 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 		case WM_LBUTTONDOWN: {
 			// This should only be called on visual object
 			oBaseVisComponent* lvObject = (oBaseVisComponent*)ECOfindObject( pECI, pHWND );
-			// and if its good, call the paint function
+			// and if its good, call the function
 			if (lvObject!=NULL) {
 				// capture our mouse
 				if (!WNDhasCapture(pHWND, WND_CAPTURE_MOUSE) && WNDmouseLeftButtonDown()) {
@@ -505,7 +505,7 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 				
 				// This should only be called on visual object
 				oBaseVisComponent* lvObject = (oBaseVisComponent*)ECOfindObject( pECI, pHWND );
-				// and if its good, call the paint function
+				// and if its good, call the function
 				if (lvObject!=NULL) {
 					qpoint pt; 
 					WNDmakePoint( lParam, &pt );
@@ -516,12 +516,32 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 				};	
 			};
 		} break;
+
+		// WM_RBUTTONDOWN - standard right mouse button down event
+		case WM_RBUTTONDOWN:
+		// WM_RBUTTONUP - standard right mouse button up event
+		case WM_RBUTTONUP: {
+			// This should only be called on visual object
+			oBaseVisComponent* lvObject = (oBaseVisComponent*)ECOfindObject( pECI, pHWND );
+			// and if its good, call the function
+			if (lvObject!=NULL) {
+				
+				// let our object know that we have pressed our mouse down.
+				qpoint pt; 
+				WNDmakePoint( lParam, &pt );
+				
+				if (lvObject->wm_rbutton(pt, pMsg == WM_RBUTTONDOWN, pECI)) {
+					return 0L;					
+				};
+			};		
+		} break;
+			
 			
 		// WM_MOUSEMOVE - mouse has been moved
 		case WM_MOUSEMOVE: {
 			// This should only be called on visual object
 			oBaseVisComponent* lvObject = (oBaseVisComponent*)ECOfindObject( pECI, pHWND );
-			// and if its good, call the paint function
+			// and if its good, call the function
 			if (lvObject!=NULL) {
 				qpoint pt; 
 				WNDmakePoint( lParam, &pt );

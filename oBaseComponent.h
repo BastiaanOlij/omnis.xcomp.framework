@@ -48,7 +48,11 @@ public:
 	qbool	init(qapp pApp);																		// initialize object
 
 /*** some nice support function ***/
-	void						addToTraceLog(const char *pData, ...);								// Add formatted string to trace log
+	static void					addToTraceLog(qstring & pData);										// Add string to trace log
+	static void					addToTraceLog(const char *pData, ...);								// Add formatted string to trace log
+#ifdef isunicode
+	static void					addToTraceLog(const qoschar *pData, ...);							// Add formatted string to trace log
+#endif
 	qbool						copyFldVal(EXTfldval &pSource, EXTfldval &pDest);					// Copy the contents of one EXTFLDVAL into another EXTFLDVAL
 	EXTfldval *					newCalculation(qstring &pCalculation, EXTCompInfo *pECI);			// initialize calculation
 	const qoschar *				fldTypeName(ffttype pType);											// get our type

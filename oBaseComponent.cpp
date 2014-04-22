@@ -39,59 +39,66 @@ qbool	oBaseComponent::init(qapp pApp) {
 
 /*** some nice support function ***/
 
+// Add string to trace log
+void	oBaseComponent::addToTraceLog(qstring & pData) {
+	qstring lvOut;
+	
+	for (uint lvIndex = 0; lvIndex < pData.length(); lvIndex++) {
+		qchar lvChar = *pData[lvIndex];
+		if (lvChar == '\r') {
+			// ignore.
+		} else if (lvChar == '\n') {
+			if (lvOut.length() > 0) {
+				str255 lvAddText(lvOut.cString());
+				ECOaddTraceLine(&lvAddText);
+				lvOut = "";
+			};
+		} else  {
+			lvOut += lvChar;
+			
+			if (lvOut.length()==250) {
+				str255 lvAddText(lvOut.cString());
+				ECOaddTraceLine(&lvAddText);
+				lvOut = "";				
+			};
+		};
+	};
+
+	if (lvOut.length()>0) {
+		str255 lvAddText(lvOut.cString());
+		ECOaddTraceLine(&lvAddText);
+		lvOut = "";
+	};
+};
+
 // Add formatted string to trace log
 void oBaseComponent::addToTraceLog(const char *pData, ...) {
-	char		tmpOutLine[2048];
-	uint		tmpLen=0;
-	char		lvBuffer[2048]; // hopefully 2048 is large enough to parse our buffer, note that our trace log doesn't support strings longer then 255 characters...
-	uint		tmpBufLen;
+	qstring		lvTrace;
+	qstring		lvFormat(pData);
 	va_list		lvArgList;
 	
 	va_start( lvArgList, pData );
-	vsprintf( lvBuffer, pData, lvArgList );
+	qstring::vAppendFormattedString(lvTrace, lvFormat, lvArgList);
 	va_end( lvArgList );
 	
-	tmpBufLen = strlen(lvBuffer);
-	
-	// remove trailing newline
-	while ((tmpBufLen > 0) && (lvBuffer[tmpBufLen-1]=='\r' || lvBuffer[tmpBufLen-1]=='\n')) {
-		tmpBufLen--;
-	};
-	
-	// and output..
-	for (uint tmpIndex = 0; tmpIndex<tmpBufLen; tmpIndex++) {
-		if (lvBuffer[tmpIndex]=='\r') {
-			// ignore...
-		} else if ((lvBuffer[tmpIndex]=='\n') || (tmpLen==250)) {
-			// output line..
-			tmpOutLine[tmpLen]='\0';
-			
-			// need to convert line to qchar if on unicode!
-#ifdef isunicode
-			qstring	lvString(tmpOutLine);
-			str255 lvAddText(lvString.cString());
-#else
-			str255 lvAddText((qchar *)tmpOutLine);
-#endif
-			ECOaddTraceLine(&lvAddText);
-
-			tmpLen=0;
-		} else {
-			tmpOutLine[tmpLen]=lvBuffer[tmpIndex];
-			tmpLen++;
-		};
-	};
-	tmpOutLine[tmpLen]='\0';
-		
-	// need to convert line to qchar if on unicode!
-#ifdef isunicode
-	qstring	lvString(tmpOutLine);
-	str255 lvAddText(lvString.cString());
-#else
-	str255 lvAddText((qchar *)tmpOutLine);
-#endif
-	ECOaddTraceLine(&lvAddText);	
+	oBaseComponent::addToTraceLog(lvTrace);
 };
+
+#ifdef isunicode
+// Add formatted string to trace log
+void	oBaseComponent::addToTraceLog(const qoschar *pData, ...) {
+	qstring		lvTrace;
+	qstring		lvFormat(pData);
+	va_list		lvArgList;
+	
+	va_start( lvArgList, pData );
+	qstring::vAppendFormattedString(lvTrace, lvFormat, lvArgList);
+	va_end( lvArgList );
+	
+	oBaseComponent::addToTraceLog(lvTrace);
+};
+#endif
+
 
 // Copy the contents of one EXTFLDVAL into another EXTFLDVAL
 qbool	oBaseComponent::copyFldVal(EXTfldval &pSource, EXTfldval &pDest) {

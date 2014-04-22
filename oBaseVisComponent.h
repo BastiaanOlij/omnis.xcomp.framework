@@ -92,7 +92,9 @@ public:
 	// mouse related
 	virtual HCURSOR				getCursor(qpoint pAt, qword2 pHitTest);								// return the mouse cursor we should show
 	virtual void				evMouseLDown(qpoint pDownAt);										// mouse left button pressed down
-	virtual void				evMouseLUp(qpoint pDownAt);											// mouse left button released
+	virtual void				evMouseLUp(qpoint pUpAt);											// mouse left button released
+	virtual bool				evMouseRDown(qpoint pDownAt, EXTCompInfo* pECI);					// mouse right button pressed down (return true if we finished handling this, false if we want Omnis internal logic)
+	virtual bool				evMouseRUp(qpoint pUpAt, EXTCompInfo* pECI);						// mouse right button released (return true if we finished handling this, false if we want Omnis internal logic)
 	virtual void				evMouseMoved(qpoint pMovedTo);										// mouse moved to this location while we are not dragging
 	virtual void				evClick(qpoint pAt,EXTCompInfo* pECI);								// mouse click at this location
 	
@@ -111,7 +113,8 @@ public:
 	virtual bool				evKeyPressed(qkey *pKey, bool pDown, EXTCompInfo* pECI);			// let us know a key was pressed. Return true if Omnis should not do anything with this keypress
 	
 	// called from our WndProc, don't override these directly
-	void						wm_lbutton(qpoint pAt, bool pDown,EXTCompInfo* pECI);				// left mouse button
+	void						wm_lbutton(qpoint pAt, bool pDown, EXTCompInfo* pECI);				// left mouse button
+	bool						wm_rbutton(qpoint pAt, bool pDown, EXTCompInfo* pECI);				// right mouse button (return true if we finished handling this, false if we want Omnis internal logic)
 	void						wm_mousemove(qpoint pAt, EXTCompInfo* pECI);						// mouse is being moved
 	qlong						wm_dragdrop(WPARAM wParam, LPARAM lParam, EXTCompInfo* pECI);		// drag and drop handling, return -1 if we're not handling this and want default omnis logic to run
 	void						wm_erasebkgnd(EXTCompInfo* pECI);									// erase our background message

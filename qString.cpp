@@ -7,9 +7,6 @@
  *
  *  Bastiaan Olij
  *
- *  Todos:
- *  - rewrite our formatted string functions to take qchar as a string and be able to input both char, qchar and qstring parameters
- *
  *  https://github.com/BastiaanOlij/omnis.xcomp.framework
  */
 
@@ -111,21 +108,135 @@ qstring::~qstring() {
 qstring * qstring::newStringFromFormat(const char *pFormat, ...)
 {
 	qstring *   retString;
-	char		tmpBuffer[2048]; // hopefully 2048 is large enough...
 	va_list		arglist;
 
 	va_start( arglist, pFormat );
-	vsprintf( tmpBuffer, pFormat, arglist );
-	va_end( arglist );
 
 #ifdef isunicode
-	retString = new qstring(tmpBuffer); // this will call our conversion from UTF-8 => UTF-32
+	qstring		format(pFormat);
+
+	retString = new qstring();
+	qstring::vAppendFormattedString(*retString, format, arglist);
 #else
+	char		tmpBuffer[2048]; // hopefully 2048 is large enough...
+	vsprintf( tmpBuffer, pFormat, arglist );
 	retString = new qstring((qchar *)tmpBuffer); // qchar = char
 #endif
+	va_end( arglist );
 	
 	return retString;
 };
+
+#ifdef isunicode
+
+// This is a simplified version of vprintf but then for qstring/qchar
+// We'll build on this eventually
+void	qstring::vAppendFormattedString(qstring &appendTo, qstring &pFormat, va_list & pArgList) {
+	qlong	lvPos = 0;
+	qlong	lvLen = pFormat.length();
+	
+	while (lvPos < lvLen) {
+		qchar	lvChar = *pFormat[lvPos];
+		if (lvChar == '%') {
+			lvPos++;
+			lvChar = *pFormat[lvPos];
+			
+			if ((lvChar=='%') || (lvChar==' ') || (lvPos==lvLen)) {
+				appendTo += lvChar;
+				lvPos++;
+			} else {
+				qstring	lvFormat("%");
+				
+				while ((lvChar!=' ') && (lvPos < lvLen)) {
+					lvFormat += lvChar;
+					lvPos++;
+					lvChar = *pFormat[lvPos];
+				};
+				
+				switch (*lvFormat[lvFormat.length()-1]) {
+/*					case 'i': {
+						char	lvBuffer[256];
+						qlong	lvVal = va_arg(pArgList, qlong);
+						sprintf(lvBuffer, lvFormat.c_str(), lvVal); // cheat, use sprintf..
+						appendTo += lvBuffer;
+					}; break;
+					case 'f': {
+						char	lvBuffer[256];
+						double	lvVal = va_arg(pArgList, double);
+						sprintf(lvBuffer, lvFormat.c_str(), lvVal); // cheat, use sprintf..
+						appendTo += lvBuffer;
+					}; break;
+ */
+					case 'c': { // no need for any overhead for characters
+						char	lvVal = va_arg(pArgList, int);
+						if (lvVal!=0) {							
+							appendTo += lvVal;
+						};
+					}; break;
+					case 's': { // and we can handle strings just fine too
+						if (*lvFormat[lvFormat.length()-2]=='q') {
+							qstring * lvVal = va_arg(pArgList, qstring *);
+							if (lvVal!=0) {
+								appendTo += *lvVal;								
+							};
+						} else {
+							char *	lvVal = va_arg(pArgList, char *);
+							if (lvVal!=0) {
+								appendTo += lvVal;
+							};
+						};
+					}; break;
+					default: { // anything else, leave it up to vsprintf to handle this properly...
+						va_list	lvArgList;
+						char	lvBuffer[1024*16];
+						
+						// make a copy or vsprintf may cause some issues.
+						va_copy(lvArgList, pArgList);
+						vsprintf(lvBuffer, lvFormat.c_str(), lvArgList);
+						va_end(lvArgList);
+						
+						appendTo += lvBuffer;
+						
+						// and discard it for ourselves
+						int discard = va_arg(pArgList, int); 
+					}; break;
+				};
+				
+			};			
+		} else {
+			// just add
+			appendTo += lvChar;
+			lvPos++;
+		};		
+	};
+};
+
+// Create a new qstring instance based on a formatted string
+qstring * qstring::newStringFromFormat(const qoschar *pFormat, ...) {
+	qstring *   retString = new qstring();
+	qstring		format(pFormat);
+	va_list		arglist;
+	
+	va_start( arglist, pFormat );	
+	qstring::vAppendFormattedString(*retString, format, arglist);
+	va_end( arglist );
+	
+	return retString;
+};
+
+// Create a new qstring instance based on a formatted string
+qstring * newStringFromFormat(qstring &pFormat, ...) {
+	qstring *   retString = new qstring();
+	va_list		arglist;
+	
+	va_start( arglist, pFormat );	
+	qstring::vAppendFormattedString(*retString, pFormat, arglist);
+	va_end( arglist );
+	
+	return retString;
+	
+};
+#endif
 
 // Get the length of a qoschar string (UTF-16)
 qlong qstring::qosstrlen(const qoschar *pString) {
@@ -458,21 +569,49 @@ qstring&	qstring::appendStyle(qchar pStyle, qulong pValue) {
 
 // Append a formatted string to our string
 qstring& qstring::appendFormattedString(const char *pFormat, ...) {
-	char		tmpBuffer[2048]; // hopefully 2048 is large enough...
+	qstring		format(pFormat);
 	va_list		arglist;
 	
 	va_start( arglist, pFormat );
-	vsprintf( tmpBuffer, pFormat, arglist );
-	va_end( arglist );
 	
 #ifdef isunicode	
-	*this += tmpBuffer;
+	qstring::vAppendFormattedString(*this, format, arglist);
 #else
+	char		tmpBuffer[2048]; // hopefully 2048 is large enough...
+	vsprintf( tmpBuffer, pFormat, arglist );
 	*this += (qchar *)tmpBuffer;
 #endif
-	
+
+	va_end( arglist );
+
 	return *this; // return ourselves
 };
+
+#ifdef isunicode
+// Append a formatted string to our string
+qstring&	qstring::appendFormattedString(const qoschar *pFormat, ...) {
+	qstring		format(pFormat);
+	va_list		arglist;
+	
+	va_start( arglist, pFormat );
+	qstring::vAppendFormattedString(*this, format, arglist);
+	va_end( arglist );
+	
+	return *this; // return ourselves	
+};
+
+// Append a formatted string to our string
+qstring&	qstring::appendFormattedString(qstring &pFormat, ...) {
+	va_list		arglist;
+	
+	va_start( arglist, pFormat );
+	qstring::vAppendFormattedString(*this, pFormat, arglist);
+	va_end( arglist );
+	
+	return *this; // return ourselves		
+};
+#endif
+
 
 // Append a binary to our string (as 0x0123456789ABCDEF)
 qstring& qstring::appendBinary(const qbyte *pBuffer, qlong pLen) {

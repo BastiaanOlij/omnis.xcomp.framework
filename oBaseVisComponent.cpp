@@ -569,6 +569,19 @@ void	oBaseVisComponent::evMouseLUp(qpoint pDownAt) {
 	// stub
 };
 
+// mouse right button pressed down (return true if we finished handling this, false if we want Omnis internal logic)
+bool	oBaseVisComponent::evMouseRDown(qpoint pDownAt, EXTCompInfo* pECI) {
+	// stub
+	return false;	
+};
+
+// mouse right button released (return true if we finished handling this, false if we want Omnis internal logic)
+bool	oBaseVisComponent::evMouseRUp(qpoint pUpAt, EXTCompInfo* pECI) {
+	// stub
+	return false;
+};
+
+
 // mouse moved to this location while we are not dragging
 void	oBaseVisComponent::evMouseMoved(qpoint pAt) {
 	// stub	
@@ -599,6 +612,15 @@ void	oBaseVisComponent::wm_lbutton(qpoint pAt, bool pDown, EXTCompInfo* pECI) {
 		};
 		this->evMouseLUp(pAt);
 	};	
+};
+
+// right mouse button (return true if we finished handling this, false if we want Omnis internal logic)
+bool	oBaseVisComponent::wm_rbutton(qpoint pAt, bool pDown, EXTCompInfo* pECI) {
+	if (pDown) {
+		return this->evMouseRDown(pAt, pECI);
+	} else {
+		return this->evMouseRUp(pAt, pECI);
+	};
 };
 
 void	oBaseVisComponent::wm_mousemove(qpoint pMovedTo, EXTCompInfo* pECI) {

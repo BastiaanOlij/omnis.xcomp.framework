@@ -305,9 +305,12 @@ void	oBaseVisComponent::drawLine(qpoint pFrom, qpoint pTo) {
 void	oBaseVisComponent::drawLine(qpoint pFrom, qpoint pTo, qdim pWidth, qcol pCol, qpat pPat) {
 	HPEN	newPen = GDIcreatePen(pWidth, pCol, pPat);
 	HPEN	oldPen = GDIselectObject(mHDC, newPen);
+	qcol	oldCol = GDIgetTextColor(mHDC);
 
+	GDIsetTextColor(mHDC, pCol);	// shouldn't be needed but for some reason in the SDK documentation they also set the text color...
 	drawLine(pFrom, pTo);
 	
+	GDIsetTextColor(mHDC, oldCol);
 	GDIselectObject(mHDC, oldPen);
 };
 
