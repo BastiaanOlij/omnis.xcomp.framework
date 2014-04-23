@@ -136,15 +136,16 @@ qdim	oBaseVisComponent::drawText(const qchar *pText, qrect pWhere, qcol pColor, 
 		return 0;
 	};
 	
-	qcol	wascol		= GDIgetTextColor(mHDC);
-	qlong	len			= OMstrlen(pText);
-	qdim	fontheight	= GDIfontHeight(mHDC);
-	qshort	pos			= 0;
-	qshort	start		= 0;
-	qdim	left		= pWhere.left;
-	qdim	top			= pWhere.top;
-	qshort	columns[2];
-	qint1	jsts[2];
+	GDItextSpecStruct	lvTextSpec	= mTextSpec;				// Copy of our text spec we're using
+	qcol				wascol		= GDIgetTextColor(mHDC);
+	qlong				len			= OMstrlen(pText);
+	qdim				fontheight	= GDIfontHeight(mHDC);
+	qshort				pos			= 0;
+	qshort				start		= 0;
+	qdim				left		= pWhere.left;
+	qdim				top			= pWhere.top;
+	qshort				columns[2];
+	qint1				jsts[2];
 	
 	
 	// Need to find a better way to get a unicode character :)
@@ -152,7 +153,7 @@ qdim	oBaseVisComponent::drawText(const qchar *pText, qrect pWhere, qcol pColor, 
 	qchar		space	= ' ';
 	
 	// Set our text color
-	GDIsetTextColor(mHDC, pColor);
+	lvTextSpec.mTextColor = pColor;
 	
 	// setup our columns
 	columns[0]			= 0;
@@ -172,7 +173,7 @@ qdim	oBaseVisComponent::drawText(const qchar *pText, qrect pWhere, qcol pColor, 
 										   top,
 										   (qchar *)&pText[start],		// for some reason Omnis never declared this a constant but it doesn't change the buffer (i hope)..
 										   pos-start,
-										   &mTextSpec,
+										   &lvTextSpec,
 										   columns,					// pColumnArray
 										   1,							// pColumnCount
 										   pStyled ? 1 : 0,			// pFlags: 1 = styled text
@@ -208,7 +209,31 @@ qdim	oBaseVisComponent::drawText(const qchar *pText, qrect pWhere, qcol pColor, 
 									
 									drawinfo.mTextLen = lastpos - start;
 									if (drawinfo.mTextLen>0) {
+										GDIsetTextColor(mHDC, lvTextSpec.mTextColor);
 										drawTextJst(&drawinfo, pWhere);
+										
+										if (pStyled) {
+											// As suggested by Stefan Csomor, check the text we just drew and update our text spec
+											qshort checkUntil = lastpos <= len - 11 ? lastpos : len - 11; // make sure we stay within bounds
+											qshort checkstyle = start;
+											while (checkstyle < checkUntil) {
+												if (pText[checkstyle] == txtEsc && pText[checkstyle+10] == txtAsciiEnd) {
+													switch (pText[checkstyle + 1]) {
+														case txtEscSty: {
+															lvTextSpec.mSty  = (qsty) oBaseComponent::HexToLong((qchar *) &pText[checkstyle + 2]);
+														}; break;
+														case txtEscCol: {
+															lvTextSpec.mTextColor	= (qcol) oBaseComponent::HexToLong((qchar *) &pText[checkstyle + 2]);
+														}; break;
+														default:
+															break;
+													};
+													checkstyle+=11;
+												} else {
+													checkstyle++;
+												};
+											};
+										};
 									};
 									
 									// advance...
@@ -234,10 +259,12 @@ qdim	oBaseVisComponent::drawText(const qchar *pText, qrect pWhere, qcol pColor, 
 					
 					// draw any remainder?
 					if (drawinfo.mTextLen>0) {
+						GDIsetTextColor(mHDC, lvTextSpec.mTextColor);
 						drawTextJst(&drawinfo, pWhere);
 					};
 				} else {
 					// draw the whole text
+					GDIsetTextColor(mHDC, lvTextSpec.mTextColor);
 					drawTextJst(&drawinfo, pWhere);
 				};
 			};

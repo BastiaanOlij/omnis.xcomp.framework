@@ -99,6 +99,33 @@ void	oBaseComponent::addToTraceLog(const qoschar *pData, ...) {
 };
 #endif
 
+// Convert a string of up to 8 characters from hex to qlong
+qlong	oBaseComponent::HexToLong(const qchar *pText) {
+	qlong	retVal = 0;
+	qshort	pos = 0;
+	
+	while (pText[pos]!=0 && pos<8) {
+		qchar	hex = pText[pos];
+		qlong	addVal = 0;
+		
+		if (hex>='0' && hex<='9') {
+			addVal = hex - '0';
+		} else if (hex>='a' && hex<='f') {
+			addVal = hex - 'a' + 10;
+		} else if (hex>='A' && hex<='F') {
+			addVal = hex - 'A' + 10;			
+		} else {
+		  // ignore...
+		};
+		
+		retVal = (retVal << 4) + addVal;
+	
+		pos++;
+	};
+	
+	return retVal;
+};
+
 
 // Copy the contents of one EXTFLDVAL into another EXTFLDVAL
 qbool	oBaseComponent::copyFldVal(EXTfldval &pSource, EXTfldval &pDest) {

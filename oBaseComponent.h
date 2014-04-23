@@ -53,6 +53,7 @@ public:
 #ifdef isunicode
 	static void					addToTraceLog(const qoschar *pData, ...);							// Add formatted string to trace log
 #endif
+	static qlong				HexToLong(const qchar *pText);										// Convert a string of up to 8 characters from hex to qlong
 	qbool						copyFldVal(EXTfldval &pSource, EXTfldval &pDest);					// Copy the contents of one EXTFLDVAL into another EXTFLDVAL
 	EXTfldval *					newCalculation(qstring &pCalculation, EXTCompInfo *pECI);			// initialize calculation
 	const qoschar *				fldTypeName(ffttype pType);											// get our type
