@@ -44,7 +44,7 @@ void	oBaseComponent::addToTraceLog(qstring & pData) {
 	qstring lvOut;
 	
 	for (uint lvIndex = 0; lvIndex < pData.length(); lvIndex++) {
-		qchar lvChar = *pData[lvIndex];
+		qchar lvChar = pData[lvIndex];
 		if (lvChar == '\r') {
 			// ignore.
 		} else if (lvChar == '\n') {

@@ -17,12 +17,40 @@
 #include "oBaseVisComponent.h"
 
 // passthrought to GDIdrawTextJst with clipping
-void	oBaseVisComponent::drawTextJst(GDIdrawTextStruct * pTextInfo, qrect pClipRect) {
-	if (pClipRect.left < pTextInfo->mX) pClipRect.left = pTextInfo->mX;
-	if (pClipRect.top < pTextInfo->mY) pClipRect.top = pTextInfo->mY;
+void	oBaseVisComponent::drawTextJst(GDIdrawTextStruct * pTextInfo, qrect pRect, bool pAdjJst) {
+	qrect lvClipRect = pRect;
 	
-	if (clipRect(pClipRect)) {
-		GDIdrawTextJst(pTextInfo);
+	if (lvClipRect.left < pTextInfo->mX) lvClipRect.left = pTextInfo->mX;
+	if (lvClipRect.top < pTextInfo->mY) lvClipRect.top = pTextInfo->mY;
+	
+	if (clipRect(lvClipRect, true)) {
+		if (pAdjJst && (pTextInfo->mColumnJsts != 0)) {
+			qdim	wasX = pTextInfo->mX;
+			qint1*	wasJst = pTextInfo->mColumnJsts;
+			qint1	jst = pTextInfo->mColumnJsts[0];
+			
+			pTextInfo->mColumnJsts = 0; // unset this... we're doing our own.
+			
+			if (jst!=jstLeft) {
+				qdim	availWidth = pRect.right - pTextInfo->mX + 1;
+				qdim	textWidth = getTextWidth(pTextInfo->mText, pTextInfo->mTextLen, pTextInfo->mFlags==1);
+				
+				if (jst == jstRight) {
+					pTextInfo->mX = pRect.right - textWidth;
+				} else if ((jst == jstCenter) && (availWidth > textWidth)) {
+					pTextInfo->mX = pRect.left + ((availWidth - textWidth) / 2.0);
+				};
+			};
+
+			// now draw it
+			GDIdrawTextJst(pTextInfo);
+			
+			// undo any changes
+			pTextInfo->mX = wasX;
+			pTextInfo->mColumnJsts = wasJst;
+		} else {
+			GDIdrawTextJst(pTextInfo);
+		};
 
 		unClip();
 	};
@@ -162,7 +190,7 @@ qdim	oBaseVisComponent::drawText(const qchar *pText, qrect pWhere, qcol pColor, 
 	jsts[1]				= pJst;
 	
 	// now loop through to find our lines or until we're below our drawing rectangle.
-	while ((pos <= len) && (top < pWhere.bottom)) {
+	while ((pos <= len) && ((top + fontheight) <= pWhere.bottom)) { // note that we add fontheight to our check because our clipping doesn't work very well with drawTextJst
 		if ((pText[pos] == 0x00) || (pText[pos] == newline)) {
 			if (pos > start) {
 				// draw our text...
@@ -181,7 +209,7 @@ qdim	oBaseVisComponent::drawText(const qchar *pText, qrect pWhere, qcol pColor, 
 										   jsts						// pColumnJsts
 										   );
 				
-				qdim	width = pWrap ? getTextWidth(drawinfo.mText, drawinfo.mTextLen, pStyled) : 0;
+				qdim	width = (pWrap && ((top + fontheight + fontheight) <= pWhere.bottom)) ? getTextWidth(drawinfo.mText, drawinfo.mTextLen, pStyled) : 0; // if we wrap and we have enough room for another line, then we set our width to our text, else to 0.
 				
 				if (width > columns[1]) {
 					// wrap our text
@@ -209,8 +237,8 @@ qdim	oBaseVisComponent::drawText(const qchar *pText, qrect pWhere, qcol pColor, 
 									
 									drawinfo.mTextLen = lastpos - start;
 									if (drawinfo.mTextLen>0) {
-										GDIsetTextColor(mHDC, lvTextSpec.mTextColor);
-										drawTextJst(&drawinfo, pWhere);
+//										GDIsetTextColor(mHDC, lvTextSpec.mTextColor);
+										drawTextJst(&drawinfo, pWhere, true);
 										
 										if (pStyled) {
 											// As suggested by Stefan Csomor, check the text we just drew and update our text spec
@@ -259,13 +287,13 @@ qdim	oBaseVisComponent::drawText(const qchar *pText, qrect pWhere, qcol pColor, 
 					
 					// draw any remainder?
 					if (drawinfo.mTextLen>0) {
-						GDIsetTextColor(mHDC, lvTextSpec.mTextColor);
-						drawTextJst(&drawinfo, pWhere);
+//						GDIsetTextColor(mHDC, lvTextSpec.mTextColor);
+						drawTextJst(&drawinfo, pWhere, true);
 					};
 				} else {
 					// draw the whole text
-					GDIsetTextColor(mHDC, lvTextSpec.mTextColor);
-					drawTextJst(&drawinfo, pWhere);
+//					GDIsetTextColor(mHDC, lvTextSpec.mTextColor);
+					drawTextJst(&drawinfo, pWhere, true);
 				};
 			};
 			

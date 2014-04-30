@@ -74,7 +74,7 @@ public:
 	qstring&		appendBinary(const qbyte *pBuffer, qlong pLen);		// Append a binary to our string (as 0x0123456789ABCDEF)
 	qstring&		appendFldVal(const EXTfldval &value);				// Append an omnis field value to our string
 	
-	qchar*			operator[](qlong pIndex);							// Get a pointer to character at a specific location
+	qchar &			operator[](qlong pIndex);							// Get a pointer to character at a specific location
 
 	qstring&		operator=(const qstring& pCopy);					// Copy a string into our string
 #ifdef isunicode

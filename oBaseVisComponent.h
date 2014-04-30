@@ -28,7 +28,7 @@ private:
 	void						setup(EXTCompInfo* pECI);											// setup our colors and fonts etc.
 
 	// passthrough drawing functions
-	void						drawTextJst(GDIdrawTextStruct * pTextInfo, qrect pClipRect);		// passthrought to GDIdrawTextJst with clipping
+	void						drawTextJst(GDIdrawTextStruct * pTextInfo, qrect pRect, bool pAdjJst = false);	// passthrought to GDIdrawTextJst with clipping
 
 protected:
 	HWND						mHWnd;																// Our main window handle (not applicable for NV objects)

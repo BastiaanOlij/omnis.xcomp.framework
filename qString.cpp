@@ -136,10 +136,10 @@ void	qstring::vAppendFormattedString(qstring &appendTo, qstring &pFormat, va_lis
 	qlong	lvLen = pFormat.length();
 	
 	while (lvPos < lvLen) {
-		qchar	lvChar = *pFormat[lvPos];
+		qchar	lvChar = pFormat[lvPos];
 		if (lvChar == '%') {
 			lvPos++;
-			lvChar = *pFormat[lvPos];
+			lvChar = pFormat[lvPos];
 			
 			if ((lvChar=='%') || (lvChar==' ') || (lvPos==lvLen)) {
 				appendTo += lvChar;
@@ -174,10 +174,10 @@ void	qstring::vAppendFormattedString(qstring &appendTo, qstring &pFormat, va_lis
 					// on to the next character
 					lvIsFirst = false;
 					lvPos++;
-					lvChar = *pFormat[lvPos];
+					lvChar = pFormat[lvPos];
 				};
 				
-				switch (*lvFormat[lvFormat.length()-1]) {
+				switch (lvFormat[lvFormat.length()-1]) {
 /*					case 'i': {
 						char	lvBuffer[256];
 						qlong	lvVal = va_arg(pArgList, qlong);
@@ -198,7 +198,7 @@ void	qstring::vAppendFormattedString(qstring &appendTo, qstring &pFormat, va_lis
 						};
 					}; break;
 					case 's': { // and we can handle strings just fine too
-						if (*lvFormat[lvFormat.length()-2]=='q') {
+						if (lvFormat[lvFormat.length()-2]=='q') {
 							qstring * lvVal = va_arg(pArgList, qstring *);
 							if (lvVal!=0) {
 								appendTo += *lvVal;								
@@ -704,20 +704,20 @@ qstring& qstring::appendFldVal(const EXTfldval &value){
  * Operators
  ********************************************************************************************************************************/
 
-// Get a pointer to character at a specific location
-qchar*	qstring::operator[](qlong pIndex) {
+// Get access to character at a specific location
+qchar &	qstring::operator[](qlong pIndex) {
 	static qchar returnChar;		// we return this only if our index is out of bounds. Protects against crashes, does nothing against bugs :)
 	
 	if (mBuffer==0) {
 		returnChar=0;
-		return &returnChar;
+		return returnChar;
 	} else {
 		// We allow access to any character within our buffer, even those after the end of our string
 		if (pIndex < mMaxSize) {
-			return &mBuffer[pIndex];
+			return mBuffer[pIndex];
 		} else {
 			returnChar=0;
-			return &returnChar;			
+			return returnChar;			
 		};
 	};
 };
