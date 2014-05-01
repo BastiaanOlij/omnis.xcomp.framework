@@ -511,6 +511,75 @@ void	qstring::copy(const EXTfldval &pExtFld) {
 	};
 };
 
+// find position of character within string (returns -1 if not found)
+qlong	qstring::pos(qchar pChar) const {
+	qlong	pos = 0;
+
+	if (mBuffer!=0) {
+		while (mBuffer[pos]!=0) {
+			if (mBuffer[pos] == pChar) {
+				return pos;
+			};
+			pos++;
+		};
+	};
+	
+	return -1;
+};
+
+// get the substring (pLen <= 0 is from end)
+qstring qstring::mid(qlong pFrom, qlong pLen) const {
+	qstring	newstring;
+	
+	if (mBuffer!=0) {
+		if (pLen <= 0) {
+			pLen = length() - pFrom - pLen;
+		};
+
+		if (pLen>0) {
+			newstring.redim(pLen+1, false);
+			
+			while ((mBuffer[pFrom]!=0) && (pLen > 0)) {
+				newstring += mBuffer[pFrom];
+				
+				pFrom++;
+				pLen--;
+			};			
+		};
+	};
+	
+	return newstring;
+};
+
+// replace one string with another
+void	qstring::replace(const char & pWhat, char & pWith) {
+	replace(qstring(pWhat), qstring(pWith));
+};
+
+// replace one string with another
+void	qstring::replace(const qstring & pWhat, const qstring & pWith) {
+	qlong	ourlen = this->length();
+	qstring newstring(ourlen);
+	qlong	whatlen = pWhat.length();
+	qlong	pos = 0;
+	
+	while (pos < ourlen) {
+		if (pos > ourlen - whatlen) {
+			newstring += mBuffer[pos];
+			pos++;
+		} else if (memcmp(&mBuffer[pos], pWhat.cString(), whatlen * sizeof(qchar))==0) {
+			newstring += pWith;
+			pos += whatlen;
+		} else {
+			newstring += mBuffer[pos];
+			pos++;
+		};
+	};
+	
+	// and copy our new string in place
+	*this = newstring;
+};
+
 // Sets the contents of our string to a formatted string
 qstring& qstring::setFormattedString(const char *pFormat, ...) {
 	char		tmpBuffer[2048]; // hopefully 2048 is large enough...

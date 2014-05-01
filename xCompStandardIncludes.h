@@ -34,6 +34,8 @@ typedef unsigned int uint;
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <string>
+#include <vector>
 
 #define PI 3.14159265
 

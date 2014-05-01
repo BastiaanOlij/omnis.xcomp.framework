@@ -5,10 +5,11 @@
  *  qArray.h
  *  template class for creating dynamic arrays of any type
  *
+ *  Note, may replace this with std::vector some day which is more complete and does the same
+ *
  *  Bastiaan Olij
  *
  *  Todos:
- *  - test code :)
  *  - add option to remove items from the array at specific locations
  *  - speed up addElements by allocating enough memory and using memcpy
  *
@@ -200,9 +201,9 @@ qArray<qElement> * qArray<qElement>::operator += (qElement pItem) {
 }
 
 // Some handy arrays
-typedef qArray<qlong>			qlongArray;			// array of longs
-typedef qArray<qdim>			qdimArray;			// array of qdims
-typedef qArray<qrect>			qRectArray;			// array of rectangles
-typedef qArray<EXTfldval *>		EXTfldvalArray;		// array of EXTfldval *, note that YOU are responsible for freeing up the instances being pointed to!!!
+typedef qArray<qlong>				qlongArray;			// array of longs
+typedef qArray<qdim>				qdimArray;			// array of qdims
+typedef qArray<qrect>				qRectArray;			// array of rectangles
+typedef std::vector<EXTfldval *>	EXTfldvalArray;		// array of EXTfldval *, note that YOU are responsible for freeing up the instances being pointed to!!!
 
 #endif

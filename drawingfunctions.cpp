@@ -369,6 +369,33 @@ void	oBaseVisComponent::drawLine(qpoint pFrom, qpoint pTo, qdim pWidth, qcol pCo
 	GDIselectObject(mHDC, oldPen);
 };
 
+// draw a rectangle. Note, if pBackground is set to GDI_COLOR_QDEFAULT we do not fill the rectangle
+void	oBaseVisComponent::drawRect(qrect pRect, qcol pBackground, qcol pBorder) {
+	qcol	wasColor = GDIgetTextColor(mHDC);
+	
+	if (pBackground != GDI_COLOR_QDEFAULT) {
+		HBRUSH	brush	= GDIgetStockBrush(BLACK_BRUSH);
+		GDIsetTextColor(mHDC, pBackground);
+		GDIfillRect(mHDC, &pRect, brush);
+	};
+
+	if ((pBackground != pBorder) && (pBorder != GDI_COLOR_QDEFAULT)) {
+		HPEN	borderPen	= GDIcreatePen(1, pBorder, patFill);
+		HPEN	oldPen		= GDIselectObject(mHDC, borderPen);
+
+		// draw our border
+		GDIsetTextColor(mHDC, pBorder);
+		GDIframeRect(mHDC, &pRect);
+		
+
+		GDIselectObject(mHDC, oldPen);
+		GDIdeleteObject(borderPen);
+	};
+	
+	// leave it as it was...
+	GDIsetTextColor(mHDC, wasColor);
+};
+
 
 // Draws a filled ellipse within the rectangle with a gradient color from top to bottom
 void	oBaseVisComponent::drawEllipse(qrect pRect, qcol pTop, qcol pBottom, qcol pBorder, qint pSpacing) {

@@ -64,6 +64,7 @@ protected:
 	void						drawIcon(qlong pIconId, qpoint pAt);								// Draw a icon at this position
 	void						drawLine(qpoint pFrom, qpoint pTo);		// Draws a line between two points using the current selected pen
 	void						drawLine(qpoint pFrom, qpoint pTo, qdim pWidth, qcol pCol, qpat pPat);		// Draws a line between two points
+	void						drawRect(qrect pRect, qcol pBackground, qcol pBorder);				// draw a rectangle. Note, if pBackground is set to GDI_COLOR_QDEFAULT we do not fill the rectangle
 	void						drawEllipse(qrect pRect, qcol pTop, qcol pBottom, qcol pBorder = -1, qint pSpacing = 0);					// Draws a filled ellipse within the rectangle with a gradient color from top to bottom
 	
 	// handy Omnis functions
