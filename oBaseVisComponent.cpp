@@ -26,6 +26,7 @@
 ////////////////////////////////////////////////////////////////
 
 oBaseVisComponent::oBaseVisComponent(void) {
+	mObjType			= cObjType_Basic;
 	mForecolor			= GDI_COLOR_QDEFAULT;
 	mBackcolor			= GDI_COLOR_QDEFAULT;
 	mOffsetX			= 0;
@@ -326,7 +327,7 @@ qcol	oBaseVisComponent::mixColors(qcol pQ1, qcol pQ2) {
 // Do our drawing in here
 void oBaseVisComponent::doPaint(EXTCompInfo* pECI) {
 	// override to implement drawing...
-	if (!WNDdrawThemeBackground(mHWnd,mHDC,&mClientRect,mBKTheme)) {
+	if (!WNDdrawThemeBackground(mHWnd,mHDC,&mClientRect,mBKTheme==WND_BK_CONTROL ? WND_BK_PARENT : mBKTheme)) { // if control theme we'll actually draw our parent, we're expecting to draw something on top
 		// clear our drawing field
 		GDIsetTextColor(mHDC, mForecolor);
 		GDIfillRect(mHDC, &mClientRect, mBackpatBrush);
@@ -334,43 +335,85 @@ void oBaseVisComponent::doPaint(EXTCompInfo* pECI) {
 	};
 };
 
-// setup our fonts and brushes
-void oBaseVisComponent::setup(EXTCompInfo* pECI) {
+// Do our list content drawing here (what we see when the list is collapsed, for cObjType_DropList only)
+bool	oBaseVisComponent::drawListContents(EXTListLineInfo *pInfo, EXTCompInfo* pECI) {
+	return false;
+};
+
+// Do our list line drawing here (for cObjType_List or cObjType_DropList)
+bool	oBaseVisComponent::drawListLine(EXTListLineInfo *pInfo, EXTCompInfo* pECI) {
+	return false;
+};
+
+
+// Create text spec structure for our standard properties (used by setup or when drawing list lines)
+GDItextSpecStruct oBaseVisComponent::getStdTextSpec(EXTCompInfo* pECI) {
 	qshort			fontSize;
 	qsty			fontStyle;
 	qjst			fontAlign;
 	EXTfldval		fval, font; 
 	str255			fieldStyle;	
-	
-	// Create our pattern brush, it will be deleted at the end of drawing..
-	mBackpatBrush = GDIcreateBrush(mBackpattern);
+
+	GDItextSpecStruct	textSpec;
 	
 	// get all our text properties...
 	ECOgetProperty(mHWnd,anumFldStyle,fval); 
 	fval.getChar(fieldStyle);
+	
 	ECOgetProperty(mHWnd,anumFont,font); 
+	// use this as is...
+	
 	ECOgetProperty(mHWnd,anumFontsize,fval); 
 	fontSize = (qshort) fval.getLong();
+	
 	ECOgetProperty(mHWnd,anumFontstyle,fval); 
 	fontStyle = (qsty) fval.getLong();
-	ECOgetProperty(mHWnd,anumTextColor,fval); 
-	mTextColor = fval.getLong();
+	
 	ECOgetProperty(mHWnd,anumAlign,fval); 
 	fontAlign = (qjst) fval.getLong();
 	
 	// Start with loading from our normal settings (defaults for now)
-	ECOgetFont(mHWnd, &(mTextSpec.mFnt), ECOgetFontIndex(mHWnd, font), fontSize);
-	mTextSpec.mSty = fontStyle;
-	mTextSpec.mJst = fontAlign;
-	mTextSpec.mTextColor = mTextColor;
+	ECOgetFont(mHWnd, &(textSpec.mFnt), ECOgetFontIndex(mHWnd, font), fontSize);
+	textSpec.mSty = fontStyle;
+	textSpec.mJst = fontAlign;
+	textSpec.mTextColor = mTextColor;
 	
 	// Now see if we need to override any of these defaults with our fieldstyle...
 	if (fieldStyle[0]>0) {
-		ECOgetStyle( ECOgetApp(pECI->mInstLocp), &fieldStyle[1], fieldStyle[0], &mTextSpec );
+		ECOgetStyle( ECOgetApp(pECI->mInstLocp), &fieldStyle[1], fieldStyle[0], &textSpec );
 		
 		// !BAS! need to also see if we need to get our foreground color, background color and/or background pattern from our style
 		// not sure if Omnis feeds this info back to us already
 	};	
+	
+	return textSpec;
+};
+
+// setup our fonts and brushes
+void oBaseVisComponent::setup(EXTCompInfo* pECI) {
+	EXTfldval		fval; 
+	
+	// Omnis is maintaining these so grab our copies
+	if (mObjType != cObjType_Basic) {
+		ECOgetProperty(mHWnd,anumForecolor,fval); 
+		mForecolor = fval.getLong();
+		ECOgetProperty(mHWnd,anumBackcolor,fval); 
+		mBackcolor = fval.getLong();
+		ECOgetProperty(mHWnd,anumBackpattern,fval); 
+		mBackpattern = fval.getLong();
+		ECOgetProperty(mHWnd,anumBackgroundTheme,fval); 
+		mBKTheme = fval.getLong();
+	};
+
+	// always get these omnis ones...
+	ECOgetProperty(mHWnd,anumTextColor,fval); 
+	mTextColor = fval.getLong();	
+	
+	// Create our pattern brush, it will be deleted at the end of drawing..
+	mBackpatBrush = GDIcreateBrush(mBackpattern);		
+	
+	// and our standard text spec
+	mTextSpec = getStdTextSpec(pECI);
 };
 
 // Clip to given rectangle and put on stack, will optionally union with the current clipping. Will return false if we can't draw in the resulting rectangle and we could thus not clip.
@@ -429,84 +472,124 @@ void	oBaseVisComponent::unClip() {
 };
 
 // erase our background message
-void	oBaseVisComponent::wm_erasebkgnd(EXTCompInfo* pECI) {
-	/* 
-		The SDK specifies we need to draw the background here and then draw whatever foreground stuff we have in wm_paint.
+bool	oBaseVisComponent::wm_erasebkgnd(EXTCompInfo* pECI) {
+	if ((mObjType==cObjType_List) || (mObjType==cObjType_DropList)) {
+		// We're going to be handling this through ECM_PAINTCONTENTS
+		return false;
+	} else {
+		/* 
+		 The SDK specifies we need to draw the background here and then draw whatever foreground stuff we have in wm_paint.
 
-		This is an old optimalisation from the early Windows days where drawing stuff was CPU expensive but it also leads
-		to alot of flickering of the screen.
+		 This is an old optimalisation from the early Windows days where drawing stuff was CPU expensive but it also leads
+		 to alot of flickering of the screen.
 
-		In our wm_paint we now use a buffer to draw too which is then blitted to the screen. In drawing that buffer we also
-		draw the background.
+		 In our wm_paint we now use a buffer to draw too which is then blitted to the screen. In drawing that buffer we also
+		 draw the background.
 
-		So we're going to cheat here, and ignore the erase background.. ;)
-	*/
+		 So we're going to cheat here, and ignore the erase background.. ;)
+		*/
+		
+		return true;		
+	};
+	
 };
 
 // paint message
-void oBaseVisComponent::wm_paint(EXTCompInfo* pECI) {
-	WNDpaintStruct	lvPaintStruct;
-	qrect			lvUpdateRect;
-	void *			lvOffScreenPaint;
-	
-	// clear our clip stack
-	mClipStack.clear();
-	
-	// get current size info
-	WNDgetClientRect(mHWnd, &mClientRect);
-	
-	if (mDrawBuffer) {
-		// create our paint structure
-		WNDbeginPaint( mHWnd, &lvPaintStruct );
+bool oBaseVisComponent::wm_paint(EXTCompInfo* pECI) {
+	if ((mObjType==cObjType_List) || (mObjType==cObjType_DropList)) {
+		// We're going to be handling this through ECM_PAINTCONTENTS
+		return false;
+	} else {
+		WNDpaintStruct	lvPaintStruct;
+		qrect			lvUpdateRect;
+		void *			lvOffScreenPaint;
 		
-		lvUpdateRect = lvPaintStruct.rcPaint;
-		mHDC = lvPaintStruct.hdc;
+		// clear our clip stack
+		mClipStack.clear();
 		
-		setup(pECI);
+		// get current size info
+		WNDgetClientRect(mHWnd, &mClientRect);
 		
-		// On windows this will do a double buffer trick, on Mac OSX the OS already does the offscreen painting:)
-		// note that mHDC and mClienRect may be altered as a result of this call which is good!
-		lvOffScreenPaint = GDIoffscreenPaintBegin(NULL, mHDC, mClientRect, lvUpdateRect);
-		if (lvOffScreenPaint) {		
-			// setup defaults for GDI drawing..
-			HFONT		lvTextFont	= GDIcreateFont(&mTextSpec.mFnt, mTextSpec.mSty);
-			HFONT		lvOldFont	= GDIselectObject(mHDC, lvTextFont); 
+		if (mDrawBuffer) {
+			// create our paint structure
+			WNDbeginPaint( mHWnd, &lvPaintStruct );
 			
-			// default our colors
-			GDIsetBkColor(mHDC, mBackcolor);
-			GDIsetTextColor(mHDC, mTextColor);	// if we need our forecolor for drawing we will switch..
+			lvUpdateRect = lvPaintStruct.rcPaint;
+			mHDC = lvPaintStruct.hdc;
 			
-			// do our real drawing
-			doPaint(pECI);
+			setup(pECI);
 			
-			// If in design mode, then call drawDesignName, drawNumber & drawMultiKnobs to draw design
-			// name, numbers and multiknobs, if required.
-			if ( ECOisDesign(mHWnd) ) {
-				ECOdrawDesignName(mHWnd,mHDC);
-				ECOdrawNumber(mHWnd,mHDC);
-				ECOdrawMultiKnobs(mHWnd,mHDC);
+			// On windows this will do a double buffer trick, on Mac OSX the OS already does the offscreen painting:)
+			// note that mHDC and mClienRect may be altered as a result of this call which is good!
+			lvOffScreenPaint = GDIoffscreenPaintBegin(NULL, mHDC, mClientRect, lvUpdateRect);
+			if (lvOffScreenPaint) {		
+				// setup defaults for GDI drawing..
+				HFONT		lvTextFont	= GDIcreateFont(&mTextSpec.mFnt, mTextSpec.mSty);
+				HFONT		lvOldFont	= GDIselectObject(mHDC, lvTextFont); 
+				
+				// default our colors
+				GDIsetBkColor(mHDC, mBackcolor);
+				GDIsetTextColor(mHDC, mTextColor);	// if we need our forecolor for drawing we will switch..
+				
+				// do our real drawing
+				doPaint(pECI);
+				
+				// If in design mode, then call drawDesignName, drawNumber & drawMultiKnobs to draw design
+				// name, numbers and multiknobs, if required.
+				if ( ECOisDesign(mHWnd) ) {
+					ECOdrawDesignName(mHWnd,mHDC);
+					ECOdrawNumber(mHWnd,mHDC);
+					ECOdrawMultiKnobs(mHWnd,mHDC);
+				}
+				
+				GDIselectObject(mHDC, lvOldFont);
+				GDIdeleteObject(lvTextFont);
+				
+				GDIdeleteObject(mBackpatBrush);
+				
+				GDIoffscreenPaintEnd(lvOffScreenPaint);
 			}
 			
-			GDIselectObject(mHDC, lvOldFont);
-			GDIdeleteObject(lvTextFont);
 			
-			GDIdeleteObject(mBackpatBrush);
-			
-			GDIoffscreenPaintEnd(lvOffScreenPaint);
+			// And finish paint...
+			WNDendPaint( mHWnd, &lvPaintStruct );	
+		} else {		
+			// component must fully implement and is responsible for setting HDC...
+			mHDC = 0;
+			doPaint(pECI);
 		}
 		
+		// Just free up memory..
+		mClipStack.clear();
 		
-		// And finish paint...
-		WNDendPaint( mHWnd, &lvPaintStruct );	
-	} else {		
-		// component must fully implement and is responsible for setting HDC...
-		mHDC = 0;
-		doPaint(pECI);
-	}
-	
-	// Just free up memory..
-	mClipStack.clear();
+		return true;
+	};
 };
+
+// Draw cObjType_DropList content
+bool	oBaseVisComponent::ecm_paintcontents(EXTListLineInfo *pInfo, EXTCompInfo* pECI) {
+	// setup our drawing info
+	
+	mHDC		= pInfo->mHdc;
+	mClientRect	= pInfo->mLineRect;
+	mClipStack.clear();
+	setup(pECI);
+	
+	return this->drawListContents(pInfo, pECI);
+};
+
+// Draw line fro cObjType_List or cObjTypeDropList
+bool	oBaseVisComponent::ecm_listdrawline(EXTListLineInfo *pInfo, EXTCompInfo* pECI) {
+	// setup our drawing info
+
+	mHDC		= pInfo->mHdc;
+	mClientRect	= pInfo->mLineRect;
+	mClipStack.clear();
+	setup(pECI);
+	
+	return this->drawListLine(pInfo, pECI);	
+};
+
 
 // Component resize/repos message
 void	oBaseVisComponent::wm_windowposchanged(EXTCompInfo* pECI, WNDwindowPosStruct * pPos) {
@@ -559,14 +642,18 @@ HCURSOR	oBaseVisComponent::getCursor(qpoint pAt, qword2 pHitTest) {
 	return WND_CURS_DEFAULT;
 };
 
-// mouse left button pressed down
-void	oBaseVisComponent::evMouseLDown(qpoint pDownAt) {
+// mouse left button pressed down (return true if we finished handling this, false if we want Omnis internal logic)
+bool	oBaseVisComponent::evMouseLDown(qpoint pDownAt) {
 	// stub
+	
+	return true;
 };
 
-// mouse left button released
-void	oBaseVisComponent::evMouseLUp(qpoint pDownAt) {
+// mouse left button released (return true if we finished handling this, false if we want Omnis internal logic)
+bool	oBaseVisComponent::evMouseLUp(qpoint pDownAt) {
 	// stub
+
+	return true;
 };
 
 // mouse left button double clicked (return true if we finished handling this, false if we want Omnis internal logic)
@@ -597,7 +684,8 @@ void	oBaseVisComponent::evClick(qpoint pAt, EXTCompInfo* pECI) {
 	// stub
 };	
 
-void	oBaseVisComponent::wm_lbutton(qpoint pAt, bool pDown, EXTCompInfo* pECI) {
+// left mouse up/down (return true if we finished handling this, false if we want Omnis internal logic)
+bool	oBaseVisComponent::wm_lbutton(qpoint pAt, bool pDown, EXTCompInfo* pECI) {
 	mMouseAt = pAt; /* store a copy of our mouse location */
 	
 	if (pDown) {
@@ -607,7 +695,7 @@ void	oBaseVisComponent::wm_lbutton(qpoint pAt, bool pDown, EXTCompInfo* pECI) {
 		mMouseDragging = false;
 		mMouseDownAt = pAt;
 		
-		this->evMouseLDown(pAt);
+		return this->evMouseLDown(pAt);
 	} else {
 		mMouseLButtonDown = false;
 		if (!mMouseDragging) {
@@ -615,7 +703,7 @@ void	oBaseVisComponent::wm_lbutton(qpoint pAt, bool pDown, EXTCompInfo* pECI) {
 
 			this->evClick(pAt, pECI);
 		};
-		this->evMouseLUp(pAt);
+		return this->evMouseLUp(pAt);
 	};	
 };
 

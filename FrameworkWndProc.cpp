@@ -374,6 +374,34 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 		};  break;
 			
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// (Drop)List object functions
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		
+		case ECM_PAINTCONTENTS: {
+			// This should only be called on visual object
+			oBaseVisComponent* lvObject = (oBaseVisComponent*)ECOfindObject( pECI, pHWND );
+			if (lvObject!=NULL) {
+				EXTListLineInfo* lineInfo = (EXTListLineInfo *)lParam;
+				
+				if (lvObject->ecm_paintcontents(lineInfo, pECI)) {
+					return 1L;
+				};
+			};						
+		};
+
+		case ECM_LISTDRAWLINE: {
+			// This should only be called on visual object
+			oBaseVisComponent* lvObject = (oBaseVisComponent*)ECOfindObject( pECI, pHWND );
+			if (lvObject!=NULL) {
+				EXTListLineInfo* lineInfo = (EXTListLineInfo *)lParam;
+				
+				if (lvObject->ecm_listdrawline(lineInfo, pECI)) {
+					return 1L;
+				};
+			};			
+		}; break;
+			
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // window messaging
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 			
@@ -483,38 +511,37 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 			oBaseVisComponent* lvObject = (oBaseVisComponent*)ECOfindObject( pECI, pHWND );
 			// and if its good, call the function
 			if (lvObject!=NULL) {
-				// capture our mouse
-				if (!WNDhasCapture(pHWND, WND_CAPTURE_MOUSE) && WNDmouseLeftButtonDown()) {
-					WNDsetCapture(pHWND, WND_CAPTURE_MOUSE);
-				};
-				
 				// let our object know that we have pressed our mouse down.
 				qpoint pt; 
 				WNDmakePoint( lParam, &pt );
-								
-				lvObject->wm_lbutton(pt, true, pECI);
-				
-				return 0L;
-			}			
+				if (lvObject->wm_lbutton(pt, true, pECI)) { // only if we return true do we round this off, if false we assume default logic for Omnis.
+					// capture our mouse
+					if (!WNDhasCapture(pHWND, WND_CAPTURE_MOUSE) && WNDmouseLeftButtonDown()) {
+						WNDsetCapture(pHWND, WND_CAPTURE_MOUSE);
+					};
+					return 0L;
+				};
+			};		
 		} break;
 			
 		// WM_LBUTTONUP - standard left mouse button up event
 		case WM_LBUTTONUP: {
-			if (WNDhasCapture(pHWND, WND_CAPTURE_MOUSE)) {
-				WNDreleaseCapture(WND_CAPTURE_MOUSE);
+			// This should only be called on visual object
+			oBaseVisComponent* lvObject = (oBaseVisComponent*)ECOfindObject( pECI, pHWND );
+			// and if its good, call the function
+			if (lvObject!=NULL) {
+				qpoint pt; 
+				WNDmakePoint( lParam, &pt );
 				
-				// This should only be called on visual object
-				oBaseVisComponent* lvObject = (oBaseVisComponent*)ECOfindObject( pECI, pHWND );
-				// and if its good, call the function
-				if (lvObject!=NULL) {
-					qpoint pt; 
-					WNDmakePoint( lParam, &pt );
-
-					lvObject->wm_lbutton(pt, false, pECI);
+				if (lvObject->wm_lbutton(pt, false, pECI)) { // only if we return true do we round this off, if false we assume default logic for Omnis.
+					// if we had capture the mouse, we release it..
+					if (WNDhasCapture(pHWND, WND_CAPTURE_MOUSE)) {
+						WNDreleaseCapture(WND_CAPTURE_MOUSE);						
+					};
 					
 					return 0L;
-				};	
-			};
+				};
+			};				
 		} break;
 			
 		// WM_LBUTTONDBLCLK - user double clicked
@@ -587,9 +614,10 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 			 oBaseVisComponent* lvObject = (oBaseVisComponent*)ECOfindObject( pECI, pHWND );
 			 // and if its good, call the erase function
 			 if (lvObject!=NULL) {
-				 lvObject->wm_erasebkgnd(pECI); 
-				 return 1L;
-			 } 
+				 if (lvObject->wm_erasebkgnd(pECI)) {
+					 return 1L;					 
+				 };
+			 };
 		} break;
 			
 		// WM_PAINT - standard paint message
@@ -598,9 +626,10 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 			 oBaseVisComponent* lvObject = (oBaseVisComponent*)ECOfindObject( pECI, pHWND );
 			 // and if its good, call the paint function
 			 if (lvObject!=NULL) {
-				 lvObject->wm_paint(pECI); 
-				 return 1L;
-			 } 
+				 if (lvObject->wm_paint(pECI)) {
+					 return 1L;
+				 };
+			 } ;
 		} break;
 			
 		// WM_WINDOWPOSCHANGED - inform that the position or size of our visual component has changed

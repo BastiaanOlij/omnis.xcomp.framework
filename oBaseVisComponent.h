@@ -24,20 +24,21 @@ private:
 	/*** only valid during drawing ***/
 	GDItextSpecStruct			mTextSpec;															// Info on how to draw text
 	qRectArray					mClipStack;															// Our clip stack
-	
-	void						setup(EXTCompInfo* pECI);											// setup our colors and fonts etc.
 
+	// init functions
+	void						setup(EXTCompInfo* pECI);											// setup our colors and fonts etc.
+	
 	// passthrough drawing functions
 	void						drawTextJst(GDIdrawTextStruct * pTextInfo, qrect pRect, bool pAdjJst = false);	// passthrought to GDIdrawTextJst with clipping
 
 protected:
+	qlong						mObjType;															// Object type
 	HWND						mHWnd;																// Our main window handle (not applicable for NV objects)
 	qpoint						mMouseAt;															// Last known location of the mouse as it hoovered over our control
 	EXTfldval					mPrimaryData;														// Copy of our primary data if default implementation is used
 	
 	qcol						mTextColor;															// Our text color
 	qpat						mBackpattern;														// Our back pattern
-	HBRUSH						mBackpatBrush;														// backpattern brush
 	qcol						mForecolor, mBackcolor;												// Our forecolor and backcolor
 	qulong						mBKTheme;															// Our background theme
 
@@ -49,14 +50,18 @@ protected:
 	qbool						mDrawBuffer;														// If true (default) we'll setup our canvas buffer
 	qrect						mClientRect;														// Our client rect, gives the size of our visual component
 	HDC							mHDC;																// Current HDC for drawing
-		
+	HBRUSH						mBackpatBrush;														// backpattern brush
+
 	// colour functions
 	qcol						mixColors(qcol pQ1, qcol pQ2);										// Mix two colors together
 	
 	// clipping functions
 	bool						clipRect(qrect pRect, bool pUnion = true);							// Clip to given rectangle and put on stack, will optionally union with the current clipping. Will return false if we can't draw in the resulting rectangle and we could thus not clip.
 	void						unClip();															// Pop our last clipping rectangle off the stack, do not call if clipRect returned false!
-		
+	
+	// preparation functions
+	GDItextSpecStruct			getStdTextSpec(EXTCompInfo* pECI);									// Create text spec structure for our standard properties (used by setup or when drawing list lines)
+	
 	// drawing functions (in drawingfunctions.cpp)
 	qdim						getTextWidth(const qchar *pText, qshort pLen, bool pStyled = true);	// Get the width of text
 	qdim						getTextHeight(const qchar *pText, qdim pWidth, bool pStyled = true, bool pWrap = true);	// Get the heigth of text if wrapped
@@ -88,12 +93,14 @@ public:
 	static	qEvents *			events(void);														// return an array of events meta data
 	
 	virtual void				doPaint(EXTCompInfo* pECI);											// Do our drawing in here
+	virtual bool				drawListContents(EXTListLineInfo *pInfo, EXTCompInfo* pECI);		// Do our list content drawing here (what we see when the list is collapsed, for cObjType_DropList only)
+	virtual bool				drawListLine(EXTListLineInfo *pInfo, EXTCompInfo* pECI);			// Do our list line drawing here (for cObjType_List or cObjType_DropList)
 	virtual void				resized();															// Our component was resized
 	
 	// mouse related
 	virtual HCURSOR				getCursor(qpoint pAt, qword2 pHitTest);								// return the mouse cursor we should show
-	virtual void				evMouseLDown(qpoint pDownAt);										// mouse left button pressed down
-	virtual void				evMouseLUp(qpoint pUpAt);											// mouse left button released
+	virtual bool				evMouseLDown(qpoint pDownAt);										// mouse left button pressed down (return true if we finished handling this, false if we want Omnis internal logic)
+	virtual bool				evMouseLUp(qpoint pUpAt);											// mouse left button released (return true if we finished handling this, false if we want Omnis internal logic)
 	virtual bool				evDoubleClick(qpoint pAt, EXTCompInfo* pECI);						// mouse left button double clicked (return true if we finished handling this, false if we want Omnis internal logic)
 	virtual bool				evMouseRDown(qpoint pDownAt, EXTCompInfo* pECI);					// mouse right button pressed down (return true if we finished handling this, false if we want Omnis internal logic)
 	virtual bool				evMouseRUp(qpoint pUpAt, EXTCompInfo* pECI);						// mouse right button released (return true if we finished handling this, false if we want Omnis internal logic)
@@ -115,13 +122,15 @@ public:
 	virtual bool				evKeyPressed(qkey *pKey, bool pDown, EXTCompInfo* pECI);			// let us know a key was pressed. Return true if Omnis should not do anything with this keypress
 	
 	// called from our WndProc, don't override these directly
-	void						wm_lbutton(qpoint pAt, bool pDown, EXTCompInfo* pECI);				// left mouse button
+	bool						wm_lbutton(qpoint pAt, bool pDown, EXTCompInfo* pECI);				// left mouse up/down (return true if we finished handling this, false if we want Omnis internal logic)
 	bool						wm_lbDblClick(qpoint pAt, EXTCompInfo* pECI);						// left mouse button double click (return true if we finished handling this, false if we want Omnis internal logic)
 	bool						wm_rbutton(qpoint pAt, bool pDown, EXTCompInfo* pECI);				// right mouse button (return true if we finished handling this, false if we want Omnis internal logic)
 	void						wm_mousemove(qpoint pAt, EXTCompInfo* pECI);						// mouse is being moved
 	qlong						wm_dragdrop(WPARAM wParam, LPARAM lParam, EXTCompInfo* pECI);		// drag and drop handling, return -1 if we're not handling this and want default omnis logic to run
-	void						wm_erasebkgnd(EXTCompInfo* pECI);									// erase our background message
-	void						wm_paint(EXTCompInfo* pECI);										// Paint message
+	bool						wm_erasebkgnd(EXTCompInfo* pECI);									// erase our background message
+	bool						wm_paint(EXTCompInfo* pECI);										// Paint message
+	bool						ecm_paintcontents(EXTListLineInfo *pInfo, EXTCompInfo* pECI);		// Draw cObjType_DropList content
+	bool						ecm_listdrawline(EXTListLineInfo *pInfo, EXTCompInfo* pECI);		// Draw line fro cObjType_List or cObjTypeDropList
 	void						wm_windowposchanged(EXTCompInfo* pECI, WNDwindowPosStruct * pPos);	// Component resize/repos message
 };
 
