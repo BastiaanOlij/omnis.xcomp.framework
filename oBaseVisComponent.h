@@ -9,6 +9,7 @@
  */
 
 #include "oBaseComponent.h"
+#include "oDrawingCanvas.h"
 
 #ifndef obaseviscomponenth
 #define obaseviscomponenth
@@ -21,15 +22,9 @@ private:
 	qpoint						mMouseDownAt;														// Location we pressed the mouse down at
 	bool						mMouseDragging;														// Are we dragging?
 	
-	/*** only valid during drawing ***/
-	GDItextSpecStruct			mTextSpec;															// Info on how to draw text
-	qRectArray					mClipStack;															// Our clip stack
-
 	// init functions
 	void						setup(EXTCompInfo* pECI);											// setup our colors and fonts etc.
 	
-	// passthrough drawing functions
-	void						drawTextJst(GDIdrawTextStruct * pTextInfo, qrect pRect, bool pAdjJst = false);	// passthrought to GDIdrawTextJst with clipping
 
 protected:
 	qlong						mObjType;															// Object type
@@ -49,29 +44,11 @@ protected:
 	/*** only valid during drawing ***/
 	qbool						mDrawBuffer;														// If true (default) we'll setup our canvas buffer
 	qrect						mClientRect;														// Our client rect, gives the size of our visual component
-	HDC							mHDC;																// Current HDC for drawing
-	HBRUSH						mBackpatBrush;														// backpattern brush
-
-	// colour functions
-	qcol						mixColors(qcol pQ1, qcol pQ2);										// Mix two colors together
-	
-	// clipping functions
-	bool						clipRect(qrect pRect, bool pUnion = true);							// Clip to given rectangle and put on stack, will optionally union with the current clipping. Will return false if we can't draw in the resulting rectangle and we could thus not clip.
-	void						unClip();															// Pop our last clipping rectangle off the stack, do not call if clipRect returned false!
+	oDrawingCanvas *			mCanvas;															// Current canvas for drawing
 	
 	// preparation functions
 	GDItextSpecStruct			getStdTextSpec(EXTCompInfo* pECI);									// Create text spec structure for our standard properties (used by setup or when drawing list lines)
-	
-	// drawing functions (in drawingfunctions.cpp)
-	qdim						getTextWidth(const qchar *pText, qshort pLen, bool pStyled = true);	// Get the width of text
-	qdim						getTextHeight(const qchar *pText, qdim pWidth, bool pStyled = true, bool pWrap = true);	// Get the heigth of text if wrapped
-	qdim						drawText(const qchar *pText, qrect pWhere, qcol pColor, qjst pJst = jstLeft, bool pStyled = true, bool pWrap = true);			// Draws the text clipped within the specified rectangle 
-	void						drawIcon(qlong pIconId, qpoint pAt);								// Draw a icon at this position
-	void						drawLine(qpoint pFrom, qpoint pTo);		// Draws a line between two points using the current selected pen
-	void						drawLine(qpoint pFrom, qpoint pTo, qdim pWidth, qcol pCol, qpat pPat);		// Draws a line between two points
-	void						drawRect(qrect pRect, qcol pBackground, qcol pBorder);				// draw a rectangle. Note, if pBackground is set to GDI_COLOR_QDEFAULT we do not fill the rectangle
-	void						drawEllipse(qrect pRect, qcol pTop, qcol pBottom, qcol pBorder = -1, qint pSpacing = 0);					// Draws a filled ellipse within the rectangle with a gradient color from top to bottom
-	
+		
 	// handy Omnis functions
 	EXTqlist *					getDataList(EXTCompInfo* pECI);										// Get list variable used for $dataname
 public:

@@ -36,6 +36,7 @@ oBaseVisComponent::oBaseVisComponent(void) {
 	mDrawBuffer			= true;
 	mMouseLButtonDown	= false;
 	mMouseDragging		= false;
+	mCanvas				= NULL;
 };
 
 // Initialize component
@@ -290,48 +291,16 @@ void	oBaseVisComponent::resized() {
 // Drawing related
 ////////////////////////////////////////////////////////////////
 
-qcol	oBaseVisComponent::mixColors(qcol pQ1, qcol pQ2) {
-	// get real colors...
-	pQ1	= GDIgetRealColor(pQ1);
-	pQ2	= GDIgetRealColor(pQ2);
-	
-	short			cnt;
-	qcol			res;
-	unsigned char	mix;
-	unsigned char	*cA = (unsigned char *)&pQ1; 
-	unsigned char	*cB = (unsigned char *)&pQ2;
-	unsigned char	*cR = (unsigned char *)&res;
-
-	// This should mix R, G, B and alpha independently of eachother...
-	for (cnt = 0; cnt < sizeof(qcol); cnt++) {
-		if (*cA==*cB) {
-			*cR = *cA;
-		} else if (*cB > *cA) {
-			mix = *cB - *cA;
-			mix = mix >> 1;
-			*cR = *cA + mix;
-		} else {
-			mix = *cA - *cB;
-			mix = mix >> 1;
-			*cR = *cB + mix;
-		};
-
-		cA++;
-		cB++;
-		cR++;
-	};
-
-	return res;
-};
-
 // Do our drawing in here
 void oBaseVisComponent::doPaint(EXTCompInfo* pECI) {
 	// override to implement drawing...
-	if (!WNDdrawThemeBackground(mHWnd,mHDC,&mClientRect,mBKTheme==WND_BK_CONTROL ? WND_BK_PARENT : mBKTheme)) { // if control theme we'll actually draw our parent, we're expecting to draw something on top
+	if (!WNDdrawThemeBackground(mHWnd,mCanvas->hdc(),&mClientRect,mBKTheme==WND_BK_CONTROL ? WND_BK_PARENT : mBKTheme)) { // if control theme we'll actually draw our parent, we're expecting to draw something on top
 		// clear our drawing field
-		GDIsetTextColor(mHDC, mForecolor);
-		GDIfillRect(mHDC, &mClientRect, mBackpatBrush);
-		GDIsetTextColor(mHDC, mTextColor);		
+		if (mBackpattern==0) {
+			mCanvas->drawRect(mClientRect, mForecolor, mForecolor);			
+		} else {
+			mCanvas->drawRect(mClientRect, mBackcolor, mBackcolor);			
+		};
 	};
 };
 
@@ -410,65 +379,10 @@ void oBaseVisComponent::setup(EXTCompInfo* pECI) {
 	mTextColor = fval.getLong();	
 	
 	// Create our pattern brush, it will be deleted at the end of drawing..
-	mBackpatBrush = GDIcreateBrush(mBackpattern);		
+	mCanvas->setBackpatBrush(mBackpattern);
 	
 	// and our standard text spec
-	mTextSpec = getStdTextSpec(pECI);
-};
-
-// Clip to given rectangle and put on stack, will optionally union with the current clipping. Will return false if we can't draw in the resulting rectangle and we could thus not clip.
-bool	oBaseVisComponent::clipRect(qrect pRect, bool pUnion) {
-	if (mHDC != 0) {
-		if (pUnion) {
-			qrect lvCliprect;
-			int lvStackSize = mClipStack.numberOfElements();
-			
-			if (lvStackSize > 0) {
-				lvCliprect = mClipStack[lvStackSize-1];
-			} else {
-				lvCliprect = mClientRect;
-			};
-			
-			// union the two rectangles so we clip only where the two rectangles overlap
-			// note that if the rectangles do not overlap left will be bigger then right or top below the bottom.
-			
-			pRect.left		= pRect.left > lvCliprect.left ? pRect.left : lvCliprect.left;
-			pRect.right		= pRect.right < lvCliprect.right ? pRect.right : lvCliprect.right;
-			pRect.top		= pRect.top > lvCliprect.top ? pRect.top : lvCliprect.top;
-			pRect.bottom	= pRect.bottom < lvCliprect.bottom ? pRect.bottom : lvCliprect.bottom;
-		};
-	
-		if ((pRect.left < pRect.right) && (pRect.top < pRect.bottom)) {
-			// clip
-			GDIsetClipRect(mHDC, &pRect);
-			
-			// now add our rectangle to our clipstack
-			mClipStack.push(pRect);
-			
-			return true;
-		} else {
-			return false;
-		};
-	} else {
-		return false;
-	};
-};
-
-// Pop our last clipping rectangle off the stack, do not call if clipRect returned false!
-void	oBaseVisComponent::unClip() {
-	if (mHDC != 0) {
-		// remove the top one, that is our current clipping
-		mClipStack.pop();
-		
-		int lvStackSize = mClipStack.numberOfElements();
-		if (lvStackSize > 0) {
-			qrect lvCliprect = mClipStack[lvStackSize-1];
-			
-			GDIsetClipRect(mHDC, &lvCliprect);			
-		} else {
-			GDIclearClip(mHDC);
-		};
-	};
+	mCanvas->setTextSpec(getStdTextSpec(pECI));
 };
 
 // erase our background message
@@ -500,13 +414,12 @@ bool oBaseVisComponent::wm_paint(EXTCompInfo* pECI) {
 		// We're going to be handling this through ECM_PAINTCONTENTS
 		return false;
 	} else {
-		WNDpaintStruct	lvPaintStruct;
-		qrect			lvUpdateRect;
-		void *			lvOffScreenPaint;
-		
-		// clear our clip stack
-		mClipStack.clear();
-		
+		oDrawingCanvas *	lvWasCanvas = mCanvas; // this should be NULL but not taking any chances...
+		HDC					lvHDC;
+		WNDpaintStruct		lvPaintStruct;
+		qrect				lvUpdateRect;
+		void *				lvOffScreenPaint;
+			
 		// get current size info
 		WNDgetClientRect(mHWnd, &mClientRect);
 		
@@ -515,52 +428,44 @@ bool oBaseVisComponent::wm_paint(EXTCompInfo* pECI) {
 			WNDbeginPaint( mHWnd, &lvPaintStruct );
 			
 			lvUpdateRect = lvPaintStruct.rcPaint;
-			mHDC = lvPaintStruct.hdc;
-			
-			setup(pECI);
-			
+			lvHDC = lvPaintStruct.hdc;
+						
 			// On windows this will do a double buffer trick, on Mac OSX the OS already does the offscreen painting:)
 			// note that mHDC and mClienRect may be altered as a result of this call which is good!
-			lvOffScreenPaint = GDIoffscreenPaintBegin(NULL, mHDC, mClientRect, lvUpdateRect);
-			if (lvOffScreenPaint) {		
-				// setup defaults for GDI drawing..
-				HFONT		lvTextFont	= GDIcreateFont(&mTextSpec.mFnt, mTextSpec.mSty);
-				HFONT		lvOldFont	= GDIselectObject(mHDC, lvTextFont); 
-				
-				// default our colors
-				GDIsetBkColor(mHDC, mBackcolor);
-				GDIsetTextColor(mHDC, mTextColor);	// if we need our forecolor for drawing we will switch..
-				
-				// do our real drawing
-				doPaint(pECI);
-				
-				// If in design mode, then call drawDesignName, drawNumber & drawMultiKnobs to draw design
-				// name, numbers and multiknobs, if required.
-				if ( ECOisDesign(mHWnd) ) {
-					ECOdrawDesignName(mHWnd,mHDC);
-					ECOdrawNumber(mHWnd,mHDC);
-					ECOdrawMultiKnobs(mHWnd,mHDC);
-				}
-				
-				GDIselectObject(mHDC, lvOldFont);
-				GDIdeleteObject(lvTextFont);
-				
-				GDIdeleteObject(mBackpatBrush);
-				
-				GDIoffscreenPaintEnd(lvOffScreenPaint);
-			}
-			
+			lvOffScreenPaint = GDIoffscreenPaintBegin(NULL, lvHDC, mClientRect, lvUpdateRect);
+			if (lvOffScreenPaint) {
+				mCanvas = new oDrawingCanvas(mApp, lvHDC, mClientRect);
+				if (mCanvas!=NULL) {
+					setup(pECI);
+					
+					// default our colors
+					GDIsetBkColor(lvHDC, mBackcolor);	// !BAS! Move into canvas!
+					
+					// do our real drawing
+					doPaint(pECI);
+					
+					// If in design mode, then call drawDesignName, drawNumber & drawMultiKnobs to draw design
+					// name, numbers and multiknobs, if required.
+					if ( ECOisDesign(mHWnd) ) {
+						ECOdrawDesignName(mHWnd,lvHDC);
+						ECOdrawNumber(mHWnd,lvHDC);
+						ECOdrawMultiKnobs(mHWnd,lvHDC);
+					}
+					
+					// delete our canvas, we no longer need it.
+					delete mCanvas;
+					
+					GDIoffscreenPaintEnd(lvOffScreenPaint);
+				};	
+			};
 			
 			// And finish paint...
 			WNDendPaint( mHWnd, &lvPaintStruct );	
 		} else {		
-			// component must fully implement and is responsible for setting HDC...
-			mHDC = 0;
+			// component must fully implement and is responsible for setting up our context...
+			mCanvas = NULL;
 			doPaint(pECI);
 		}
-		
-		// Just free up memory..
-		mClipStack.clear();
 		
 		return true;
 	};
@@ -568,26 +473,42 @@ bool oBaseVisComponent::wm_paint(EXTCompInfo* pECI) {
 
 // Draw cObjType_DropList content
 bool	oBaseVisComponent::ecm_paintcontents(EXTListLineInfo *pInfo, EXTCompInfo* pECI) {
+	oDrawingCanvas *	lvWasCanvas = mCanvas;	// this should be NULL but just in case
+	bool				retval = false;
+	
 	// setup our drawing info
+	mCanvas = new oDrawingCanvas(mApp, pInfo->mHdc, pInfo->mLineRect);
+	if (mCanvas != NULL) {
+		setup(pECI);
+		
+		retval = this->drawListContents(pInfo, pECI);
+		
+		delete mCanvas;
+	};
 	
-	mHDC		= pInfo->mHdc;
-	mClientRect	= pInfo->mLineRect;
-	mClipStack.clear();
-	setup(pECI);
+	mCanvas = lvWasCanvas;
 	
-	return this->drawListContents(pInfo, pECI);
+	return retval;
 };
 
 // Draw line fro cObjType_List or cObjTypeDropList
 bool	oBaseVisComponent::ecm_listdrawline(EXTListLineInfo *pInfo, EXTCompInfo* pECI) {
-	// setup our drawing info
-
-	mHDC		= pInfo->mHdc;
-	mClientRect	= pInfo->mLineRect;
-	mClipStack.clear();
-	setup(pECI);
+	oDrawingCanvas *	lvWasCanvas = mCanvas;	// this should be NULL but just in case
+	bool				retval = false;
 	
-	return this->drawListLine(pInfo, pECI);	
+	// setup our drawing info
+	mCanvas = new oDrawingCanvas(mApp, pInfo->mHdc, pInfo->mLineRect);
+	if (mCanvas != NULL) {
+		setup(pECI);
+		
+		retval = this->drawListLine(pInfo, pECI);	
+		
+		delete mCanvas;
+	};
+	
+	mCanvas = lvWasCanvas;
+	
+	return retval;
 };
 
 
