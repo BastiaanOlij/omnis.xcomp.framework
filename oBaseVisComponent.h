@@ -37,9 +37,9 @@ protected:
 	qcol						mForecolor, mBackcolor;												// Our forecolor and backcolor
 	qulong						mBKTheme;															// Our background theme
 
-	/*** scrollbar related ***/
-	qdim						mOffsetX;															// Horizontal offset (scrollbar), this is not automatically taken into account when drawing (yet)!
-	qdim						mOffsetY;															// Vertical offset (scrollbar)
+	/*** scrollbar related, how you interpret these in your control is up to you ***/
+	qdim						mHorzScollPos;														// Horizontal scroll position
+	qdim						mVertScollPos;														// Vertical scroll position
 
 	/*** only valid during drawing ***/
 	qbool						mDrawBuffer;														// If true (default) we'll setup our canvas buffer

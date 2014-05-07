@@ -29,8 +29,8 @@ oBaseVisComponent::oBaseVisComponent(void) {
 	mObjType			= cObjType_Basic;
 	mForecolor			= GDI_COLOR_QDEFAULT;
 	mBackcolor			= GDI_COLOR_QDEFAULT;
-	mOffsetX			= 0;
-	mOffsetY			= 0;
+	mHorzScollPos		= 0;
+	mVertScollPos			= 0;
 	mBackpattern		= 0;
 	mBKTheme			= WND_BK_NONE;
 	mDrawBuffer			= true;
@@ -533,23 +533,23 @@ qdim	oBaseVisComponent::getVertStepSize(void) {
 
 // window was scrolled
 void	oBaseVisComponent::evWindowScrolled(qdim pNewX, qdim pNewY) {
-	if ((mOffsetX!=pNewX) || (mOffsetY!=pNewY)) {
+	if ((mHorzScollPos!=pNewX) || (mVertScollPos!=pNewY)) {
 		WNDsetScrollPos(mHWnd, SB_HORZ, pNewX, qfalse); 
 		WNDsetScrollPos(mHWnd, SB_VERT, pNewY, qfalse);
 		
 		// we may not need to do this..
-		WNDscrollWindow(mHWnd, mOffsetX - pNewX, mOffsetY-pNewY);
+		WNDscrollWindow(mHWnd, mHorzScollPos - pNewX, mVertScollPos-pNewY);
 
 		// redraw the whole thing...
 		WNDinvalidateRect(mHWnd, NULL);
 
 		if (mMouseLButtonDown) {
-			mMouseDownAt.h += pNewX-mOffsetX;
-			mMouseDownAt.v += pNewY-mOffsetY;
+			mMouseDownAt.h += pNewX-mHorzScollPos;
+			mMouseDownAt.v += pNewY-mVertScollPos;
 		};	
 
-		mOffsetX = pNewX;
-		mOffsetY = pNewY;
+		mHorzScollPos = pNewX;
+		mVertScollPos = pNewY;
 	};
 };
 
