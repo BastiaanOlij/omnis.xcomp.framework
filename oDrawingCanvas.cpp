@@ -404,7 +404,12 @@ qstring	oDrawingCanvas::wrapText(const qchar *pText, qdim pMaxWidth) {
 			};
 			
 			pos++;
-		};		
+		};
+		
+		// any last words to add?
+		if (word.length()>0) {
+			width	= addWord(retval, word, prefix, width, pMaxWidth);
+		};
 	};
 			
 	return retval;
