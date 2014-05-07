@@ -363,7 +363,7 @@ const char *	qstring::c_str() {
 };
 
 // return the length our our string in characters
-qlong	qstring::length() const {
+qulong	qstring::length() const {
 	if (mBuffer!=0) {
 		return qstring::qstrlen(mBuffer); 
 	} else {

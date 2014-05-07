@@ -43,7 +43,7 @@ qbool	oBaseComponent::init(qapp pApp) {
 void	oBaseComponent::addToTraceLog(qstring & pData) {
 	qstring lvOut;
 	
-	for (uint lvIndex = 0; lvIndex < pData.length(); lvIndex++) {
+	for (qulong lvIndex = 0; lvIndex < pData.length(); lvIndex++) {
 		qchar lvChar = pData[lvIndex];
 		if (lvChar == '\r') {
 			// ignore.

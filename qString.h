@@ -60,7 +60,7 @@ public:
 
 	const qchar*	cString() const;									// return a pointer to our string (UTF-32)
 	const char *	c_str();											// return a pointer to our string (UTF-8)
-	qlong			length() const;										// return the length our our string in characters
+	qulong			length() const;										// return the length our our string in characters
 	
 	qlong			pos(qchar pChar) const;								// find position of character within string (returns -1 if not found)
 	qstring			mid(qlong pFrom, qlong pLen = 0) const;				// get the substring (pLen <= 0 is from end)

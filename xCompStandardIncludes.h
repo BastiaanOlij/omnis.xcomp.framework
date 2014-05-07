@@ -33,6 +33,7 @@ typedef unsigned int uint;
 // add in some useful standard libraries
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include <math.h>
 #include <string>
 #include <vector>

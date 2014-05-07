@@ -250,7 +250,7 @@ void	oDrawingCanvas::drawTextJst(GDIdrawTextStruct * pTextInfo, qrect pRect, boo
 				if (jst == jstRight) {
 					pTextInfo->mX = pRect.right - textWidth;
 				} else if ((jst == jstCenter) && (availWidth > textWidth)) {
-					pTextInfo->mX = pRect.left + ((availWidth - textWidth) / 2.0);
+					pTextInfo->mX = pRect.left + ((availWidth - textWidth) / 2);
 				};
 			};
 			
