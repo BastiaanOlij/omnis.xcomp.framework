@@ -159,6 +159,12 @@ void	oDrawingCanvas::setBackpatBrush(qpat pPat) {
 	mBackpatBrush = GDIcreateBrush(pPat);		
 };
 
+// set our background color
+void	oDrawingCanvas::setBkColor(qcol pColor) {
+	GDIsetBkColor(mHDC, pColor);
+};
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // clipping functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -633,17 +639,31 @@ void	oDrawingCanvas::drawLine(qpoint pFrom, qpoint pTo, qdim pWidth, qcol pCol, 
 	GDIselectObject(mHDC, oldPen);
 };
 
+// fills a rectangle using our standard pattern brush
+void	oDrawingCanvas::drawRect(qrect pRect, qcol pFillColor) {
+	drawRect(pRect, pFillColor, mBackpatBrush);
+};
+
+// fills a rectangle with a certain pattern
+void	oDrawingCanvas::drawRect(qrect pRect, qcol pFillColor, HBRUSH pBrush) {
+	qcol	wasColor = GDIgetTextColor(mHDC);
+
+	GDIsetTextColor(mHDC, pFillColor);
+	GDIfillRect(mHDC, &pRect, pBrush);
+
+	// leave it as it was...
+	GDIsetTextColor(mHDC, wasColor);
+};
+
 // draw a rectangle. Note, if pBackground is set to GDI_COLOR_QDEFAULT we do not fill the rectangle
-void	oDrawingCanvas::drawRect(qrect pRect, qcol pBackground, qcol pBorder) {
+void	oDrawingCanvas::drawRect(qrect pRect, qcol pFillColor, qcol pBorder) {
 	qcol	wasColor = GDIgetTextColor(mHDC);
 	
-	if (pBackground != GDI_COLOR_QDEFAULT) {
-		HBRUSH	brush	= GDIgetStockBrush(BLACK_BRUSH);
-		GDIsetTextColor(mHDC, pBackground);
-		GDIfillRect(mHDC, &pRect, brush);
+	if (pFillColor != GDI_COLOR_QDEFAULT) {
+		drawRect(pRect, pFillColor, GDIgetStockBrush(BLACK_BRUSH));
 	};
 	
-	if ((pBackground != pBorder) && (pBorder != GDI_COLOR_QDEFAULT)) {
+	if ((pFillColor != pBorder) && (pBorder != GDI_COLOR_QDEFAULT)) {
 		HPEN	borderPen	= GDIcreatePen(1, pBorder, patFill);
 		HPEN	oldPen		= GDIselectObject(mHDC, borderPen);
 		

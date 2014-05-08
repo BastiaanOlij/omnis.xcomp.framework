@@ -499,9 +499,13 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 				WNDmapWindowPoint(HWND_DESKTOP, pHWND, &pt);
 				
 				HCURSOR	cursor = lvObject->getCursor(pt, hittest);
-				WNDsetCursor(cursor);
-				
-				return 1L;
+				if (cursor != WND_CURS_DEFAULT) {
+					WNDsetCursor(cursor);
+					
+					return 1L;					
+				} else {
+					// let omnis do its thing...
+				};
 			};
 		}; break;
 			

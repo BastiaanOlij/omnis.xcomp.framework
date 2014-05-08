@@ -296,11 +296,7 @@ void oBaseVisComponent::doPaint(EXTCompInfo* pECI) {
 	// override to implement drawing...
 	if (!WNDdrawThemeBackground(mHWnd,mCanvas->hdc(),&mClientRect,mBKTheme==WND_BK_CONTROL ? WND_BK_PARENT : mBKTheme)) { // if control theme we'll actually draw our parent, we're expecting to draw something on top
 		// clear our drawing field
-		if (mBackpattern==0) {
-			mCanvas->drawRect(mClientRect, mForecolor, mForecolor);			
-		} else {
-			mCanvas->drawRect(mClientRect, mBackcolor, mBackcolor);			
-		};
+		mCanvas->drawRect(mClientRect, mForecolor);
 	};
 };
 
@@ -378,6 +374,9 @@ void oBaseVisComponent::setup(EXTCompInfo* pECI) {
 	ECOgetProperty(mHWnd,anumTextColor,fval); 
 	mTextColor = fval.getLong();	
 	
+	// set background color
+	mCanvas->setBkColor(mBackcolor);
+	
 	// Create our pattern brush, it will be deleted at the end of drawing..
 	mCanvas->setBackpatBrush(mBackpattern);
 	
@@ -437,9 +436,6 @@ bool oBaseVisComponent::wm_paint(EXTCompInfo* pECI) {
 				mCanvas = new oDrawingCanvas(mApp, lvHDC, mClientRect);
 				if (mCanvas!=NULL) {
 					setup(pECI);
-					
-					// default our colors
-					GDIsetBkColor(lvHDC, mBackcolor);	// !BAS! Move into canvas!
 					
 					// do our real drawing
 					doPaint(pECI);
@@ -560,6 +556,8 @@ void	oBaseVisComponent::evWindowScrolled(qdim pNewX, qdim pNewY) {
 
 // return the mouse cursor we should show
 HCURSOR	oBaseVisComponent::getCursor(qpoint pAt, qword2 pHitTest) {
+	// We return WND_CURS_DEFAULT which will cause our framework to let Omnis override this with any user setting or else use the default cursor.
+	// If you override this and return anything but WND_CURS_DEFAULT what you return will be used.
 	return WND_CURS_DEFAULT;
 };
 

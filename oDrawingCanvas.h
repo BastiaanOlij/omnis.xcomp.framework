@@ -77,11 +77,12 @@ public:
 	// properties
 	HDC							hdc();										// access to our HDC if we really need to.
 	GDItextSpecStruct			textSpec();									// get our text spec
-	void						setTextSpec(GDItextSpecStruct pSpec);		// set our text spec
+	void						setTextSpec(GDItextSpecStruct pSpec);		// set our text spec, also sets the text color to what is specified in our text spec
 
 	// colour functions
 	qcol						mixColors(qcol pQ1, qcol pQ2);				// Mix two colors together
 	void						setBackpatBrush(qpat pPat);					// setup our backpattern brush
+	void						setBkColor(qcol pColor);					// set our background color
 	
 	// clipping functions
 	bool						clipRect(qrect pRect, bool pUnion = true);	// Clip to given rectangle and put on stack, will optionally union with the current clipping. Will return false if we can't draw in the resulting rectangle and we could thus not clip.
@@ -94,12 +95,14 @@ public:
 	qdim						getTextHeight(const qchar *pText, qdim pWidth, bool pStyled = true, bool pWrap = true);	// Get the heigth of text if wrapped
 
 	// drawing functions
-	qdim						drawText(const qchar *pText, qrect pWhere, qcol pColor, qjst pJst = jstLeft, bool pStyled = true, bool pWrap = true);			// Draws the text clipped within the specified rectangle 
-	void						drawIcon(qlong pIconId, qpoint pAt);								// Draw a icon at this position
-	void						drawLine(qpoint pFrom, qpoint pTo);		// Draws a line between two points using the current selected pen
-	void						drawLine(qpoint pFrom, qpoint pTo, qdim pWidth, qcol pCol, qpat pPat);		// Draws a line between two points
-	void						drawRect(qrect pRect, qcol pBackground, qcol pBorder);				// draw a rectangle. Note, if pBackground is set to GDI_COLOR_QDEFAULT we do not fill the rectangle
-	void						drawEllipse(qrect pRect, qcol pTop, qcol pBottom, qcol pBorder = -1, qint pSpacing = 0);					// Draws a filled ellipse within the rectangle with a gradient color from top to bottom
+	qdim						drawText(const qchar *pText, qrect pWhere, qcol pColor, qjst pJst = jstLeft, bool pStyled = true, bool pWrap = true);	// Draws the text clipped within the specified rectangle 
+	void						drawIcon(qlong pIconId, qpoint pAt);																					// Draw a icon at this position
+	void						drawLine(qpoint pFrom, qpoint pTo);																						// Draws a line between two points using the current selected pen
+	void						drawLine(qpoint pFrom, qpoint pTo, qdim pWidth, qcol pCol, qpat pPat);													// Draws a line between two points
+	void						drawRect(qrect pRect, qcol pFillColor);																					// fills a rectangle using our standard pattern brush
+	void						drawRect(qrect pRect, qcol pFillColor, HBRUSH pBrush);																	// fills a rectangle with a certain pattern
+	void						drawRect(qrect pRect, qcol pFillColor, qcol pBorder);																	// draw a rectangle. Note, if pBackground is set to GDI_COLOR_QDEFAULT we do not fill the rectangle
+	void						drawEllipse(qrect pRect, qcol pTop, qcol pBottom, qcol pBorder = -1, qint pSpacing = 0);								// Draws a filled ellipse within the rectangle with a gradient color from top to bottom
 	
 };
 
