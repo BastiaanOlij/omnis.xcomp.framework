@@ -38,8 +38,8 @@ protected:
 	qulong						mBKTheme;															// Our background theme
 
 	/*** scrollbar related, how you interpret these in your control is up to you ***/
-	qdim						mHorzScollPos;														// Horizontal scroll position
-	qdim						mVertScollPos;														// Vertical scroll position
+	qdim						mHorzScrollPos;														// Horizontal scroll position
+	qdim						mVertScrollPos;														// Vertical scroll position
 
 	/*** only valid during drawing ***/
 	qbool						mDrawBuffer;														// If true (default) we'll setup our canvas buffer
