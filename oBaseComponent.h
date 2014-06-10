@@ -49,6 +49,7 @@ public:
 
 /*** some nice support function ***/
 	static void					addToTraceLog(qstring & pData);										// Add string to trace log
+	static void					vAddToTraceLog(const char *pData, va_list pArgList);				// Add formatted string to trace log
 	static void					addToTraceLog(const char *pData, ...);								// Add formatted string to trace log
 #ifdef isunicode
 	static void					addToTraceLog(const qoschar *pData, ...);							// Add formatted string to trace log

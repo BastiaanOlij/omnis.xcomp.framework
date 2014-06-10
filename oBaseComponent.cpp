@@ -72,16 +72,23 @@ void	oBaseComponent::addToTraceLog(qstring & pData) {
 };
 
 // Add formatted string to trace log
-void oBaseComponent::addToTraceLog(const char *pData, ...) {
+void	oBaseComponent::vAddToTraceLog(const char *pData, va_list pArgList) {
 	qstring		lvTrace;
 	qstring		lvFormat(pData);
+	
+	qstring::vAppendFormattedString(lvTrace, lvFormat, pArgList);
+
+	oBaseComponent::addToTraceLog(lvTrace);
+};
+
+
+// Add formatted string to trace log
+void oBaseComponent::addToTraceLog(const char *pData, ...) {
 	va_list		lvArgList;
 	
 	va_start( lvArgList, pData );
-	qstring::vAppendFormattedString(lvTrace, lvFormat, lvArgList);
+	vAddToTraceLog(pData, lvArgList);
 	va_end( lvArgList );
-	
-	oBaseComponent::addToTraceLog(lvTrace);
 };
 
 #ifdef isunicode
