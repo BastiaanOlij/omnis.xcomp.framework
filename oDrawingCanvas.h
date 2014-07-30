@@ -16,15 +16,6 @@
 #ifndef odrawingcanvash
 #define odrawingcanvash
 
-// pixel structure as its used in a 32bit HPIXMAP
-// tested on Mac, may need to change on windows..
-typedef struct sPixel {
-	qbyte	mA;
-	qbyte	mR;
-	qbyte	mG;
-	qbyte	mB;
-} sPixel;
-
 struct qchar50 {
 	qchar mVal[50];
 	

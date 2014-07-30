@@ -420,6 +420,20 @@ long oBaseComponent::getLongFromParam(int pParamNo, EXTCompInfo* pECI) {
 	}
 };
 
+// get boolean from parameter
+bool oBaseComponent::getBoolFromParam(int pParamNo, EXTCompInfo* pECI) {
+	if (ECOgetParamCount(pECI) >= pParamNo) {
+		EXTParamInfo*		tmpParam = ECOfindParamNum( pECI, pParamNo );
+		EXTfldval			tmpFldVal((qfldval) tmpParam->mData);
+		
+		return tmpFldVal.getBool() == 2;
+	} else {
+		return 0;
+	}
+	
+};
+
+
 // get qlist from parameter, caller needs to delete return object
 EXTqlist *	oBaseComponent::newQListFromParam(int pParamNo, EXTCompInfo* pECI) {
 	if (ECOgetParamCount(pECI) >= pParamNo) {

@@ -28,6 +28,7 @@
 #include "oUTF8.h"
 #include "qArray.h"
 #include "qString.h"
+#include "oRGBAImage.h"
 #include "oBaseComponent.h"
 #include "oBaseNVComponent.h"
 #include "oDrawingCanvas.h"
