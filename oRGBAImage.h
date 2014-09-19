@@ -53,7 +53,6 @@ public:
 	void			copy(const oRGBAImage & pCopy);			// copy another image
 	bool			copy(qbyte *pBuffer, qlong pSize);		// cpoy a binary image into our image (see STB library for supported formats)
 	
-	HPIXMAP			asPixMap();								// return our image as a HPIXMAP (calling method is responsible for freeing up the memory using MEMfree)
 	qbyte *			asPNG(int &pLen);						// returns our image as a PNG (calling method is responsible for freeing up the memory using free)
 	
 	sPixel			getPixel(float pX, float pY) const;		// returns interpolated pixel

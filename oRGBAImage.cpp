@@ -142,64 +142,40 @@ bool oRGBAImage::copy(qbyte *pBuffer, qlong pSize) {
 	unsigned char *pixeldata = stbi_load_from_memory(pBuffer, pSize, &X, &Y, &Comp, 4);
 	if (pixeldata == NULL) {
 		// Need to implement stbi_failure_reason() to get more info...
-		oBaseComponent::addToTraceLog("copy: can''t decode image data - %s",stbi_failure_reason());
-	} else if (Comp != 4) {
-		oBaseComponent::addToTraceLog("copy: couldn't convert image to RGBA");
+		oBaseComponent::addToTraceLog("copy: can't decode image data - %s",stbi_failure_reason());
 	} else {
-		oBaseComponent::addToTraceLog("copy: loaded image %i, %i - %i", X, Y, Comp);
+		if (Comp == 3) {
+			initBuffer(X, Y);
+			if (mBuffer != NULL) {
+				qbyte * data = pixeldata;
+				for (qlong i = 0; i < X*Y; i++) {
+					mBuffer[i].mR = *data; data++;
+					mBuffer[i].mG = *data; data++;
+					mBuffer[i].mB = *data; data++;
+					mBuffer[i].mA = 255;
+				};
+				
+				successful = true;
+			};
+		} else if (Comp == 4) {
+//			oBaseComponent::addToTraceLog("copy: loaded image %i, %i - %i", X, Y, Comp);
 
-		// in theory we should be able to use our pixel data directly but we'll take the safe approach and copy it into our own buffer
-		initBuffer(X, Y);
-		if (mBuffer != NULL) {
-			memcpy(mBuffer, pixeldata, 4 * X * Y);
+			// in theory we should be able to use our pixel data directly but we'll take the safe approach and copy it into our own buffer
+			initBuffer(X, Y);
+			if (mBuffer != NULL) {
+				memcpy(mBuffer, pixeldata, 4 * X * Y);
 
-			successful = true;
+				successful = true;
+			};
+		} else {
+			oBaseComponent::addToTraceLog("copy: couldn't convert image to RGBA");			
 		};
-
+		
 		// and free up...
 		stbi_image_free(pixeldata);
 	};
 
 	return successful;
-};
-
-// return our image as a HPIXMAP (calling method is responsible for freeing up the memory)
-HPIXMAP oRGBAImage::asPixMap() {
-	HPIXMAP pixmap = 0;
-	
-	// only if we have a bitmap
-	if (mBuffer == NULL) {
-		oBaseComponent::addToTraceLog("asPixMap: No image to convert");
-	} else if ((mWidth==0) || (mHeight == 0)) { 
-		oBaseComponent::addToTraceLog("asPixMap: Can't convert empty image");
-	} else {
-//		oBaseComponent::addToTraceLog("asPixMap: creating pixmap %li, %li", mWidth, mHeight);
-
-		pixmap = GDIcreateHPIXMAP(mWidth, mHeight, 32, false);
-		if (pixmap == 0) {
-			oBaseComponent::addToTraceLog("asPixMap: Couldn't create pixmap");
-		} else {
-//			oBaseComponent::addToTraceLog("asPixMap: Locking pixmap");
-			sPixel *	pixels = (sPixel *) GDIlockHPIXMAP(pixmap);
-			if (pixels == NULL) {
-				oBaseComponent::addToTraceLog("asPixMap: Couldn't lock pixmap");
-				GDIdeleteHPIXMAP(pixmap);
-				pixmap = 0;
-			} else {
-				qulong size = sizeof(sPixel);
-				qulong copybytes = size * mWidth * mHeight;
-//				oBaseComponent::addToTraceLog("asPixMap: Copying image %li, %li",size, copybytes);
-
-				memcpy(pixels, mBuffer, copybytes);
-				
-//				oBaseComponent::addToTraceLog("asPixMap: unlock pixmap");
-
-				GDIunlockHPIXMAP(pixmap);
-			};
-		};
-	};
-	
-	return pixmap;
 };
 
 // returns our image as a PNG (calling method is responsible for freeing up the memory using free)
