@@ -16,6 +16,11 @@ Directories are setup relative and assume the framework is installed within the 
  - omnis.xcomp.framework
  - ...
 
+Dependencies
+============
+There are support libraries you need to download separately to compile these sources and I've added placeholders for these libraries in the source tree. 
+So far this is limited to STB
+
 License
 =======
 Please note that I'm releasing these works, including my own derivatives under an MIT license. In a nutshell this means you can use the code presented here as you see fit including in commercial projects. All I ask is that you give some credit to this body of work. See the license.txt file for the full license text.

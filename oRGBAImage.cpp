@@ -13,6 +13,15 @@
 
 #include "oRGBAImage.h"
 
+// Include our support library
+#define STBI_FAILURE_USERMSG
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb/stb_image_write.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb/stb_image.h"
+// #define STB_DEFINE
+// #include "stb/stb.h"
+
 // initialise our buffer..
 void oRGBAImage::initBuffer(qlong pWidth, qlong pHeight) {
 	// free any buffer we still have...
@@ -87,13 +96,13 @@ oRGBAImage::oRGBAImage(const oRGBAImage & pCopy) {
 	copy(pCopy);
 };
 
-// construct from an omnis HPIXMAP 
-oRGBAImage::oRGBAImage(HPIXMAP pPixMap) {
+// construct from a binary image (see STB library for supported formats)
+oRGBAImage::oRGBAImage(qbyte *pBuffer, qlong pSize){
 	mWidth		= 0;
 	mHeight		= 0;
 	mBuffer		= NULL;
 	
-	copy(pPixMap);	
+	copy(pBuffer, pSize);
 };
 
 // destruct and free up memory
@@ -124,31 +133,33 @@ void oRGBAImage::copy(const oRGBAImage & pCopy) {
 	};	
 };
 
-// copy an omnis HPIXMAP into our image
-bool oRGBAImage::copy(HPIXMAP pPixMap) {
-	// !BAS! need to add soem error handling into this...
+// cpoy a binary image into our image (see STB library for supported formats)
+bool oRGBAImage::copy(qbyte *pBuffer, qlong pSize) {
 	bool			successful = false;
-	
-	sPixel *		pixels = (sPixel *) GDIlockHPIXMAP(pPixMap);
-	if (pixels != NULL) {
-		HPIXMAPinfo		pixmapinfo;
-		
-		// get info
-		GDIgetHPIXMAPinfo(pPixMap, &pixmapinfo);
-		qlong			width	= pixmapinfo.mWidth;
-		qlong			height	= pixmapinfo.mHeight;				
-		
-		initBuffer(width, height);
+	int				X = 0, Y = 0, Comp = 0;
+
+	// this will decompress our image and 
+	unsigned char *pixeldata = stbi_load_from_memory(pBuffer, pSize, &X, &Y, &Comp, 4);
+	if (pixeldata == NULL) {
+		// Need to implement stbi_failure_reason() to get more info...
+		oBaseComponent::addToTraceLog("copy: can''t decode image data - %s",stbi_failure_reason());
+	} else if (Comp != 4) {
+		oBaseComponent::addToTraceLog("copy: couldn't convert image to RGBA");
+	} else {
+		oBaseComponent::addToTraceLog("copy: loaded image %i, %i - %i", X, Y, Comp);
+
+		// in theory we should be able to use our pixel data directly but we'll take the safe approach and copy it into our own buffer
+		initBuffer(X, Y);
 		if (mBuffer != NULL) {
-			// at this moment HPIXMAP and oRGBAImage share the same memory structure so we can just copy...
-			memcpy(mBuffer, pixels, sizeof(sPixel) * mWidth * mHeight);
-			
-			// we're good
+			memcpy(mBuffer, pixeldata, 4 * X * Y);
+
 			successful = true;
 		};
-		GDIunlockHPIXMAP(pPixMap);		
+
+		// and free up...
+		stbi_image_free(pixeldata);
 	};
-	
+
 	return successful;
 };
 
@@ -157,22 +168,54 @@ HPIXMAP oRGBAImage::asPixMap() {
 	HPIXMAP pixmap = 0;
 	
 	// only if we have a bitmap
-	if (mBuffer != NULL) {
+	if (mBuffer == NULL) {
+		oBaseComponent::addToTraceLog("asPixMap: No image to convert");
+	} else if ((mWidth==0) || (mHeight == 0)) { 
+		oBaseComponent::addToTraceLog("asPixMap: Can't convert empty image");
+	} else {
+//		oBaseComponent::addToTraceLog("asPixMap: creating pixmap %li, %li", mWidth, mHeight);
+
 		pixmap = GDIcreateHPIXMAP(mWidth, mHeight, 32, false);
-		if (pixmap != 0) {
+		if (pixmap == 0) {
+			oBaseComponent::addToTraceLog("asPixMap: Couldn't create pixmap");
+		} else {
+//			oBaseComponent::addToTraceLog("asPixMap: Locking pixmap");
 			sPixel *	pixels = (sPixel *) GDIlockHPIXMAP(pixmap);
-			if (pixels != NULL) {
-				memcpy(pixels, mBuffer, sizeof(sPixel) * mWidth * mHeight);
-				
-				GDIunlockHPIXMAP(pixmap);
-			} else {
+			if (pixels == NULL) {
+				oBaseComponent::addToTraceLog("asPixMap: Couldn't lock pixmap");
 				GDIdeleteHPIXMAP(pixmap);
 				pixmap = 0;
+			} else {
+				qulong size = sizeof(sPixel);
+				qulong copybytes = size * mWidth * mHeight;
+//				oBaseComponent::addToTraceLog("asPixMap: Copying image %li, %li",size, copybytes);
+
+				memcpy(pixels, mBuffer, copybytes);
+				
+//				oBaseComponent::addToTraceLog("asPixMap: unlock pixmap");
+
+				GDIunlockHPIXMAP(pixmap);
 			};
 		};
 	};
 	
 	return pixmap;
+};
+
+// returns our image as a PNG (calling method is responsible for freeing up the memory using free)
+qbyte * oRGBAImage::asPNG(int &pLen) {
+	// note that according to the STB documentation to compression used by this PNG logic isn't very good
+	// its implemented for simplicity but it does what we need it to do...
+	// you can always have Omnis recompress it as Omnis has a full PNG implementation
+	int len;
+	unsigned char *png = stbi_write_png_to_mem((unsigned char *) mBuffer, 0, mWidth, mHeight, 4, &len);
+	if (png == NULL) {
+		pLen = 0;
+		oBaseComponent::addToTraceLog("asPNG: Couldn't convert to PNG");
+	} else {
+		pLen = len;
+	};
+	return png;
 };
 
 // returns interpolated pixel
@@ -183,8 +226,8 @@ sPixel oRGBAImage::getPixel(float pX, float pY) const {
 		if (pX < 0.0) pX = 0.0; // ???
 		if (pY < 0.0) pY = 0.0; // ???	
 		
-		qlong	intX		= floor(pX);
-		qlong	intY		= floor(pY);
+		qlong	intX		= (qlong) floor(pX);
+		qlong	intY		= (qlong) floor(pY);
 		bool	interpolate	= true;
 		
 		// make sure we stay within our buffer...
@@ -310,33 +353,33 @@ sPixel	oRGBAImage::interpolatePixel(sPixel pA, sPixel pB, float pFract) {
 	if (pA.mR == pB.mR) {
 		result.mR = pA.mR;
 	} else {
-		delta		= pB.mR - pA.mR;
+		delta		= (float) (pB.mR - pA.mR);
 		delta		*= pFract;
-		result.mR	= pA.mR + delta;		
+		result.mR	= (qbyte) (pA.mR + delta);
 	};
 	
 	if (pA.mG == pB.mG) {
 		result.mG = pA.mG;
 	} else {
-		delta		= pB.mG - pA.mG;
+		delta		= (float) (pB.mG - pA.mG);
 		delta		*= pFract;
-		result.mG	= pA.mG + delta;
+		result.mG	= (qbyte) (pA.mG + delta);
 	};
 	
 	if (pA.mB == pB.mB) {
 		result.mB = pA.mB;
 	} else {
-		delta		= pB.mB - pA.mB;
+		delta		= (float) (pB.mB - pA.mB);
 		delta		*= pFract;
-		result.mB	= pA.mB + delta;
+		result.mB	= (qbyte) (pA.mB + delta);
 	};
 	
 	if (pA.mA == pB.mA) {
 		result.mA = pA.mA;
 	} else {
-		delta		= pB.mA - pA.mA;
+		delta		= (float) (pB.mA - pA.mA);
 		delta		*= pFract;
-		result.mA	= pA.mA + delta;
+		result.mA	= (qbyte) (pA.mA + delta);
 	};
 	
 	return result;

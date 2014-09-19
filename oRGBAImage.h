@@ -6,26 +6,26 @@
  *
  *  RGBA bitmap class
  *  The Omnis SDK has a really powerful set of device dependent bitmap functions. It also has powerful functions around HPIXMAP for device independent functions.
- *  But the documentation is poor and I've had alot of stability issues with them.
+ *  But the documentation is poor and I've had alot of stability issues with them so I've switched to using the STB library.
  *
- *  This class is a simple and raw implementation for bitmaps. In the future we may change this object to simply encapsulate an HPIXMAP object.
+ *  This class is a simple and raw implementation for bitmaps.
  *
  *  https://github.com/BastiaanOlij/omnis.xcomp.framework
  */
 
 
 #include "xCompStandardIncludes.h"
+#include "oBaseComponent.h"
 
 #ifndef orgbaimageh
 #define orgbaimageh
 
-// pixel structure as its used in a 32bit HPIXMAP, we'll use this here as well. 
-// tested on Mac, may need to change on windows..
+// pixel structure as its used by our STB library 
 typedef struct sPixel {
-	qbyte	mA;
 	qbyte	mR;
 	qbyte	mG;
 	qbyte	mB;
+	qbyte	mA;
 } sPixel;
 
 class oRGBAImage {
@@ -43,7 +43,7 @@ public:
 	oRGBAImage(qlong pWidth, qlong pHeight);				// create empty bitmap of these dimentions
 	oRGBAImage(qlong pWidth, qlong pHeight, qcol pColor);	// create empty bitmap of these dimentions with a default color
 	oRGBAImage(const oRGBAImage & pCopy);					// construct as a copy
-	oRGBAImage(HPIXMAP pPixMap);							// construct from an omnis HPIXMAP 
+	oRGBAImage(qbyte *pBuffer, qlong pSize);				// construct from a binary image (see STB library for supported formats)
 	~oRGBAImage();											// destruct and free up memory
 	
 	const sPixel *	imageBuffer() const;					// get a pointer to our image buffer
@@ -51,9 +51,10 @@ public:
 	qlong			height() const;							// height of our image
 	
 	void			copy(const oRGBAImage & pCopy);			// copy another image
-	bool			copy(HPIXMAP pPixMap);					// copy an omnis HPIXMAP into our image
+	bool			copy(qbyte *pBuffer, qlong pSize);		// cpoy a binary image into our image (see STB library for supported formats)
 	
-	HPIXMAP			asPixMap();								// return our image as a HPIXMAP (calling method is responsible for freeing up the memory)
+	HPIXMAP			asPixMap();								// return our image as a HPIXMAP (calling method is responsible for freeing up the memory using MEMfree)
+	qbyte *			asPNG(int &pLen);						// returns our image as a PNG (calling method is responsible for freeing up the memory using free)
 	
 	sPixel			getPixel(float pX, float pY) const;		// returns interpolated pixel
 
