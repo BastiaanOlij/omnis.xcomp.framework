@@ -9,7 +9,7 @@
  *
  *  Todos:
  *  - See if we can put our drawing functions into a separate context object
- *  - Implement a way to create a sna	pshot bitmap
+ *  - Implement a way to create a snapshot bitmap
  *  - Complete drag and drop interface
  *
  *  https://github.com/BastiaanOlij/omnis.xcomp.framework
