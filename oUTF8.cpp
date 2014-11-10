@@ -136,19 +136,19 @@ std::string	oUTF8::convertFromUTF8(const char * pString) {
 				// this should not happen, we've not encoded something properly or this is not an UTF-8 character!
 				tmpIsUTF8 = false;
 			} else if (tmpChar < 0xE0) {
-				tmpUnicode = tmpChar && 0x1F;
+				tmpUnicode = tmpChar & 0x1F;
 				tmpUTF8Bytes = 2;
 			} else if (tmpChar < 0xF0) {
-				tmpUnicode = tmpChar && 0x0F;
+				tmpUnicode = tmpChar & 0x0F;
 				tmpUTF8Bytes = 3;
 			} else if (tmpChar < 0xF8) {
-				tmpUnicode = tmpChar && 0x07;
+				tmpUnicode = tmpChar & 0x07;
 				tmpUTF8Bytes = 4;
 			} else if (tmpChar < 0xFE) {
-				tmpUnicode = tmpChar && 0x03;
+				tmpUnicode = tmpChar & 0x03;
 				tmpUTF8Bytes = 5;
 			} else {
-				tmpUnicode = tmpChar && 0x01;
+				tmpUnicode = tmpChar & 0x01;
 				tmpUTF8Bytes = 6;				
 			};
 			
