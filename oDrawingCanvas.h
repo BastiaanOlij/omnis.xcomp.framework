@@ -94,6 +94,7 @@ public:
 	qdim						getTextHeight(const qchar *pText, qdim pWidth, bool pStyled = true, bool pWrap = true);	// Get the heigth of text if wrapped
 
 	// drawing functions
+    void                        drawText(const qchar *pText, qpoint pWhere, const GDItextSpecStruct& pTextSpec);                                        // Draws text with a specific text struct (left aligned, no wrapping or clipping)
 	qdim						drawText(const qchar *pText, qrect pWhere, qcol pColor, qjst pJst = jstLeft, bool pStyled = true, bool pWrap = true);	// Draws the text clipped within the specified rectangle 
 	void						drawIcon(qlong pIconId, qpoint pAt);																					// Draw a icon at this position
 	void						drawLine(qpoint pFrom, qpoint pTo);																						// Draws a line between two points using the current selected pen

@@ -66,10 +66,7 @@ qstring::qstring(const qoschar *pString) {
 // Initialize and copy from an omnis string (zero terminated)
 qstring::qstring(const qchar *pString) {
 	init();
-	
-	str255 msg(QTEXT("string"));
-	ECOaddTraceLine(&msg);
-	
+		
 	copy(pString);
 };
 

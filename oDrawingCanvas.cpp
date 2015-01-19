@@ -484,6 +484,26 @@ qdim	oDrawingCanvas::getTextHeight(const qchar *pText, qdim pWidth, bool pStyled
 // Drawing functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// Draws text with a specific text struct (left aligned, no wrapping or clipping)
+void    oDrawingCanvas::drawText(const qchar *pText, qpoint pWhere, const GDItextSpecStruct &pTextSpec) {
+	GDIdrawTextStruct drawinfo(
+        mHDC,
+        pWhere.h,
+        pWhere.v,
+        (qchar *)pText,		// for some reason Omnis never declared this a constant but it doesn't change the buffer (i hope)..
+        OMstrlen(pText),
+        (GDItextSpecStruct *)&pTextSpec,
+        0,                  // pColumnArray
+		0,					// pColumnCount
+		1,                  // pFlags: 1 = styled text
+        mApp,
+        0                   // pColumnJsts
+    );
+
+    // draw the whole text
+    GDIdrawTextJst(&drawinfo);
+};
+
 // Draws the text clipped within the specified rectangle 
 qdim	oDrawingCanvas::drawText(const qchar *pText, qrect pWhere, qcol pColor, qjst pJst, bool pStyled, bool pWrap) {
 	if ((pWhere.right <= pWhere.left) || (pWhere.bottom <= pWhere.top)) {

@@ -51,7 +51,7 @@ public:
 	qlong			height() const;							// height of our image
 	
 	void			copy(const oRGBAImage & pCopy);			// copy another image
-	bool			copy(qbyte *pBuffer, qlong pSize);		// cpoy a binary image into our image (see STB library for supported formats)
+	bool			copy(qbyte *pBuffer, qlong pSize);		// copy a binary image into our image (see STB library for supported formats)
 	
 	qbyte *			asPNG(int &pLen);						// returns our image as a PNG (calling method is responsible for freeing up the memory using free)
 	
