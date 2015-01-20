@@ -521,29 +521,35 @@ qdim	oDrawingCanvas::drawText(const qchar *pText, qrect pWhere, qcol pColor, qjs
 		qdim				fontheight	= mFontHeight;
 		qshort				pos			= 0;
 		qshort				start		= 0;
-		qdim				left		= pWhere.left;
 		qdim				top			= pWhere.top;
-		qshort				columns[2];
-		qint1				jsts[2];
 		
 		// Need to find a better way to get a unicode character :)
 		qchar		newline	= '\n';
 		qchar		space	= ' ';
 
 		// Set our text color
-		lvTextSpec.mTextColor = pColor;
+		if (pColor != GDI_COLOR_QDEFAULT) lvTextSpec.mTextColor = pColor;
 
-		// setup our columns
-		columns[0]			= 0;
-		columns[1]			= pWhere.right - pWhere.left + 1;
-		jsts[0]				= pJst;
-		jsts[1]				= pJst;
-
+		// setup our justification
+        if (pJst == jstNone) pJst = lvTextSpec.mJst;
+        lvTextSpec.mJst = jstLeft;
+        
 		// now loop through to find our lines or until we're below our drawing rectangle.
 		while ((pos <= len) && ((top + fontheight) <= pWhere.bottom)) { // note that we add fontheight to our check because our clipping doesn't work very well with drawTextJst
 			if ((pText[pos] == 0x00) || (pText[pos] == newline)) {
 				if (pos > start) {
 					// draw our text...
+                    qdim left = pWhere.left;
+                    
+                    // justify
+                    if (pJst != jstLeft) {
+                        qdim width = GDItextWidth(mHDC, (qchar *)&pText[start], pos-start);
+                        if (pJst == jstRight) {
+                            left += pWhere.width() - width;
+                        } else if (pJst == jstCenter) {
+                            left += (pWhere.width() - width) / 2;
+                        };
+                    };
 					
 					GDIdrawTextStruct drawinfo(
 											   mHDC,
@@ -552,11 +558,11 @@ qdim	oDrawingCanvas::drawText(const qchar *pText, qrect pWhere, qcol pColor, qjs
 											   (qchar *)&pText[start],		// for some reason Omnis never declared this a constant but it doesn't change the buffer (i hope)..
 											   pos-start,
 											   &lvTextSpec,
-											   columns,					// pColumnArray
-											   1,							// pColumnCount
+											   0,                       // pColumnArray
+											   0,						// pColumnCount
 											   pStyled ? 1 : 0,			// pFlags: 1 = styled text
 											   mApp,
-											   jsts						// pColumnJsts
+											   0						// pColumnJsts
 											   );
 					
 					// draw the whole text
@@ -588,7 +594,6 @@ qdim	oDrawingCanvas::drawText(const qchar *pText, qrect pWhere, qcol pColor, qjs
 				
 				// get start position for next line..
 				start	= pos + 1;
-				left	= pWhere.left;
 				top		+= fontheight;
 			};
 			
@@ -602,8 +607,8 @@ qdim	oDrawingCanvas::drawText(const qchar *pText, qrect pWhere, qcol pColor, qjs
 	};
 };
 
-// Draw a icon at this position
-void	oDrawingCanvas::drawIcon(qlong pIconId, qpoint pAt) {
+// Draw a icon at this position, height/width of rectangle is only used for centering, no clipping!
+qdim	oDrawingCanvas::drawIcon(qlong pIconId, qrect pAt, bool pHorzCenter, bool pVertCenter, bool pEnabled) {
 	EXTBMPref	tmpIcon(pIconId);
 	qrect		iconRect;
 	qdim		pxsize = 16;
@@ -627,16 +632,18 @@ void	oDrawingCanvas::drawIcon(qlong pIconId, qpoint pAt) {
 			break;
 	};
 	
-	iconRect.left	= pAt.h;
-	iconRect.top	= pAt.v;
-	iconRect.right	= iconRect.left + pxsize;
-	iconRect.bottom	= iconRect.top + pxsize;
+	iconRect.left	= pAt.left;
+	iconRect.top	= pAt.top;
+	iconRect.right	= pHorzCenter ? pAt.right : iconRect.left + pxsize;
+	iconRect.bottom	= pVertCenter ? pAt.bottom : iconRect.top + pxsize;
 	
 	if (clipRect(iconRect, true)) {
-		tmpIcon.draw (mHDC, &iconRect, picsize, picNormal, qfalse, colNone, qfalse, imgjst, imgjst);		
+		tmpIcon.draw (mHDC, &iconRect, picsize, picNormal, !pEnabled, colNone, qfalse, pHorzCenter ? imgjst : jstLeft, pVertCenter ? imgjst : jstLeft);
 		
 		unClip();
 	};
+    
+    return pxsize;
 };
 
 
@@ -675,7 +682,7 @@ void	oDrawingCanvas::drawRect(qrect pRect, qcol pFillColor, HBRUSH pBrush) {
 	GDIsetTextColor(mHDC, wasColor);
 };
 
-// draw a rectangle. Note, if pBackground is set to GDI_COLOR_QDEFAULT we do not fill the rectangle
+// draw a rectangle. Note, if pFillColor is set to GDI_COLOR_QDEFAULT we do not fill the rectangle
 void	oDrawingCanvas::drawRect(qrect pRect, qcol pFillColor, qcol pBorder) {
 	qcol	wasColor = GDIgetTextColor(mHDC);
 	
@@ -691,7 +698,6 @@ void	oDrawingCanvas::drawRect(qrect pRect, qcol pFillColor, qcol pBorder) {
 		GDIsetTextColor(mHDC, pBorder);
 		GDIframeRect(mHDC, &pRect);
 		
-		
 		GDIselectObject(mHDC, oldPen);
 		GDIdeleteObject(borderPen);
 	};
@@ -700,6 +706,30 @@ void	oDrawingCanvas::drawRect(qrect pRect, qcol pFillColor, qcol pBorder) {
 	GDIsetTextColor(mHDC, wasColor);
 };
 
+// draw a rounded rectangle. Note, if pFillColor is set to GDI_COLOR_QDEFAULT we do not fill the rectangle
+void    oDrawingCanvas::drawRoundedRect(qrect pRect, qdim pDiameter, qcol pFillColor, qcol pBorder) {
+	qcol	wasColor = GDIgetTextColor(mHDC);
+	
+	if (pFillColor != GDI_COLOR_QDEFAULT) {
+        GDIsetTextColor(mHDC, pFillColor);
+		GDIfillRoundRect(mHDC, &pRect, pDiameter, pDiameter, GDIgetStockBrush(BLACK_BRUSH));
+	};
+	
+	if ((pFillColor != pBorder) && (pBorder != GDI_COLOR_QDEFAULT)) {
+		HPEN	borderPen	= GDIcreatePen(1, pBorder, patFill);
+		HPEN	oldPen		= GDIselectObject(mHDC, borderPen);
+		
+		// draw our border
+		GDIsetTextColor(mHDC, pBorder);
+		GDIframeRoundRect(mHDC, &pRect, pDiameter, pDiameter);
+		
+		GDIselectObject(mHDC, oldPen);
+		GDIdeleteObject(borderPen);
+	};
+	
+	// leave it as it was...
+	GDIsetTextColor(mHDC, wasColor);
+};
 
 // Draws a filled ellipse within the rectangle with a gradient color from top to bottom
 void	oDrawingCanvas::drawEllipse(qrect pRect, qcol pTop, qcol pBottom, qcol pBorder, qint pSpacing) {

@@ -27,10 +27,11 @@
 
 oBaseVisComponent::oBaseVisComponent(void) {
 	mObjType			= cObjType_Basic;
+    mShowName           = true;
 	mForecolor			= GDI_COLOR_QDEFAULT;
 	mBackcolor			= GDI_COLOR_QDEFAULT;
 	mHorzScrollPos		= 0;
-	mVertScrollPos			= 0;
+	mVertScrollPos		= 0;
 	mBackpattern		= 0;
 	mBKTheme			= WND_BK_NONE;
 	mDrawBuffer			= true;
@@ -204,6 +205,24 @@ EXTqlist *	oBaseVisComponent::getDataList(EXTCompInfo* pECI) {
 		addToTraceLog("Dataname isn't a list or row");
 		return NULL;
 	};
+};
+
+// check if our field is enabled
+bool    oBaseVisComponent::isEnabled() {
+    // !BAS! this checks just our own setting, it doesn't check if any container is inactive. Some day we need to improve this...
+	EXTfldval	enabledFld;
+
+	ECOgetProperty(mHWnd, anumEnabled, enabledFld);
+	return enabledFld.getBool() == 2;
+};
+
+// check if our field is active
+bool    oBaseVisComponent::isActive() {
+    // !BAS! this checks just our own setting, it doesn't check if any container is inactive. Some day we need to improve this...
+	EXTfldval	activeFld;
+
+	ECOgetProperty(mHWnd, anumActive, activeFld);
+	return activeFld.getBool() == 2;
 };
 
 // Changes our primary data
@@ -443,7 +462,7 @@ bool oBaseVisComponent::wm_paint(EXTCompInfo* pECI) {
 					// If in design mode, then call drawDesignName, drawNumber & drawMultiKnobs to draw design
 					// name, numbers and multiknobs, if required.
 					if ( ECOisDesign(mHWnd) ) {
-						ECOdrawDesignName(mHWnd,lvHDC);
+						if (mShowName) ECOdrawDesignName(mHWnd,lvHDC);
 						ECOdrawNumber(mHWnd,lvHDC);
 						ECOdrawMultiKnobs(mHWnd,lvHDC);
 					}
@@ -561,6 +580,21 @@ HCURSOR	oBaseVisComponent::getCursor(qpoint pAt, qword2 pHitTest) {
 	return WND_CURS_DEFAULT;
 };
 
+// returns true if the mouse is over our object
+bool oBaseVisComponent::mouseIsOver() {
+    return mMouseOver;
+};
+
+// mouse moved over our object
+void oBaseVisComponent::evMouseEnter() {
+    // stub
+};
+
+// mouse moved away from our object
+void oBaseVisComponent::evMouseLeave() {
+    // stub
+};
+
 // mouse left button pressed down (return true if we finished handling this, false if we want Omnis internal logic)
 bool	oBaseVisComponent::evMouseLDown(qpoint pDownAt) {
 	// stub
@@ -615,7 +649,7 @@ bool	oBaseVisComponent::wm_lbutton(qpoint pAt, bool pDown, EXTCompInfo* pECI) {
 		mMouseDownAt = pAt;
 		
 		return this->evMouseLDown(pAt);
-	} else {
+	} else if (mMouseLButtonDown) {
 		mMouseLButtonDown = false;
 		if (!mMouseDragging) {
 			// addToTraceLog("Click");
@@ -623,7 +657,10 @@ bool	oBaseVisComponent::wm_lbutton(qpoint pAt, bool pDown, EXTCompInfo* pECI) {
 			this->evClick(pAt, pECI);
 		};
 		return this->evMouseLUp(pAt);
-	};	
+	} else {
+        // mouse didn't go down on this so...
+        return false;
+    };
 };
 
 // left mouse button double click (return true if we finished handling this, false if we want Omnis internal logic)
@@ -641,14 +678,25 @@ bool	oBaseVisComponent::wm_rbutton(qpoint pAt, bool pDown, EXTCompInfo* pECI) {
 	};
 };
 
-void	oBaseVisComponent::wm_mousemove(qpoint pMovedTo, EXTCompInfo* pECI) {
+void	oBaseVisComponent::wm_mousemove(qpoint pMovedTo, EXTCompInfo* pECI, bool IsOver) {
 	mMouseAt = pMovedTo; /* store a copy of our mouse location */
 	
-	if (mMouseDragging) {
-		// for now we ignore this...
-	} else {
-		this->evMouseMoved(mMouseAt);		
-	};
+    if (IsOver) {
+        if (!mMouseOver) {
+            mMouseOver = true;
+            
+            this->evMouseEnter();
+        };
+    
+        if (mMouseDragging) {
+            // for now we ignore this...
+        } else {
+            this->evMouseMoved(mMouseAt);
+        };
+    } else if (mMouseOver) {
+        mMouseOver = false;
+        this->evMouseLeave();
+    };
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////

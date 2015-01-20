@@ -516,11 +516,17 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 			// and if its good, call the function
 			if (lvObject!=NULL) {
 				// let our object know that we have pressed our mouse down.
-				qpoint pt; 
+				qpoint pt;
+                
+                // get some info about our mouse
 				WNDmakePoint( lParam, &pt );
-				if (lvObject->wm_lbutton(pt, true, pECI)) { // only if we return true do we round this off, if false we assume default logic for Omnis.
+                
+                if (!lvObject->mouseIsOver()) {
+                    // our mouse is not over our component, we must have captured it..
+				} else if (lvObject->wm_lbutton(pt, true, pECI)) { // only if we return true do we round this off, if false we assume default logic for Omnis.
 					// capture our mouse
-					if (!WNDhasCapture(pHWND, WND_CAPTURE_MOUSE) && WNDmouseLeftButtonDown()) {
+					if (!WNDhasCapture(pHWND, WND_CAPTURE_MOUSE)) {
+//                        oBaseComponent::addToTraceLog("Mouse captured on mouse down");
 						WNDsetCapture(pHWND, WND_CAPTURE_MOUSE);
 					};
 					return 0L;
@@ -535,16 +541,15 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 			// and if its good, call the function
 			if (lvObject!=NULL) {
 				qpoint pt; 
+                
+                // get some info about our mouse
 				WNDmakePoint( lParam, &pt );
-				
+                
 				if (lvObject->wm_lbutton(pt, false, pECI)) { // only if we return true do we round this off, if false we assume default logic for Omnis.
-					// if we had capture the mouse, we release it..
-					if (WNDhasCapture(pHWND, WND_CAPTURE_MOUSE)) {
-						WNDreleaseCapture(WND_CAPTURE_MOUSE);						
-					};
-					
 					return 0L;
 				};
+                
+                // note, if we've captured the mouse on our mouse down, our next call to mouse move will clean things up nicely....
 			};				
 		} break;
 			
@@ -583,16 +588,37 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 		} break;
 			
 			
-		// WM_MOUSEMOVE - mouse has been moved
+		// WM_MOUSEMOVE - mouse has been moved while it is above us or we have captured the mouse
 		case WM_MOUSEMOVE: {
 			// This should only be called on visual object
 			oBaseVisComponent* lvObject = (oBaseVisComponent*)ECOfindObject( pECI, pHWND );
+            
 			// and if its good, call the function
 			if (lvObject!=NULL) {
-				qpoint pt; 
+                HWND   mouse_over = NULL;
+				qpoint pt, pt_desktop;
+                qword2 hittest;
+                bool   captured = WNDhasCapture(pHWND, WND_CAPTURE_MOUSE);
+                
+                // get some info about our mouse
 				WNDmakePoint( lParam, &pt );
-		
-				lvObject->wm_mousemove(pt, pECI);
+                pt_desktop = pt;
+                WNDmapWindowPoint(pHWND, HWND_DESKTOP, &pt_desktop);
+                WNDgetWindowFromPt(&mouse_over, &hittest, &pt_desktop);
+                
+                bool mouseIsOver = (mouse_over == pHWND) && (hittest != HTNOWHERE);
+                
+                // mouse moved
+                lvObject->wm_mousemove(pt, pECI, mouseIsOver);
+
+                // check if we need to keep our capture
+				if (captured && !mouseIsOver && !WNDmouseLeftButtonDown()) {
+					WNDreleaseCapture(WND_CAPTURE_MOUSE);
+//                    oBaseComponent::addToTraceLog("Mouse released on mouse moved out");
+				} else if (!captured && mouseIsOver) {
+                    WNDsetCapture(pHWND, WND_CAPTURE_MOUSE);
+//                    oBaseComponent::addToTraceLog("Mouse captured on mouse moved over");
+                };
 				
 				return 0L;
 			};	
@@ -648,20 +674,130 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 		} break;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// undocumented but handy!
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        // 1026 - $enabled or $active set to true in runtime INCLUDING if this action is done on a container!
+        case 1026: {
+            // must do our standard logic..
+			qlong result = WNDdefWindowProc(pHWND,pMsg,wParam,lParam,pECI);
+
+            /* Can't do anything with this yet, Omnis is not telling us whether $enabled or $active is being set so we have no reliable way of knowing how to react here...
+            
+			oBaseVisComponent* lvObject = (oBaseVisComponent*)ECOfindObject( pECI, pHWND );
+			if (lvObject!=NULL) {
+                oBaseComponent::addToTraceLog("%li: active/enabled changed to true w: %li, l: %li", pHWND, wParam, lParam);
+            };
+            
+            */
+            
+            // do call a redraw on our object just in case it wants to change the way it draws...
+            WNDinvalidateRect(pHWND, NULL);
+
+            return result;
+        } break;
+
+        // 1027 - $enabled or $active set to false in runtime INCLUDING if this action is done on a container!
+        case 1027: {
+            // must do our standard logic..
+			qlong result = WNDdefWindowProc(pHWND,pMsg,wParam,lParam,pECI);
+
+            /* Can't do anything with this yet, Omnis is not telling us whether $enabled or $active is being set so we have no reliable way of knowing how to react here...
+
+			oBaseVisComponent* lvObject = (oBaseVisComponent*)ECOfindObject( pECI, pHWND );
+			if (lvObject!=NULL) {
+                oBaseComponent::addToTraceLog("%li: active/enabled changed to false w: %li, l: %li", pHWND, wParam, lParam);
+            };
+            
+            */
+
+            // do call a redraw on our object just in case it wants to change the way it draws...
+            WNDinvalidateRect(pHWND, NULL);
+        
+            return result;
+        } break;
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// place holders for later implementation..
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        // WM_CREATE - create an object
+        case WM_CREATE: {
+			return WNDdefWindowProc(pHWND,pMsg,wParam,lParam,pECI);			
+        } break;
+        
+        // WM_DESTROY - destroy an object
+        case WM_DESTROY: {
+			return WNDdefWindowProc(pHWND,pMsg,wParam,lParam,pECI);			
+        } break;
+        
+        // WM_SHOWWINDOW - make object visible
+        case WM_SHOWWINDOW: {
+			return WNDdefWindowProc(pHWND,pMsg,wParam,lParam,pECI);			
+        } break;
+
+        // WM_WINDOWPOSCHANGING - moving component around (WM_WINDOWPOSCHANGED is called once finished)
+        case WM_WINDOWPOSCHANGING: {
+			return WNDdefWindowProc(pHWND,pMsg,wParam,lParam,pECI);			
+        } break;
+
+        // WM_GETERASEINFO - send to fld to get information required to erase areas not painted by the border
+        case WM_GETERASEINFO: {
+			return WNDdefWindowProc(pHWND,pMsg,wParam,lParam,pECI);			
+        } break;
+
+        // ECM_OBJINITIALIZE - Sent during object construction (before set property WPARAM=0; after WPARAM=1)
+        case ECM_OBJINITIALIZE: {
+			return WNDdefWindowProc(pHWND,pMsg,wParam,lParam,pECI);			
+        } break;
+        
+        // ECM_PROPERTYCALCTYPE - Request for the Calculation type of an attribute // mt40455
+        case ECM_PROPERTYCALCTYPE: {
+			return WNDdefWindowProc(pHWND,pMsg,wParam,lParam,pECI);			
+        } break;
+
+        // ECM_INBUILT_OVERRIDE - sent by Omnis to find out if our object wants to maintain certain build in properties itself
+        case ECM_INBUILT_OVERRIDE: {
+			return WNDdefWindowProc(pHWND,pMsg,wParam,lParam,pECI);			
+        } break;
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// unknowns worth looking into
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        case 1037: { // 0x40D seems to be called when the mouse moves in design time
+			return WNDdefWindowProc(pHWND,pMsg,wParam,lParam,pECI);			
+        } break;
+        
+        case 1051: { // 0x41B seems to be called regularly
+			return WNDdefWindowProc(pHWND,pMsg,wParam,lParam,pECI);			
+        } break;
+        
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // omnis internal calls that we need to pass through..
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        // WM_NULL - no message?
+        case WM_NULL: {
+			return WNDdefWindowProc(pHWND,pMsg,wParam,lParam,pECI);			
+        } break ;
+
+        // ECM_OBJECTDATABLOCK - Setting object properties with a data block
+        case ECM_OBJECTDATABLOCK: {
+			return WNDdefWindowProc(pHWND,pMsg,wParam,lParam,pECI);			
+        } break;
 
 		// ECM_MEMORYDELETION tells our xcomp to free up memory
 		case ECM_MEMORYDELETION: {
 			return WNDdefWindowProc(pHWND,pMsg,wParam,lParam,pECI);			
-		};
+		} break;
 
 		default: {
 /* uncomment for debugging
 			qstring		lvString;
 			lvString.appendFormattedString("Call not implemented: %li", pMsg);
 			str255		lvStr(lvString.cString());
-			ECOaddTraceLine(&lvStr);*/
+			ECOaddTraceLine(&lvStr); */
 		}; break;	
 	};
 	

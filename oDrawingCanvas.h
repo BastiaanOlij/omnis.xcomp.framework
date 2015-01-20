@@ -95,13 +95,14 @@ public:
 
 	// drawing functions
     void                        drawText(const qchar *pText, qpoint pWhere, const GDItextSpecStruct& pTextSpec);                                        // Draws text with a specific text struct (left aligned, no wrapping or clipping)
-	qdim						drawText(const qchar *pText, qrect pWhere, qcol pColor, qjst pJst = jstLeft, bool pStyled = true, bool pWrap = true);	// Draws the text clipped within the specified rectangle 
-	void						drawIcon(qlong pIconId, qpoint pAt);																					// Draw a icon at this position
+	qdim						drawText(const qchar *pText, qrect pWhere, qcol pColor, qjst pJst = jstNone, bool pStyled = true, bool pWrap = true);	// Draws the text clipped within the specified rectangle 
+	qdim						drawIcon(qlong pIconId, qrect pAt, bool pHorzCenter = false, bool pVertCenter = false, bool pEnabled = true);           // Draw a icon at this position, height/width of rectangle is only used for centering, no clipping!
 	void						drawLine(qpoint pFrom, qpoint pTo);																						// Draws a line between two points using the current selected pen
 	void						drawLine(qpoint pFrom, qpoint pTo, qdim pWidth, qcol pCol, qpat pPat);													// Draws a line between two points
 	void						drawRect(qrect pRect, qcol pFillColor);																					// fills a rectangle using our standard pattern brush
 	void						drawRect(qrect pRect, qcol pFillColor, HBRUSH pBrush);																	// fills a rectangle with a certain pattern
-	void						drawRect(qrect pRect, qcol pFillColor, qcol pBorder);																	// draw a rectangle. Note, if pBackground is set to GDI_COLOR_QDEFAULT we do not fill the rectangle
+	void						drawRect(qrect pRect, qcol pFillColor, qcol pBorder);																	// draw a rectangle. Note, if pFillColor is set to GDI_COLOR_QDEFAULT we do not fill the rectangle
+	void						drawRoundedRect(qrect pRect, qdim pDiameter, qcol pFillColor, qcol pBorder);											// draw a rounded rectangle. Note, if pFillColor is set to GDI_COLOR_QDEFAULT we do not fill the rectangle
 	void						drawEllipse(qrect pRect, qcol pTop, qcol pBottom, qcol pBorder = -1, qint pSpacing = 0);								// Draws a filled ellipse within the rectangle with a gradient color from top to bottom
 	
 };

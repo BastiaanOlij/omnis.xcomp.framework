@@ -21,6 +21,7 @@ private:
 	bool						mMouseLButtonDown;													// Did we press the mouse button down while within our control? 
 	qpoint						mMouseDownAt;														// Location we pressed the mouse down at
 	bool						mMouseDragging;														// Are we dragging?
+    bool                        mMouseOver;                                                         // If true mouse is over our object
 	
 	// init functions
 	void						setup(EXTCompInfo* pECI);											// setup our colors and fonts etc.
@@ -29,6 +30,7 @@ private:
 protected:
 	qlong						mObjType;															// Object type
 	HWND						mHWnd;																// Our main window handle (not applicable for NV objects)
+    bool                        mShowName;                                                          // For design only, show our field name
 	qpoint						mMouseAt;															// Last known location of the mouse as it hoovered over our control
 	EXTfldval					mPrimaryData;														// Copy of our primary data if default implementation is used
 	
@@ -51,6 +53,8 @@ protected:
 		
 	// handy Omnis functions
 	EXTqlist *					getDataList(EXTCompInfo* pECI);										// Get list variable used for $dataname
+    bool                        isEnabled();                                                        // check if our field is enabled
+    bool                        isActive();                                                         // check if our field is active
 public:
 	oBaseVisComponent(void);																		// constructor
 	virtual	qbool				init(qapp pApp, HWND pHWnd);										// Initialize component
@@ -76,6 +80,9 @@ public:
 	
 	// mouse related
 	virtual HCURSOR				getCursor(qpoint pAt, qword2 pHitTest);								// return the mouse cursor we should show
+    bool                        mouseIsOver();                                                      // returns true if the mouse is over our object
+    virtual void                evMouseEnter();                                                     // mouse moved over our object
+    virtual void                evMouseLeave();                                                     // mouse moved away from our object
 	virtual bool				evMouseLDown(qpoint pDownAt);										// mouse left button pressed down (return true if we finished handling this, false if we want Omnis internal logic)
 	virtual bool				evMouseLUp(qpoint pUpAt);											// mouse left button released (return true if we finished handling this, false if we want Omnis internal logic)
 	virtual bool				evDoubleClick(qpoint pAt, EXTCompInfo* pECI);						// mouse left button double clicked (return true if we finished handling this, false if we want Omnis internal logic)
@@ -102,7 +109,7 @@ public:
 	bool						wm_lbutton(qpoint pAt, bool pDown, EXTCompInfo* pECI);				// left mouse up/down (return true if we finished handling this, false if we want Omnis internal logic)
 	bool						wm_lbDblClick(qpoint pAt, EXTCompInfo* pECI);						// left mouse button double click (return true if we finished handling this, false if we want Omnis internal logic)
 	bool						wm_rbutton(qpoint pAt, bool pDown, EXTCompInfo* pECI);				// right mouse button (return true if we finished handling this, false if we want Omnis internal logic)
-	void						wm_mousemove(qpoint pAt, EXTCompInfo* pECI);						// mouse is being moved
+	void						wm_mousemove(qpoint pAt, EXTCompInfo* pECI, bool IsOver);			// mouse is being moved
 	qlong						wm_dragdrop(WPARAM wParam, LPARAM lParam, EXTCompInfo* pECI);		// drag and drop handling, return -1 if we're not handling this and want default omnis logic to run
 	bool						wm_erasebkgnd(EXTCompInfo* pECI);									// erase our background message
 	bool						wm_paint(EXTCompInfo* pECI);										// Paint message
