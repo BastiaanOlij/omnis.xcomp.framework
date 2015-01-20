@@ -506,7 +506,7 @@ bool	oBaseVisComponent::ecm_paintcontents(EXTListLineInfo *pInfo, EXTCompInfo* p
 	return retval;
 };
 
-// Draw line fro cObjType_List or cObjTypeDropList
+// Draw line for cObjType_List or cObjTypeDropList
 bool	oBaseVisComponent::ecm_listdrawline(EXTListLineInfo *pInfo, EXTCompInfo* pECI) {
 	oDrawingCanvas *	lvWasCanvas = mCanvas;	// this should be NULL but just in case
 	bool				retval = false;
@@ -515,9 +515,34 @@ bool	oBaseVisComponent::ecm_listdrawline(EXTListLineInfo *pInfo, EXTCompInfo* pE
 	mCanvas = new oDrawingCanvas(mApp, pInfo->mHdc, pInfo->mLineRect);
 	if (mCanvas != NULL) {
 		setup(pECI);
-		
+
+		// draw our background..
+		HBRUSH brush = GDIcreateBrush( patFill );
+		GDIsetTextColor(pInfo->mHdc, mForecolor);
+		GDIfillRect(pInfo->mHdc,&pInfo->mLineRect,brush);
+		GDIdeleteObject(brush);
+
+		// start hiliting
+		if (pInfo->mSelected) {
+			GDIhiliteTextStart(pInfo->mHdc, &pInfo->mLineRect, mTextColor);
+
+	        GDItextSpecStruct   textSpec = mCanvas->textSpec();
+			textSpec.mTextColor = GDIgetTextColor(pInfo->mHdc);
+			mCanvas->setTextSpec(textSpec);
+		};
+
 		retval = this->drawListLine(pInfo, pECI);	
-		
+	
+		if (pInfo->mSelected) {
+			GDIhiliteTextEnd( pInfo->mHdc, &pInfo->mLineRect, mTextColor);
+		};
+
+		// Draw focus rectangle
+		if (pInfo->mDrawFocusRect) {
+			pInfo->mLineRect.right++;
+			GDIdrawFocusRect(pInfo->mHdc, &pInfo->mLineRect);
+		};
+
 		delete mCanvas;
 	};
 	
