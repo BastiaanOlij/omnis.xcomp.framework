@@ -516,26 +516,30 @@ bool	oBaseVisComponent::ecm_listdrawline(EXTListLineInfo *pInfo, EXTCompInfo* pE
 	if (mCanvas != NULL) {
 		setup(pECI);
 
-		// draw our background..
+#ifdef iswin32
+		// On windows we need to draw our background, on Mac it is drawn for us though maybe only if kBGThemeControl is used..
 		HBRUSH brush = GDIcreateBrush( patFill );
 		GDIsetTextColor(pInfo->mHdc, mForecolor);
 		GDIfillRect(pInfo->mHdc,&pInfo->mLineRect,brush);
 		GDIdeleteObject(brush);
 
 		// start hiliting
+        GDItextSpecStruct   textSpec = mCanvas->textSpec();
 		if (pInfo->mSelected) {
-			GDIhiliteTextStart(pInfo->mHdc, &pInfo->mLineRect, mTextColor);
 
-	        GDItextSpecStruct   textSpec = mCanvas->textSpec();
+			GDIhiliteTextStart(pInfo->mHdc, &pInfo->mLineRect, textSpec.mTextColor);
 			textSpec.mTextColor = GDIgetTextColor(pInfo->mHdc);
 			mCanvas->setTextSpec(textSpec);
 		};
+#endif
 
 		retval = this->drawListLine(pInfo, pECI);	
 	
+#ifdef iswin32
 		if (pInfo->mSelected) {
-			GDIhiliteTextEnd( pInfo->mHdc, &pInfo->mLineRect, mTextColor);
+			GDIhiliteTextEnd( pInfo->mHdc, &pInfo->mLineRect, textSpec.mTextColor);
 		};
+#endif
 
 		// Draw focus rectangle
 		if (pInfo->mDrawFocusRect) {
