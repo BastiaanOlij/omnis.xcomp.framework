@@ -25,6 +25,7 @@ typedef unsigned int uint;
 
 // add in our SDK headers
 #include <anums.he>
+#include <dmconst.he>
 #include <extcomp.he>
 #include <extfval.he>
 #include <hwnd.he>

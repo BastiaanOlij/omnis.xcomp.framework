@@ -294,13 +294,18 @@ qdim	oDrawingCanvas::getWordWidth(qstring & pWord) {
 	};
 	
 	// not found?
+
+
+	GDItextSpecStruct	lvTextSpec	= mTextSpec;				// Copy of our text spec we're using
+    lvTextSpec.mJst = jstLeft;                                  // Set to left justification or our text width fails
+
 	GDIdrawTextStruct drawinfo(
 							   mHDC,
 							   0,
 							   0,
 							   (qchar *)pWord.cString(),	// for some reason Omnis never declared this a constant but it doesn't change the buffer (i hope)..
 							   pWord.length(),
-							   &mTextSpec,
+							   &lvTextSpec,
 							   0,							// pColumnArray
 							   0,							// pColumnCount
 							   1,							// pFlags: 1 = styled text
@@ -314,9 +319,9 @@ qdim	oDrawingCanvas::getWordWidth(qstring & pWord) {
 		// can we cache it?
 		mTextCache.insert(std::pair<qchar50, qdim>(pWord.cString(),width));
 		
-//		oBaseComponent::addToTraceLog("Cached word %qs, size = %li", &pWord, width);		
-//	} else {
-//		oBaseComponent::addToTraceLog("Width word %qs, size = %li", &pWord, width);			
+//		oBaseComponent::addToTraceLog("Cached word %qs, size = %li", &pWord, width);
+	} else {
+//		oBaseComponent::addToTraceLog("Width word %qs, size = %li", &pWord, width);
 	};
 
 	return width;
@@ -427,8 +432,10 @@ qdim	oDrawingCanvas::getTextWidth(const qchar *pText, qshort pLen, bool pStyled)
 	if (pLen==0) {		
 		return 0;
 	}
+
+	GDItextSpecStruct	lvTextSpec	= mTextSpec;				// Copy of our text spec we're using
+    lvTextSpec.mJst = jstLeft;                                  // Set to left justification or our text width fails
 	
-#ifdef isunicode 
 	// It seems that on the OS4 SDK GDItextWidthJst gives a wrong result on a retina display, so only using it in unicode
 	GDIdrawTextStruct drawinfo(
 							   mHDC,
@@ -436,7 +443,7 @@ qdim	oDrawingCanvas::getTextWidth(const qchar *pText, qshort pLen, bool pStyled)
 							   0,
 							   (qchar *)pText,			// for some reason Omnis never declared this a constant but it doesn't change the buffer (i hope)..
 							   pLen,
-							   &mTextSpec,
+							   &lvTextSpec,
 							   0,						// pColumnArray
 							   0,						// pColumnCount
 							   pStyled ? 1 : 0,			// pFlags: 1 = styled text
@@ -445,10 +452,6 @@ qdim	oDrawingCanvas::getTextWidth(const qchar *pText, qshort pLen, bool pStyled)
 							   );
 	
 	qdim width = GDItextWidthJst(&drawinfo) + 2;
-#else
-	// this will not work properly if we have styled text...
-	qdim width = GDItextWidth(mHDC, (qchar *) pText, pLen) + 2;
-#endif
 	
 	return width;
 };
@@ -543,7 +546,7 @@ qdim	oDrawingCanvas::drawText(const qchar *pText, qrect pWhere, qcol pColor, qjs
                     
                     // justify
                     if (pJst != jstLeft) {
-                        qdim width = GDItextWidth(mHDC, (qchar *)&pText[start], pos-start);
+                        qdim width = getTextWidth((qchar *)&pText[start], pos-start, pStyled);
                         if (pJst == jstRight) {
                             left += pWhere.width() - width;
                         } else if (pJst == jstCenter) {
@@ -608,42 +611,40 @@ qdim	oDrawingCanvas::drawText(const qchar *pText, qrect pWhere, qcol pColor, qjs
 };
 
 // Draw a icon at this position, height/width of rectangle is only used for centering, no clipping!
-qdim	oDrawingCanvas::drawIcon(qlong pIconId, qrect pAt, bool pHorzCenter, bool pVertCenter, bool pEnabled) {
+qdim	oDrawingCanvas::drawIcon(qlong pIconId, qrect pAt, qjst pHorzJst, qjst pVertJst, bool pEnabled) {
 	EXTBMPref	tmpIcon(pIconId);
-	qrect		iconRect;
-	qdim		pxsize = 16;
-	ePicSize	picsize = tmpIcon.getBmpSize(pIconId);
-	qjst		imgjst = jstCenter;
-	
-	switch (picsize) {
-		case ePic16:
-			pxsize = 16;
-			break;
-		case ePic32:
-			pxsize = 32;
-			break;
-		case ePic48:
-			pxsize = 48;
-			break;
-		default:
-			// don't know the size...
-			pxsize = 48;
-			imgjst = jstLeft;
-			break;
-	};
-	
-	iconRect.left	= pAt.left;
-	iconRect.top	= pAt.top;
-	iconRect.right	= pHorzCenter ? pAt.right : iconRect.left + pxsize;
-	iconRect.bottom	= pVertCenter ? pAt.bottom : iconRect.top + pxsize;
-	
-	if (clipRect(iconRect, true)) {
-		tmpIcon.draw (mHDC, &iconRect, picsize, picNormal, !pEnabled, colNone, qfalse, pHorzCenter ? imgjst : jstLeft, pVertCenter ? imgjst : jstLeft);
-		
-		unClip();
-	};
     
-    return pxsize;
+    if (tmpIcon.getIconId() == 0) {
+        // pIconId could just hold our size info if someone reset the iconid back to 0
+        return 0;
+    } else {
+        qdim		pxsize = 16;
+        ePicSize	picsize = tmpIcon.getBmpSize(pIconId);
+
+        switch (picsize) {
+            case ePic16:
+                pxsize = 16;
+                break;
+            case ePic32:
+                pxsize = 32;
+                break;
+            case ePic48:
+                pxsize = 48;
+                break;
+            default:
+                // don't know the size, assume 48, need to find out how to get our default size...
+                pxsize = 48;
+                break;
+        };
+	
+        if (clipRect(pAt, true)) {
+            tmpIcon.draw (mHDC, &pAt, picsize, picNormal, !pEnabled, colNone, qfalse, pHorzJst, pVertJst);
+		
+            unClip();
+        };
+    
+        return pxsize;
+    };
 };
 
 

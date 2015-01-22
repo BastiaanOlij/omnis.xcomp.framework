@@ -96,7 +96,7 @@ public:
 	// drawing functions
     void                        drawText(const qchar *pText, qpoint pWhere, const GDItextSpecStruct& pTextSpec);                                        // Draws text with a specific text struct (left aligned, no wrapping or clipping)
 	qdim						drawText(const qchar *pText, qrect pWhere, qcol pColor, qjst pJst = jstNone, bool pStyled = true, bool pWrap = true);	// Draws the text clipped within the specified rectangle 
-	qdim						drawIcon(qlong pIconId, qrect pAt, bool pHorzCenter = false, bool pVertCenter = false, bool pEnabled = true);           // Draw a icon at this position, height/width of rectangle is only used for centering, no clipping!
+	qdim						drawIcon(qlong pIconId, qrect pAt, qjst pHorzJst = jstCenter, qjst pVertJst = jstCenter, bool pEnabled = true);         // Draw a icon at this position
 	void						drawLine(qpoint pFrom, qpoint pTo);																						// Draws a line between two points using the current selected pen
 	void						drawLine(qpoint pFrom, qpoint pTo, qdim pWidth, qcol pCol, qpat pPat);													// Draws a line between two points
 	void						drawRect(qrect pRect, qcol pFillColor);																					// fills a rectangle using our standard pattern brush
