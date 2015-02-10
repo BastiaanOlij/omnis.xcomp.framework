@@ -63,8 +63,8 @@ public:
 /*** Properties ***/
 	static  qProperties *		properties(void);													// return array of property meta data
 	virtual qbool				canAssign(qlong pPropID);											// return true/false if a property can be written too
-	virtual qbool				setProperty(qlong pPropID,EXTfldval &pNewValue,EXTCompInfo* pECI);	// set the value of a property
-	virtual void				getProperty(qlong pPropID,EXTfldval &pGetValue,EXTCompInfo* pECI);	// get the value of a property
+	virtual qbool				setProperty(qlong pPropID,EXTfldval &pNewValue,EXTCompInfo* pECI);	// set the value of a property (return true if property was handled, false if Omnis needs to do its thing..)
+ 	virtual qbool				getProperty(qlong pPropID,EXTfldval &pGetValue,EXTCompInfo* pECI);	// get the value of a property (return true if property was handled, false if Omnis needs to do its thing..)
 	
 /*** Methods ***/
 	static  qMethods *			methods(void);														// return an array of method meta data

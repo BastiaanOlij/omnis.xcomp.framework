@@ -215,8 +215,12 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 			if ((lvObject != NULL) && (lvNewParam !=NULL)) {
 				EXTfldval lvValue( (qfldval)lvNewParam->mData );
 				
-				return lvObject->setProperty(ECOgetId(pECI), lvValue, pECI);
-			};			
+				if (lvObject->setProperty(ECOgetId(pECI), lvValue, pECI)) {
+                    return 1L;
+                };
+
+                // let Omnis do its default logic...
+			};
 		}; break;
 		
 		// ECM_GETPROPERTY: Retrieve value from property
@@ -230,11 +234,14 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 			if (lvObject != NULL) {
 				EXTfldval lvValue;
 				
-				lvObject->getProperty(ECOgetId(pECI), lvValue, pECI);
-				ECOaddParam(pECI, &lvValue);
+				if (lvObject->getProperty(ECOgetId(pECI), lvValue, pECI)) {
+                    ECOaddParam(pECI, &lvValue);
 				
-				return 1L;
-			};			
+                    return 1L;
+                };
+                
+                // let Omnis do its default logic...
+			};
 			
 		}; break;
 
@@ -637,6 +644,17 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 				};
 			};
 		}; break;
+        
+        // WM_GETERASEINFO -  get info for drawing non client area background
+        case WM_GETERASEINFO: {
+			 // This should only be called on visual object
+			 oBaseVisComponent* lvObject = (oBaseVisComponent*)ECOfindObject( pECI, pHWND );
+			 if (lvObject!=NULL) {
+				 if (lvObject->wm_geteraseinfo((WNDeraseInfoStruct*) lParam, pECI)) {
+					 return 1L;					 
+				 };
+			 };
+        } break;
 
 		// WM_ERASEBKGND - erase the background
 		case WM_ERASEBKGND: {
@@ -738,11 +756,6 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 
         // WM_WINDOWPOSCHANGING - moving component around (WM_WINDOWPOSCHANGED is called once finished)
         case WM_WINDOWPOSCHANGING: {
-			return WNDdefWindowProc(pHWND,pMsg,wParam,lParam,pECI);			
-        } break;
-
-        // WM_GETERASEINFO - send to fld to get information required to erase areas not painted by the border
-        case WM_GETERASEINFO: {
 			return WNDdefWindowProc(pHWND,pMsg,wParam,lParam,pECI);			
         } break;
 

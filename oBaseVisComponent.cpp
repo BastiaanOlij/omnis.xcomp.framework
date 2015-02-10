@@ -30,6 +30,7 @@ oBaseVisComponent::oBaseVisComponent(void) {
     mShowName           = true;
 	mForecolor			= GDI_COLOR_QDEFAULT;
 	mBackcolor			= GDI_COLOR_QDEFAULT;
+    mBorderColor        = GDI_COLOR_QDEFAULT;
 	mHorzScrollPos		= 0;
 	mVertScrollPos		= 0;
 	mBackpattern		= 0;
@@ -60,6 +61,7 @@ ECOproperty oBaseVisProperties[] = {
 	//	ID						ResID	Type			Flags					ExFlags	EnumStart	EnumEnd
 	anumForecolor,			0,		fftInteger,		EXTD_FLAG_PROPAPP,		0,		0,			0,		// $forecolor
 	anumBackcolor,			0,		fftInteger,		EXTD_FLAG_PROPAPP,		0,		0,			0,		// $backcolor
+    anumBorderColor,        0,      fftInteger,     EXTD_FLAG_PROPAPP,      0,      0,          0,      // $bordercolor
 	anumBackpattern,		0,		fftInteger,		EXTD_FLAG_PROPAPP,		0,		0,			0,		// $backpattern
 	anumBackgroundTheme,	0,		fftInteger,		EXTD_FLAG_PROPAPP,		0,		0,			0,		// $bgtheme
 	
@@ -82,65 +84,46 @@ qProperties * oBaseVisComponent::properties(void) {
 
 // set the value of a property
 qbool oBaseVisComponent::setProperty(qlong pPropID,EXTfldval &pNewValue,EXTCompInfo* pECI) {
-	// most anum properties are managed by Omnis but some we need to do ourselves, no idea why...
-	
-//	addToTraceLog("Setting property %li",pPropID);
-	
-	switch (pPropID) {
-		case anumForecolor:
-			mForecolor = pNewValue.getLong();
+    switch (pPropID) {
+        case anumBorderColor: {
+            // Omnis for some reason does not support border color being set to GDI_COLOR_QDEFAULT
+            // This is a crued workaround the problem
+            
+            mBorderColor = pNewValue.getLong();
 			WNDinvalidateRect(mHWnd, NULL);
-			
-//			addToTraceLog("Changed color to %li",mForecolor);
-			
-			return 1L;
-			break;
-		case anumBackcolor:
-			mBackcolor = pNewValue.getLong();
-			WNDinvalidateRect(mHWnd, NULL);	
-			
-			return 1L;
-			break;
-		case anumBackpattern:
-			mBackpattern = (qpat) pNewValue.getLong();
-			WNDinvalidateRect(mHWnd, NULL);	
-			
-			return 1L;
-			break;
-		case anumBackgroundTheme:
-			mBKTheme = pNewValue.getLong();
-			WNDinvalidateRect(mHWnd, NULL);	
-			
-			return 1L;
-			break;
-		default:
-			return oBaseComponent::setProperty(pPropID, pNewValue, pECI);
-			break;
-	};
+        
+            return false; // let Omnis do its internal thing, internally GDI_COLOR_QDEFAULT => black
+        }; break;
+        case anumBackgroundTheme: {
+            // This one we override so we have control over their default value.
+            // Once we figure out how we can set default values for build-in properties we can remove this override
+            
+            mBKTheme = pNewValue.getLong();
+			WNDinvalidateRect(mHWnd, NULL);
+        
+            return false; // let Omnis do its internal thing also though I think we do enough for this not to matter
+        }; break;
+        default: {
+            // Pass through...
+            return oBaseComponent::setProperty(pPropID, pNewValue, pECI);
+        }; break;
+    };
 };
 
 // get the value of a property
-void oBaseVisComponent::getProperty(qlong pPropID,EXTfldval &pGetValue,EXTCompInfo* pECI) {
-	// most anum properties are managed by Omnis but some we need to do ourselves...
-	
-	switch (pPropID) {
-		case anumForecolor:
-			pGetValue.setLong(mForecolor);
-			break;
-		case anumBackcolor:
-			pGetValue.setLong(mBackcolor);
-			break;
-		case anumBackpattern:
-			pGetValue.setLong(mBackpattern);
-			break;
-		case anumBackgroundTheme:
-			pGetValue.setLong(mBKTheme);
-			break;
-		default:
-			oBaseComponent::getProperty(pPropID, pGetValue, pECI);
-			
-			break;
-	};
+qbool oBaseVisComponent::getProperty(qlong pPropID,EXTfldval &pGetValue,EXTCompInfo* pECI) {
+    switch (pPropID) {
+        case anumBorderColor: {
+            pGetValue.setLong(mBorderColor);
+        }; break;
+        case anumBackgroundTheme: {
+            pGetValue.setLong(mBKTheme);
+        }; break;
+        default: {
+            // Pass through...
+            return oBaseComponent::getProperty(pPropID, pGetValue, pECI);
+        }; break;
+    };
 };
 
 ////////////////////////////////////////////////////////////////
@@ -375,23 +358,25 @@ GDItextSpecStruct oBaseVisComponent::getStdTextSpec(EXTCompInfo* pECI) {
 
 // setup our fonts and brushes
 void oBaseVisComponent::setup(EXTCompInfo* pECI) {
-	EXTfldval		fval; 
+	EXTfldval		fval;
+    
+    // !BAS! need to deal with the situation where these are overriden by our field style..
 	
 	// Omnis is maintaining these so grab our copies
-	if (mObjType != cObjType_Basic) {
-		ECOgetProperty(mHWnd,anumForecolor,fval); 
-		mForecolor = fval.getLong();
-		ECOgetProperty(mHWnd,anumBackcolor,fval); 
-		mBackcolor = fval.getLong();
-		ECOgetProperty(mHWnd,anumBackpattern,fval); 
-		mBackpattern = fval.getLong();
-		ECOgetProperty(mHWnd,anumBackgroundTheme,fval); 
-		mBKTheme = fval.getLong();
-	};
+	ECOgetProperty(mHWnd,anumForecolor,fval);
+	mForecolor = fval.getLong();
+	ECOgetProperty(mHWnd,anumBackcolor,fval);
+	mBackcolor = fval.getLong();
+	ECOgetProperty(mHWnd,anumBackpattern,fval);
+	mBackpattern = fval.getLong();
+	ECOgetProperty(mHWnd,anumTextColor,fval);
+	mTextColor = fval.getLong();
 
-	// always get these omnis ones...
-	ECOgetProperty(mHWnd,anumTextColor,fval); 
-	mTextColor = fval.getLong();	
+    // for now we are managing these
+//    ECOgetProperty(mHWnd,anumBorderColor,fval);
+//    mBorderColor = fval.getLong();
+//	  ECOgetProperty(mHWnd,anumBackgroundTheme,fval);
+//    mBKTheme = fval.getLong();
 	
 	// set background color
 	mCanvas->setBkColor(mBackcolor);
@@ -401,6 +386,16 @@ void oBaseVisComponent::setup(EXTCompInfo* pECI) {
 	
 	// and our standard text spec
 	mCanvas->setTextSpec(getStdTextSpec(pECI));
+};
+
+// get info about background drawing
+bool oBaseVisComponent::wm_geteraseinfo(WNDeraseInfoStruct * pInfo, EXTCompInfo * pECI) {
+    pInfo->mBackColor = mBackcolor;
+    pInfo->mForeColor = mForecolor;
+    pInfo->mFillPat = mBackpattern;
+    pInfo->mBKTheme = mBKTheme;
+    
+    return true;
 };
 
 // erase our background message

@@ -347,14 +347,14 @@ qbool oBaseComponent::canAssign(qlong pPropID) {
 	return true; // assume assignable
 };
 
-// set the value of a property
+// set the value of a property (return true if property was handled, false if Omnis needs to do its thing..)
 qbool oBaseComponent::setProperty(qlong pPropID,EXTfldval &pNewValue,EXTCompInfo* pECI) {
 	return false;
 };
 
-// get the value of a property
-void oBaseComponent::getProperty(qlong pPropID,EXTfldval &pGetValue,EXTCompInfo* pECI) {
-	// nothing to do here, base class does not have any properties...
+// get the value of a property (return true if property was handled, false if Omnis needs to do its thing..)
+qbool oBaseComponent::getProperty(qlong pPropID,EXTfldval &pGetValue,EXTCompInfo* pECI) {
+    return false;
 };
 
 /*** Methods ***/

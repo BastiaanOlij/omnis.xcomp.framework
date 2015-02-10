@@ -37,6 +37,7 @@ protected:
 	qcol						mTextColor;															// Our text color
 	qpat						mBackpattern;														// Our back pattern
 	qcol						mForecolor, mBackcolor;												// Our forecolor and backcolor
+    qcol                        mBorderColor;                                                       // Our border color
 	qulong						mBKTheme;															// Our background theme
 
 	/*** scrollbar related, how you interpret these in your control is up to you ***/
@@ -60,8 +61,8 @@ public:
 	virtual	qbool				init(qapp pApp, HWND pHWnd);										// Initialize component
 	
 	static  qProperties *		properties(void);													// return array of property meta data
-	virtual qbool				setProperty(qlong pPropID,EXTfldval &pNewValue, EXTCompInfo* pECI);	// set the value of a property
-	virtual void				getProperty(qlong pPropID,EXTfldval &pGetValue, EXTCompInfo* pECI);	// get the value of a property
+	virtual qbool				setProperty(qlong pPropID,EXTfldval &pNewValue, EXTCompInfo* pECI);	// set the value of a property (return true if property was handled, false if Omnis needs to do its thing..)
+	virtual qbool				getProperty(qlong pPropID,EXTfldval &pGetValue, EXTCompInfo* pECI);	// get the value of a property (return true if property was handled, false if Omnis needs to do its thing..)
 
 	// $dataname
 	virtual qbool				setPrimaryData(EXTfldval &pNewValue);								// Changes our primary data
@@ -111,6 +112,7 @@ public:
 	bool						wm_rbutton(qpoint pAt, bool pDown, EXTCompInfo* pECI);				// right mouse button (return true if we finished handling this, false if we want Omnis internal logic)
 	void						wm_mousemove(qpoint pAt, EXTCompInfo* pECI, bool IsOver);			// mouse is being moved
 	qlong						wm_dragdrop(WPARAM wParam, LPARAM lParam, EXTCompInfo* pECI);		// drag and drop handling, return -1 if we're not handling this and want default omnis logic to run
+    bool                        wm_geteraseinfo(WNDeraseInfoStruct * pInfo, EXTCompInfo * pECI);    // get info about background drawing
 	bool						wm_erasebkgnd(EXTCompInfo* pECI);									// erase our background message
 	bool						wm_paint(EXTCompInfo* pECI);										// Paint message
 	bool						ecm_paintcontents(EXTListLineInfo *pInfo, EXTCompInfo* pECI);		// Draw cObjType_DropList content
