@@ -82,16 +82,29 @@ qProperties * oBaseVisComponent::properties(void) {
 	return lvProperties;
 };
 
+// return true if our component is handling this build in property?
+qbool oBaseVisComponent::inBuildOverride(qlong pPropID) {
+    switch (pPropID) {
+        case anumBorderColor:
+			return true;
+		case anumBackgroundTheme:
+			return true;
+		default:
+			return false;
+	};
+};
+
 // set the value of a property
 qbool oBaseVisComponent::setProperty(qlong pPropID,EXTfldval &pNewValue,EXTCompInfo* pECI) {
     switch (pPropID) {
         case anumBorderColor: {
             // Omnis for some reason does not support border color being set to GDI_COLOR_QDEFAULT
-            // This is a crued workaround the problem
+            // We handle it ourselves...
             
             mBorderColor = pNewValue.getLong();
 			WNDinvalidateRect(mHWnd, NULL);
         
+			return true;
             return false; // let Omnis do its internal thing, internally GDI_COLOR_QDEFAULT => black
         }; break;
         case anumBackgroundTheme: {
@@ -101,6 +114,7 @@ qbool oBaseVisComponent::setProperty(qlong pPropID,EXTfldval &pNewValue,EXTCompI
             mBKTheme = pNewValue.getLong();
 			WNDinvalidateRect(mHWnd, NULL);
         
+			return true;
             return false; // let Omnis do its internal thing also though I think we do enough for this not to matter
         }; break;
         default: {
@@ -115,9 +129,11 @@ qbool oBaseVisComponent::getProperty(qlong pPropID,EXTfldval &pGetValue,EXTCompI
     switch (pPropID) {
         case anumBorderColor: {
             pGetValue.setLong(mBorderColor);
+			return true;
         }; break;
         case anumBackgroundTheme: {
             pGetValue.setLong(mBKTheme);
+			return true;
         }; break;
         default: {
             // Pass through...
@@ -605,17 +621,17 @@ HCURSOR	oBaseVisComponent::getCursor(qpoint pAt, qword2 pHitTest) {
 };
 
 // returns true if the mouse is over our object
-bool oBaseVisComponent::mouseIsOver() {
+DEPRECATED bool oBaseVisComponent::mouseIsOver() {
     return mMouseOver;
 };
 
 // mouse moved over our object
-void oBaseVisComponent::evMouseEnter() {
+DEPRECATED void oBaseVisComponent::evMouseEnter() {
     // stub
 };
 
 // mouse moved away from our object
-void oBaseVisComponent::evMouseLeave() {
+DEPRECATED void oBaseVisComponent::evMouseLeave() {
     // stub
 };
 
@@ -705,6 +721,7 @@ bool	oBaseVisComponent::wm_rbutton(qpoint pAt, bool pDown, EXTCompInfo* pECI) {
 void	oBaseVisComponent::wm_mousemove(qpoint pMovedTo, EXTCompInfo* pECI, bool IsOver) {
 	mMouseAt = pMovedTo; /* store a copy of our mouse location */
 	
+	/** disabled for now, we no longer get an event once we're no longer over our field...
     if (IsOver) {
         if (!mMouseOver) {
             mMouseOver = true;
@@ -721,6 +738,15 @@ void	oBaseVisComponent::wm_mousemove(qpoint pMovedTo, EXTCompInfo* pECI, bool Is
         mMouseOver = false;
         this->evMouseLeave();
     };
+	**/
+
+    if (IsOver) {
+	    if (mMouseDragging) {
+            // for now we ignore this...
+        } else {
+            this->evMouseMoved(mMouseAt);
+        };
+	};
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////

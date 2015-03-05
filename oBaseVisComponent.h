@@ -61,6 +61,7 @@ public:
 	virtual	qbool				init(qapp pApp, HWND pHWnd);										// Initialize component
 	
 	static  qProperties *		properties(void);													// return array of property meta data
+	virtual qbool				inBuildOverride(qlong pPropID);										// return true if our component is handling this build in property?
 	virtual qbool				setProperty(qlong pPropID,EXTfldval &pNewValue, EXTCompInfo* pECI);	// set the value of a property (return true if property was handled, false if Omnis needs to do its thing..)
 	virtual qbool				getProperty(qlong pPropID,EXTfldval &pGetValue, EXTCompInfo* pECI);	// get the value of a property (return true if property was handled, false if Omnis needs to do its thing..)
 
@@ -79,11 +80,11 @@ public:
 	virtual bool				drawListLine(EXTListLineInfo *pInfo, EXTCompInfo* pECI);			// Do our list line drawing here (for cObjType_List or cObjType_DropList)
 	virtual void				resized();															// Our component was resized
 	
-	// mouse related
+	// mouse related (note, our mouseover/enter/leave functionality gave us issues so has been deprecated)
 	virtual HCURSOR				getCursor(qpoint pAt, qword2 pHitTest);								// return the mouse cursor we should show
-    bool                        mouseIsOver();                                                      // returns true if the mouse is over our object
-    virtual void                evMouseEnter();                                                     // mouse moved over our object
-    virtual void                evMouseLeave();                                                     // mouse moved away from our object
+    DEPRECATED bool             mouseIsOver();                                                      // returns true if the mouse is over our object
+    virtual DEPRECATED void     evMouseEnter();                                                     // mouse moved over our object
+    virtual DEPRECATED void     evMouseLeave();                                                     // mouse moved away from our object
 	virtual bool				evMouseLDown(qpoint pDownAt);										// mouse left button pressed down (return true if we finished handling this, false if we want Omnis internal logic)
 	virtual bool				evMouseLUp(qpoint pUpAt);											// mouse left button released (return true if we finished handling this, false if we want Omnis internal logic)
 	virtual bool				evDoubleClick(qpoint pAt, EXTCompInfo* pECI);						// mouse left button double clicked (return true if we finished handling this, false if we want Omnis internal logic)

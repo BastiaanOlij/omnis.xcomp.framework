@@ -188,6 +188,15 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 				return retVal; 				
 			}; 
 		}; break;
+
+		// ECM_INBUILT_OVERRIDE - sent by Omnis to find out if our object wants to maintain certain build in properties itself
+        case ECM_INBUILT_OVERRIDE: {
+			oBaseVisComponent* lvObject = (oBaseVisComponent*) ECOfindObject( pECI, pHWND ); // Must be a visual component
+			if (lvObject != NULL) {
+				return lvObject->inBuildOverride(ECOgetId(pECI)) ? 1L : 0L;
+			};
+			return WNDdefWindowProc(pHWND,pMsg,wParam,lParam,pECI);			
+        } break;
 			
 		// ECM_PROPERTYCANASSIGN: Is the property assignable
 		case ECM_PROPERTYCANASSIGN: {	
@@ -528,12 +537,9 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
                 // get some info about our mouse
 				WNDmakePoint( lParam, &pt );
                 
-                if (!lvObject->mouseIsOver()) {
-                    // our mouse is not over our component, we must have captured it..
-				} else if (lvObject->wm_lbutton(pt, true, pECI)) { // only if we return true do we round this off, if false we assume default logic for Omnis.
+				if (lvObject->wm_lbutton(pt, true, pECI)) { // only if we return true do we round this off, if false we assume default logic for Omnis.
 					// capture our mouse
 					if (!WNDhasCapture(pHWND, WND_CAPTURE_MOUSE)) {
-//                        oBaseComponent::addToTraceLog("Mouse captured on mouse down");
 						WNDsetCapture(pHWND, WND_CAPTURE_MOUSE);
 					};
 					return 0L;
@@ -547,16 +553,20 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 			oBaseVisComponent* lvObject = (oBaseVisComponent*)ECOfindObject( pECI, pHWND );
 			// and if its good, call the function
 			if (lvObject!=NULL) {
-				qpoint pt; 
+				// always release our capture, if we open up a window or something weird things start to happen.
+				if (WNDhasCapture(pHWND, WND_CAPTURE_MOUSE)) {
+					WNDreleaseCapture(WND_CAPTURE_MOUSE);
+
+					// now process this...
+					qpoint pt; 
                 
-                // get some info about our mouse
-				WNDmakePoint( lParam, &pt );
+					// get some info about our mouse
+					WNDmakePoint( lParam, &pt );
                 
-				if (lvObject->wm_lbutton(pt, false, pECI)) { // only if we return true do we round this off, if false we assume default logic for Omnis.
-					return 0L;
+					if (lvObject->wm_lbutton(pt, false, pECI)) { // only if we return true do we round this off, if false we assume default logic for Omnis.
+						return 0L;
+					};
 				};
-                
-                // note, if we've captured the mouse on our mouse down, our next call to mouse move will clean things up nicely....
 			};				
 		} break;
 			
@@ -566,13 +576,19 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 			oBaseVisComponent* lvObject = (oBaseVisComponent*)ECOfindObject( pECI, pHWND );
 			// and if its good, call the function
 			if (lvObject!=NULL) {
+				// now process our double click...
 				qpoint pt; 
 				WNDmakePoint( lParam, &pt );
 				
 				if (lvObject->wm_lbDblClick(pt, pECI)) {
 					return 0L;					
 				};
-			}
+
+				// always release our capture, if we open up a window or something weird things start to happen.
+				if (WNDhasCapture(pHWND, WND_CAPTURE_MOUSE)) {
+					WNDreleaseCapture(WND_CAPTURE_MOUSE);
+				};
+			};
 		}; break;
 
 		// WM_RBUTTONDOWN - standard right mouse button down event
@@ -605,7 +621,6 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
                 HWND   mouse_over = NULL;
 				qpoint pt, pt_desktop;
                 qword2 hittest;
-                bool   captured = WNDhasCapture(pHWND, WND_CAPTURE_MOUSE);
                 
                 // get some info about our mouse
 				WNDmakePoint( lParam, &pt );
@@ -617,15 +632,6 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
                 
                 // mouse moved
                 lvObject->wm_mousemove(pt, pECI, mouseIsOver);
-
-                // check if we need to keep our capture
-				if (captured && !mouseIsOver && !WNDmouseLeftButtonDown()) {
-					WNDreleaseCapture(WND_CAPTURE_MOUSE);
-//                    oBaseComponent::addToTraceLog("Mouse released on mouse moved out");
-				} else if (!captured && mouseIsOver) {
-                    WNDsetCapture(pHWND, WND_CAPTURE_MOUSE);
-//                    oBaseComponent::addToTraceLog("Mouse captured on mouse moved over");
-                };
 				
 				return 0L;
 			};	
@@ -766,11 +772,6 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
         
         // ECM_PROPERTYCALCTYPE - Request for the Calculation type of an attribute // mt40455
         case ECM_PROPERTYCALCTYPE: {
-			return WNDdefWindowProc(pHWND,pMsg,wParam,lParam,pECI);			
-        } break;
-
-        // ECM_INBUILT_OVERRIDE - sent by Omnis to find out if our object wants to maintain certain build in properties itself
-        case ECM_INBUILT_OVERRIDE: {
 			return WNDdefWindowProc(pHWND,pMsg,wParam,lParam,pECI);			
         } break;
 
