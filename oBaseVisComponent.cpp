@@ -832,7 +832,7 @@ qlong	oBaseVisComponent::wm_dragdrop(WPARAM wParam, LPARAM lParam, EXTCompInfo* 
 		case DD_ENDDRAG: {
 			FLDdragDrop *	dragInfo = (FLDdragDrop *)lParam;
 			return this->evEndDrag(dragInfo);			
-		};
+		}; break;
 	
 		// DD_SETDRAGVALUE
 		// Request for control to set the drag value and can be used, for example, 
