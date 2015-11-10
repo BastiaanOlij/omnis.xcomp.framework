@@ -224,6 +224,12 @@ bool    oBaseVisComponent::isActive() {
 	return activeFld.getBool() == 2;
 };
 
+// Do we use our primary data logic? If we return false we do not story a copy of the primary data
+qbool   oBaseVisComponent::enablePrimaryData() {
+    // Override and set to qtrue to support primary data
+    return qfalse;
+};
+
 // Changes our primary data
 qbool	oBaseVisComponent::setPrimaryData(EXTfldval &pNewValue) {
 	return copyFldVal(pNewValue, mPrimaryData);

@@ -66,6 +66,7 @@ public:
 	virtual qbool				getProperty(qlong pPropID,EXTfldval &pGetValue, EXTCompInfo* pECI);	// get the value of a property (return true if property was handled, false if Omnis needs to do its thing..)
 
 	// $dataname
+    virtual qbool               enablePrimaryData();                                                // Do we use our primary data logic? If we return false we do not story a copy of the primary data
 	virtual qbool				setPrimaryData(EXTfldval &pNewValue);								// Changes our primary data
 	virtual qbool				getPrimaryData(EXTfldval &pGetValue);								// Retrieves our primary data, return false if we do not manage a copy
 	virtual qlong				cmpPrimaryData(EXTfldval &pWithValue);								// Compare with our primary data, return DATA_CMPDATA_SAME if same, DATA_CMPDATA_DIFFER if different, 0 if not implemented

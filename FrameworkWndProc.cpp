@@ -260,24 +260,29 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 			
 		// ECM_SETPRIMARYDATA: The contents of our $dataname property has changed
 		case ECM_SETPRIMARYDATA: {
-			EXTParamInfo* lvNewParam = ECOfindParamNum( pECI, 1 );
-
 			oBaseVisComponent* lvObject = (oBaseVisComponent *)ECOfindObject( pECI, pHWND );
-			if ((lvObject != NULL) && (lvNewParam !=NULL)) {
-				EXTfldval lvValue( (qfldval)lvNewParam->mData );
+			if (lvObject == NULL) {
+                // huh?
+            } else if (lvObject->enablePrimaryData() == qtrue) {
+                EXTParamInfo* lvNewParam = ECOfindParamNum( pECI, 1 );
+                if (lvNewParam !=NULL) {
+                    EXTfldval lvValue( (qfldval)lvNewParam->mData );
 				
-				if (lvObject->setPrimaryData(lvValue) == qtrue) {
-					return 1L;
-				} else {
-					return 0L;
-				};
-			};			
+                    if (lvObject->setPrimaryData(lvValue) == qtrue) {
+                        return 1L;
+                    } else {
+                        return 0L;
+                    };
+                };
+			};
 		}; break;
 			
 		// ECM_GETPRIMARYDATA: Omnis would like to get a copy of our data. 
 		case ECM_GETPRIMARYDATA: {
 			oBaseVisComponent* lvObject = (oBaseVisComponent *)ECOfindObject( pECI, pHWND );
-			if (lvObject != NULL) {
+			if (lvObject == NULL) {
+                // huh?
+            } else if (lvObject->enablePrimaryData() == qtrue) {
 				EXTfldval lvValue;
 				
 				if (lvObject->getPrimaryData(lvValue) == qtrue) {
@@ -291,19 +296,24 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 			
 		// ECM_CMPPRIMARYDATA: Omnis would like to know if our copy of the data has changed
 		case ECM_CMPPRIMARYDATA: {
-			EXTParamInfo* lvNewParam = ECOfindParamNum( pECI, 1 );
-
 			oBaseVisComponent* lvObject = (oBaseVisComponent *)ECOfindObject( pECI, pHWND );
-			if ((lvObject != NULL) && (lvNewParam !=NULL)) {
-				EXTfldval lvValue( (qfldval)lvNewParam->mData );
-				return lvObject->cmpPrimaryData(lvValue);
+			if (lvObject == NULL) {
+                // huh?
+            } else if (lvObject->enablePrimaryData() == qtrue) {
+                EXTParamInfo* lvNewParam = ECOfindParamNum( pECI, 1 );
+                if (lvNewParam !=NULL) {
+                    EXTfldval lvValue( (qfldval)lvNewParam->mData );
+                    return lvObject->cmpPrimaryData(lvValue);
+                };
 			};			
 		}; break;
 			
 		// ECM_GETPRIMARYDATALEN: Omnis would like to know how big our copy of the data is
 		case ECM_GETPRIMARYDATALEN: {
 			oBaseVisComponent* lvObject = (oBaseVisComponent *)ECOfindObject( pECI, pHWND );
-			if (lvObject != NULL) {
+			if (lvObject == NULL) {
+                // huh?
+            } else if (lvObject->enablePrimaryData() == qtrue) {
 				qlong datalen = lvObject->getPrimaryDataLen();
 				if (datalen>=0) {					
 					EXTfldval lvValue;
@@ -322,10 +332,10 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 		case ECM_PRIMARYDATACHANGE: {
 			oBaseVisComponent* lvObject = (oBaseVisComponent *)ECOfindObject( pECI, pHWND );
 			if (lvObject != NULL) {
+                // !BAS! Do we only do this when enablePrimaryData is true? or do we always inform our component so we can automate redraws?
 				lvObject->primaryDataHasChanged();
 				return 1L;
-			};			
-			
+			};
 		}; break;
 			
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
