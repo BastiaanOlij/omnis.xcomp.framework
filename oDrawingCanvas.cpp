@@ -538,8 +538,9 @@ qdim	oDrawingCanvas::drawText(const qchar *pText, qrect pWhere, qcol pColor, qjs
         lvTextSpec.mJst = jstLeft;
         
 		// now loop through to find our lines or until we're below our drawing rectangle.
-		while ((pos <= len) && ((top + fontheight) <= pWhere.bottom)) { // note that we add fontheight to our check because our clipping doesn't work very well with drawTextJst
-			if ((pText[pos] == 0x00) || (pText[pos] == newline)) {
+//		while ((pos <= len) && ((top + fontheight) <= pWhere.bottom)) { // note that we add fontheight to our check because our clipping doesn't work very well with drawTextJst
+		while ((pos <= len) && (top <= pWhere.bottom)) { // Clipping should be fixed in 6.1
+				if ((pText[pos] == 0x00) || (pText[pos] == newline)) {
 				if (pos > start) {
 					// draw our text...
                     qdim left = pWhere.left;
