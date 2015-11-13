@@ -42,6 +42,8 @@ protected:
 	bool						getBoolFromParam(int pParamNo, EXTCompInfo* pECI);					// get boolean from parameter
 	EXTqlist *					newQListFromParam(int pParamNo, EXTCompInfo* pECI);					// get qlist from parameter, caller needs to delete return object
 	char *						newBinfromParam(int pParamNo, size_t *pLen,  EXTCompInfo* pECI);	// get binary buffer, returns NULL if the buffer is empty
+
+    EXTqlist *                  getNamedList(qstring &pName, EXTCompInfo* pECI);                    // get list variable by name
 	
 public:
 	oBaseComponent(void);																			// constructor

@@ -474,5 +474,66 @@ char * oBaseComponent::newBinfromParam(int pParamNo, size_t *pLen, EXTCompInfo* 
 	return tmpBuffer;
 };
 
-
+// get list variable by name
+EXTqlist * oBaseComponent::getNamedList(qstring &pName, EXTCompInfo* pECI) {
+	str255		listName;
+	ffttype		datatype;
+	qshort		datasubtype;
+    
+    if (pName.length() == 0) {
+		addToTraceLog("No list name specified");
+		return NULL;
+    };
+	
+    /* copy our name */
+    listName = pName.cString();
+	
+	/* and now get the field related to this.. */
+	EXTfldval	dataField(listName, qfalse, pECI->mLocLocp);
+	
+	/* check the type of our variable */
+	dataField.getType(datatype, &datasubtype);
+	if (datatype==fftItemref) {
+		/* this is an item reference, lets parse the item reference, thanks to TL tech support */
+		EXTfldval	calc, result;
+		
+		/* Add .$fullname to our reference */
+		listName.concat(str255(QTEXT(".$fullname")));
+		
+		/* execute this as a calculation to get the name of the variable our reference points at */
+		calc.setCalculation(pECI->mInstLocp, ctyCalculation, &listName[1], listName[0]);
+		calc.evalCalculation(result, pECI->mInstLocp);
+		listName = result.getChar(); /* this will return something like $root.$iwindows.myWindow.$objs.mySubWindow.$ivars.ivList */
+		
+		/* now our variable could be an instance variable for a subwindow. Our $fullname reference actually doesn't work then.. So lets check for this situation.. */
+		qshort ivarspos = listName.pos(str255(QTEXT(".$ivars.")));
+		qshort objspos = listName.pos(str255(QTEXT(".$objs.")));
+		if ((ivarspos!=0) && (objspos!=0)) {
+			/*
+			 if we're dealing with an instance variable and we have $objs in our dataname this must be a subwindow, we need to add $subinst..
+			 
+			 so it becomes $root.$iwindows.myWindow.$objs.mySubWindow.$subinst().$ivars.ivList
+			 */
+			
+			listName.insert(str255(QTEXT(".$subinst()")), ivarspos);
+		};
+		
+		/* and now get our real data variable */
+		EXTfldval	referencedField(listName, qfalse, pECI->mLocLocp);
+		referencedField.getType(datatype, &datasubtype);
+		if ((datatype==fftList) || (datatype==fftRow)) {
+			/* list or row? return the list */
+			return referencedField.getList(qfalse);
+		} else {
+			addToTraceLog("Item reference isn't a list or row");
+			return NULL;
+		};		
+	} else if ((datatype==fftList) || (datatype==fftRow)) {
+		/* list or row? return the list */
+		return dataField.getList(qfalse);
+	} else {
+		addToTraceLog("%qs isn't a list or row", &pName);
+		return NULL;
+	};
+};
 
