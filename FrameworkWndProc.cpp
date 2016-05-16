@@ -60,6 +60,11 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 			
 			return ECOreturnObjects( gInstLib, pECI, (ECOobject *) lvObject->getArray(), (qshort) lvObject->numberOfElements());
 		} break;
+        
+        // ECM_GETSTATICOBJECT - this is sent by OMNIS to find out about our static methods
+        case ECM_GETSTATICOBJECT: {
+            return ECOreturnMethods(gInstLib, pECI, gXCompLib->staticMethods(), (qshort) gXCompLib->numberOfStaticMethods());
+        };
 
 		// ECM_GETCOMPLIBINFO - this is sent by OMNIS to find out the name of the library, and
 		// the number of components this library supports
@@ -356,7 +361,7 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 			qlong methodID = ECOgetId(pECI);
 
 			oBaseComponent* lvObject;
-			if ((pHWND==0) && (pECI->mOmnisInstance==0)) {
+			if ((pHWND==0) && (lParam==0) && (wParam==0)) {
 				// must be static method call, need to test this
 				lvResult = gXCompLib->invokeMethod(methodID, pECI);
 			} else {

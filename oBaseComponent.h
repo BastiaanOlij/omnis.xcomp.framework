@@ -12,6 +12,10 @@
  *  Bastiaan Olij
  *
  *  https://github.com/BastiaanOlij/omnis.xcomp.framework
+ *
+ *  Todos:
+ *  - Change from using qArray to std::vector for objects and components
+ *
  */
 
 #include "xCompStandardIncludes.h"
@@ -28,6 +32,10 @@ const int cObjType_NVObject = 255;																	// Omnis reserved 1-9, assume
 typedef	qArray<ECOproperty>		qProperties;
 typedef qArray<ECOmethodEvent>	qMethods;
 typedef qArray<ECOmethodEvent>	qEvents;
+
+// std::vector versions of the above arrays, we'll slowly be switching over to using these
+typedef std::vector<ECOmethodEvent> vMethods;                                                      // vector containing methods
+
 
 /* our base class for all component objects */
 class oBaseComponent {

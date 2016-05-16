@@ -159,6 +159,25 @@ oBaseComponent * oXCompLib::instantiateComponent(long pCompID
 	return NULL;
 };
 
+// add methods to our vector
+void oXCompLib::addStaticMethods(ECOmethodEvent * pMethods, int pCount) {
+    // for now we copy our methods into a vector. Seeing the nature of static methods we may change this in due course, not sure yet
+    for (int i = 0; i < pCount; i++) {
+        mStaticMethods.push_back(pMethods[i]);
+    };
+};
+
+// number of static methods in our library
+unsigned long oXCompLib::numberOfStaticMethods(void) {
+    return mStaticMethods.size();   
+};
+
+// return pointer to array of static methods in our library
+ECOmethodEvent * oXCompLib::staticMethods(void) {
+    return mStaticMethods.data();
+};
+
+
 // return property meta data for this object
 qProperties * oXCompLib::properties(long pCompID) {
 	OXFcomponent lvComponent = componentByID(pCompID);
@@ -203,10 +222,8 @@ qEvents *	oXCompLib::events(long pCompID) {
 qint oXCompLib::ecm_connect(void){
 	qint	lvFlags = EXT_FLAG_LOADED|EXT_FLAG_ALWAYS_USABLE|EXT_FLAG_REMAINLOADED;
 	
-	// !BAS! We probably need to add a check for static functions here too.
-
-	if (mECOobjects.numberOfElements()!=0) {
-		lvFlags = lvFlags | EXT_FLAG_NVOBJECTS;		// Let Omnis know we also include non-visual object, this means ECM_GETOBJECT will be called
+	if ((this->numberOfStaticMethods() > 0) || (mECOobjects.numberOfElements()!=0)) {
+		lvFlags = lvFlags | EXT_FLAG_NVOBJECTS;		// Let Omnis know we also include non-visual object, this means ECM_GETSTATICOBJECT and ECM_GETOBJECT will be called
 	}
 	
 	return lvFlags;	
