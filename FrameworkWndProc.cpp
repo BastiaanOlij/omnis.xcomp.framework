@@ -522,9 +522,15 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 					};
                 };
 				if (scrollParent) {
-                    // pass this to our parent
+                    EXTfldval hasScroll;
+                    
+                    // pass this to our parent, but only if our parent  has scroll on!
                     HWND parentHwnd = WNDgetParent( pHWND );
-                    WNDsendMessage(parentHwnd, pMsg, wParam, lParam);
+                    
+                    ECOgetProperty(parentHwnd, pMsg == WM_HSCROLL ? anumHorzscroll : anumVertscroll, hasScroll);
+                    if (hasScroll.getBool() == 2) {
+                        WNDsendMessage(parentHwnd, pMsg, wParam, lParam);
+                    };
                 };
                 return 0L;
 			};
