@@ -10,6 +10,10 @@
  *  Bastiaan Olij
  *
  *  https://github.com/BastiaanOlij/omnis.xcomp.framework
+ *
+ *  Todos:
+ *  - Change from using qArray to std::vector for objects and components
+ *
  */
 
 // our base component library already includes everything else we need...
@@ -46,6 +50,7 @@ private:
 	qECOobjects			mECOobjects;										// our object array converted to Omnis
 	qArray<uint>		mVisIndex;											// index of visual components
 	qComponents			mComponents;										// array of component definitions
+    vMethods            mStaticMethods;                                     // array of static methods
 
 protected:
 	
@@ -71,6 +76,11 @@ public:
 											 , HWND pHWND
 											 , LPARAM pParam);				// instantiate a component by component ID
 	
+    // access to static functions
+    void                addStaticMethods(ECOmethodEvent * pMethods, int pCount);
+    unsigned long       numberOfStaticMethods(void);                        // number of static methods in our library
+    ECOmethodEvent *    staticMethods(void);                                // return pointer to array of static methods in our library
+
 	// access to meta data
 	qProperties *		properties(long pCompID);							// return property meta data for this object
 	qMethods *			methods(long pCompID);								// return method meta data for this object
@@ -82,7 +92,7 @@ public:
 	virtual qbool		ecm_disconnect(void);								// cleanup
 
 	// need to add methods for returning static method information
-	virtual int			invokeMethod(qlong pMethodId, EXTCompInfo* pECI);		// invoke a static method
+	virtual int			invokeMethod(qlong pMethodId, EXTCompInfo* pECI);	// invoke a static method
 };
 
 // This class must be implemented in your library (on windows its not enough to just have a class definition...) 

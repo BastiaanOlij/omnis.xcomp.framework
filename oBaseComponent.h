@@ -12,6 +12,10 @@
  *  Bastiaan Olij
  *
  *  https://github.com/BastiaanOlij/omnis.xcomp.framework
+ *
+ *  Todos:
+ *  - Change from using qArray to std::vector for objects and components
+ *
  */
 
 #include "xCompStandardIncludes.h"
@@ -29,6 +33,10 @@ typedef	qArray<ECOproperty>		qProperties;
 typedef qArray<ECOmethodEvent>	qMethods;
 typedef qArray<ECOmethodEvent>	qEvents;
 
+// std::vector versions of the above arrays, we'll slowly be switching over to using these
+typedef std::vector<ECOmethodEvent> vMethods;                                                      // vector containing methods
+
+
 /* our base class for all component objects */
 class oBaseComponent {
 private:
@@ -42,6 +50,8 @@ protected:
 	bool						getBoolFromParam(int pParamNo, EXTCompInfo* pECI);					// get boolean from parameter
 	EXTqlist *					newQListFromParam(int pParamNo, EXTCompInfo* pECI);					// get qlist from parameter, caller needs to delete return object
 	char *						newBinfromParam(int pParamNo, size_t *pLen,  EXTCompInfo* pECI);	// get binary buffer, returns NULL if the buffer is empty
+
+    EXTqlist *                  getNamedList(qstring &pName, EXTCompInfo* pECI);                    // get list variable by name
 	
 public:
 	oBaseComponent(void);																			// constructor
