@@ -122,7 +122,7 @@ public:
 #if OMNISSDK>=70
 	void						wm_windowposchanged(EXTCompInfo* pECI, WNDsetWindowPosStruct * pPos);	// Component resize/repos message
 #else
-	void						wm_windowposchanged(EXTCompInfo* pECI, WNDWindowPosStruct * pPos);	// Component resize/repos message
+	void						wm_windowposchanged(EXTCompInfo* pECI, WNDwindowPosStruct * pPos);	// Component resize/repos message
 #endif
 };
 
