@@ -702,7 +702,11 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 			oBaseVisComponent* lvObject = (oBaseVisComponent*)ECOfindObject( pECI, pHWND );
 			// and if its good, call the paint function
 			if (lvObject!=NULL) {
-				lvObject->wm_windowposchanged(pECI, (WNDwindowPosStruct *) lParam); 
+#if OMNISSDK>=70
+				lvObject->wm_windowposchanged(pECI, (WNDsetWindowPosStruct *) lParam);
+#else
+				lvObject->wm_windowposchanged(pECI, (WNDwindowPosStruct *) lParam);
+#endif
 				return 1L;
 			} 			
 		} break;

@@ -119,8 +119,13 @@ public:
 	bool						wm_paint(EXTCompInfo* pECI);										// Paint message
 	bool						ecm_paintcontents(EXTListLineInfo *pInfo, EXTCompInfo* pECI);		// Draw cObjType_DropList content
 	bool						ecm_listdrawline(EXTListLineInfo *pInfo, EXTCompInfo* pECI);		// Draw line fro cObjType_List or cObjTypeDropList
-	void						wm_windowposchanged(EXTCompInfo* pECI, WNDwindowPosStruct * pPos);	// Component resize/repos message
+#if OMNISSDK>=70
+	void						wm_windowposchanged(EXTCompInfo* pECI, WNDsetWindowPosStruct * pPos);	// Component resize/repos message
+#else
+	void						wm_windowposchanged(EXTCompInfo* pECI, WNDWindowPosStruct * pPos);	// Component resize/repos message
+#endif
 };
+
 
 #endif
 

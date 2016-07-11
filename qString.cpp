@@ -128,7 +128,7 @@ qstring * qstring::newStringFromFormat(const char *pFormat, ...)
 
 // This is a simplified version of vprintf but then for qstring/qchar
 // We'll build on this eventually
-void	qstring::vAppendFormattedString(qstring &appendTo, qstring &pFormat, va_list & pArgList) {
+void	qstring::vAppendFormattedString(qstring &appendTo, qstring &pFormat, va_list pArgList) {
 	qlong	lvPos = 0;
 	qlong	lvLen = pFormat.length();
 	

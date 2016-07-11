@@ -50,7 +50,7 @@ public:
 
 	static qstring * newStringFromFormat(const char *pFormat, ...);		// Create a new qstring instance based on a formatted string
 #ifdef isunicode
-	static void		vAppendFormattedString(qstring &appendTo, qstring &pFormat, va_list &pArgList);
+	static void		vAppendFormattedString(qstring &appendTo, qstring &pFormat, va_list pArgList);
 	static qstring * newStringFromFormat(const qoschar *pFormat, ...);	// Create a new qstring instance based on a formatted string
 	static qstring * newStringFromFormat(qstring &pFormat, ...);	// Create a new qstring instance based on a formatted string
 #endif
