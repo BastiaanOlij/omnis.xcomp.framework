@@ -457,6 +457,7 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 			oBaseVisComponent* lvObject = (oBaseVisComponent*)ECOfindObject( pECI, pHWND );
 			if (lvObject!=NULL) {
 				qdim		min, max, page, oldPos, newPos, otherPos, stepSize;
+                bool        scrollParent = false;
 				
 				if (pMsg == WM_HSCROLL) {
 					stepSize = lvObject->getHorzStepSize();
@@ -469,7 +470,7 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 					WNDgetScrollPos( pHWND, SB_HORZ, &otherPos ); 
 					WNDgetScrollRange( pHWND, SB_VERT, &min, &max, &page );
 				};
-				
+                
 				switch ( wParam ) {
 					case SB_LINEDOWN: 
 						newPos = oldPos + stepSize; 
@@ -501,20 +502,32 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg,WPARAM wP
 						newPos = oldPos;
 						break;
 				};
-				
-				if (newPos!=oldPos) {	
-					if (newPos < min) newPos=min;
-					if (newPos > max) newPos=max;
-					
+
+                max = max - (max % 8); // seems constraint by 8ths..
+
+				if (newPos < min) {
+                    newPos=min;
+                    scrollParent = true;
+                };
+				if (newPos > max) {
+                    newPos=max;
+                    scrollParent = true;
+				};
+                
+				if (newPos!=oldPos) {
 					if (pMsg == WM_HSCROLL) {
 						lvObject->evWindowScrolled(newPos, otherPos);
 					} else {
 						lvObject->evWindowScrolled(otherPos, newPos);						
 					};
-				};
-				
-				return 1L;
-			};			
+                };
+				if (scrollParent) {
+                    // pass this to our parent
+                    HWND parentHwnd = WNDgetParent( pHWND );
+                    WNDsendMessage(parentHwnd, pMsg, wParam, lParam);
+                };
+                return 0L;
+			};
 		}; break;
 		
 		// WM_SETCURSOR - gets sent when the mouse is above our control and Omnis wants to know what cursor to show
