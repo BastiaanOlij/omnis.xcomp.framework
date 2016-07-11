@@ -574,7 +574,11 @@ bool	oBaseVisComponent::ecm_listdrawline(EXTListLineInfo *pInfo, EXTCompInfo* pE
 
 
 // Component resize/repos message
+#if OMNISSDK>=70
+void	oBaseVisComponent::wm_windowposchanged(EXTCompInfo* pECI, WNDsetWindowPosStruct * pPos) {
+#else
 void	oBaseVisComponent::wm_windowposchanged(EXTCompInfo* pECI, WNDwindowPosStruct * pPos) {
+#endif
 	resized();
 };
 
