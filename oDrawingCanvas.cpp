@@ -283,7 +283,8 @@ qdim	oDrawingCanvas::getFontHeight() {
 qdim	oDrawingCanvas::getWordWidth(qstring & pWord) {
 	int		len = pWord.length();
 	
-	if (len<=50) {
+	/* in theory we can store 50 character wide strings but just in case we have any special characters, cut it off at 40 */
+	if (len<=40) {
 		qTextWidthMap::iterator it;
 		
 		it = mTextCache.find(pWord.cString());
@@ -294,7 +295,6 @@ qdim	oDrawingCanvas::getWordWidth(qstring & pWord) {
 	};
 	
 	// not found?
-
 
 	GDItextSpecStruct	lvTextSpec	= mTextSpec;				// Copy of our text spec we're using
     lvTextSpec.mJst = jstLeft;                                  // Set to left justification or our text width fails
@@ -315,12 +315,12 @@ qdim	oDrawingCanvas::getWordWidth(qstring & pWord) {
 		
 	qdim width = GDItextWidthJst(&drawinfo) + 2;
 	
-	if (len<=50) {
+	if (len<=40) {
 		// can we cache it?
 		mTextCache.insert(std::pair<qchar50, qdim>(pWord.cString(),width));
 		
 //		oBaseComponent::addToTraceLog("Cached word %qs, size = %li", &pWord, width);
-	} else {
+//	} else {
 //		oBaseComponent::addToTraceLog("Width word %qs, size = %li", &pWord, width);
 	};
 
