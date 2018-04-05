@@ -393,6 +393,31 @@ qEvents *	oBaseComponent::events(void) {
 
 /*** Parameters ***/
 
+// get c-string from parameter, call needs to delete returned object
+char    * oBaseComponent::newCStringFromParam(int pParamNo, EXTCompInfo* pECI, char * pBuffer, int pBufLen) {
+    static char buffer[1024];
+    int maxlen = pBuffer == NULL ? 1024 : pBufLen;
+    char * result = pBuffer == NULL ? buffer : pBuffer;
+  
+    if (ECOgetParamCount(pECI) >= pParamNo) {
+        EXTParamInfo*        tmpParam = ECOfindParamNum( pECI, pParamNo );
+        EXTfldval            tmpFldVal((qfldval) tmpParam->mData);
+        qstring    *            tmpNewString = new qstring(tmpFldVal);
+        
+        if (tmpNewString->length() < maxlen-1) {
+            strcpy(result, tmpNewString->c_str());
+        } else {
+            memcpy(result, tmpNewString->c_str(), maxlen-1);
+            result[maxlen-1] = 0;
+        }
+        delete tmpNewString;
+    } else {
+        result[0] = 0;
+    };
+    
+    return result;
+};
+
 // get string from parameter, call needs to delete returned object
 qstring	* oBaseComponent::newStringFromParam(int pParamNo, EXTCompInfo* pECI) {
 	if (ECOgetParamCount(pECI) >= pParamNo) {

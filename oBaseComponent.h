@@ -45,6 +45,7 @@ protected:
 	qapp						mApp;																// our application (assuming this is static)
 	
 	/*** Parameters ***/
+    char *                      newCStringFromParam(int pParamNo, EXTCompInfo* pECI, char * pBuffer = NULL, int pBufLen = 0);               // get string from parameter, if no buffer is given we limit our return value to 1024 bytes
 	qstring	*					newStringFromParam(int pParamNo, EXTCompInfo* pECI);				// get string from parameter, call needs to delete returned object
 	long						getLongFromParam(int pParamNo, EXTCompInfo* pECI);					// get long from parameter
 	bool						getBoolFromParam(int pParamNo, EXTCompInfo* pECI);					// get boolean from parameter
