@@ -26,30 +26,30 @@
 ////////////////////////////////////////////////////////////////
 
 oBaseVisComponent::oBaseVisComponent(void) {
-	mObjType			= cObjType_Basic;
-    mShowName           = true;
-	mForecolor			= GDI_COLOR_QDEFAULT;
-	mBackcolor			= GDI_COLOR_QDEFAULT;
-    mBorderColor        = GDI_COLOR_QDEFAULT;
-	mHorzScrollPos		= 0;
-	mVertScrollPos		= 0;
-	mBackpattern		= 0;
-	mBKTheme			= WND_BK_NONE;
-	mDrawBuffer			= true;
-	mMouseLButtonDown	= false;
-	mMouseDragging		= false;
-	mCanvas				= NULL;
+	mObjType = cObjType_Basic;
+	mShowName = true;
+	mForecolor = GDI_COLOR_QDEFAULT;
+	mBackcolor = GDI_COLOR_QDEFAULT;
+	mBorderColor = GDI_COLOR_QDEFAULT;
+	mHorzScrollPos = 0;
+	mVertScrollPos = 0;
+	mBackpattern = 0;
+	mBKTheme = WND_BK_NONE;
+	mDrawBuffer = true;
+	mMouseLButtonDown = false;
+	mMouseDragging = false;
+	mCanvas = NULL;
 };
 
 // Initialize component
 qbool oBaseVisComponent::init(qapp pApp, HWND pHWnd) {
 	oBaseComponent::init(pApp);
-	
+
 	mHWnd = pHWnd;
-	
+
 	WNDsetScrollRange(mHWnd, SB_HORZ, 0, 0, 1, qfalse);
 	WNDsetScrollRange(mHWnd, SB_VERT, 0, 0, 1, qfalse);
-	
+
 	return true;
 };
 
@@ -57,35 +57,35 @@ qbool oBaseVisComponent::init(qapp pApp, HWND pHWnd) {
 // Properties
 ////////////////////////////////////////////////////////////////
 
-ECOproperty oBaseVisProperties[] = { 
+ECOproperty oBaseVisProperties[] = {
 	//	ID						ResID	Type			Flags					ExFlags	EnumStart	EnumEnd
-	anumForecolor,			0,		fftInteger,		EXTD_FLAG_PROPAPP,		0,		0,			0,		// $forecolor
-	anumBackcolor,			0,		fftInteger,		EXTD_FLAG_PROPAPP,		0,		0,			0,		// $backcolor
-    anumBorderColor,        0,      fftInteger,     EXTD_FLAG_PROPAPP,      0,      0,          0,      // $bordercolor
-	anumBackpattern,		0,		fftInteger,		EXTD_FLAG_PROPAPP,		0,		0,			0,		// $backpattern
-	anumBackgroundTheme,	0,		fftInteger,		EXTD_FLAG_PROPAPP,		0,		0,			0,		// $bgtheme
-	
-	anumTextColor,			0,		fftInteger,		EXTD_FLAG_PROPTEXT,		0,		0,			0,		// $textcolor
-	anumFont,				0,		fftCharacter,	EXTD_FLAG_PROPTEXT,		0,		0,			0,		// $font
-	anumFontsize,			0,		fftInteger,		EXTD_FLAG_PROPTEXT,		0,		0,			0,		// $fontsize
-	anumFontstyle,			0,		fftInteger,		EXTD_FLAG_PROPTEXT,		0,		0,			0,		// $fontstyle
-	anumAlign,				0,		fftInteger,		EXTD_FLAG_PROPTEXT,		0,		0,			0,		// $align	
+	anumForecolor, 0, fftInteger, EXTD_FLAG_PROPAPP, 0, 0, 0, // $forecolor
+	anumBackcolor, 0, fftInteger, EXTD_FLAG_PROPAPP, 0, 0, 0, // $backcolor
+	anumBorderColor, 0, fftInteger, EXTD_FLAG_PROPAPP, 0, 0, 0, // $bordercolor
+	anumBackpattern, 0, fftInteger, EXTD_FLAG_PROPAPP, 0, 0, 0, // $backpattern
+	anumBackgroundTheme, 0, fftInteger, EXTD_FLAG_PROPAPP, 0, 0, 0, // $bgtheme
+
+	anumTextColor, 0, fftInteger, EXTD_FLAG_PROPTEXT, 0, 0, 0, // $textcolor
+	anumFont, 0, fftCharacter, EXTD_FLAG_PROPTEXT, 0, 0, 0, // $font
+	anumFontsize, 0, fftInteger, EXTD_FLAG_PROPTEXT, 0, 0, 0, // $fontsize
+	anumFontstyle, 0, fftInteger, EXTD_FLAG_PROPTEXT, 0, 0, 0, // $fontstyle
+	anumAlign, 0, fftInteger, EXTD_FLAG_PROPTEXT, 0, 0, 0, // $align
 };
 
 // Add properties for visual componect
-qProperties * oBaseVisComponent::properties(void) {
-	qProperties *	lvProperties = oBaseComponent::properties();
-	
+qProperties *oBaseVisComponent::properties(void) {
+	qProperties *lvProperties = oBaseComponent::properties();
+
 	// Add the property definition for our visual component here...
 	lvProperties->addElements(oBaseVisProperties, sizeof(oBaseVisProperties) / sizeof(ECOproperty));
-	
+
 	return lvProperties;
 };
 
 // return true if our component is handling this build in property?
 qbool oBaseVisComponent::inBuildOverride(qlong pPropID) {
-    switch (pPropID) {
-        case anumBorderColor:
+	switch (pPropID) {
+		case anumBorderColor:
 			return true;
 		case anumBackgroundTheme:
 			return true;
@@ -95,51 +95,51 @@ qbool oBaseVisComponent::inBuildOverride(qlong pPropID) {
 };
 
 // set the value of a property
-qbool oBaseVisComponent::setProperty(qlong pPropID,EXTfldval &pNewValue,EXTCompInfo* pECI) {
-    switch (pPropID) {
-        case anumBorderColor: {
-            // Omnis for some reason does not support border color being set to GDI_COLOR_QDEFAULT
-            // We handle it ourselves...
-            
-            mBorderColor = pNewValue.getLong();
+qbool oBaseVisComponent::setProperty(qlong pPropID, EXTfldval &pNewValue, EXTCompInfo *pECI) {
+	switch (pPropID) {
+		case anumBorderColor: {
+			// Omnis for some reason does not support border color being set to GDI_COLOR_QDEFAULT
+			// We handle it ourselves...
+
+			mBorderColor = pNewValue.getLong();
 			WNDinvalidateRect(mHWnd, NULL);
-        
+
 			return true;
-            return false; // let Omnis do its internal thing, internally GDI_COLOR_QDEFAULT => black
-        }; break;
-        case anumBackgroundTheme: {
-            // This one we override so we have control over their default value.
-            // Once we figure out how we can set default values for build-in properties we can remove this override
-            
-            mBKTheme = pNewValue.getLong();
+			return false; // let Omnis do its internal thing, internally GDI_COLOR_QDEFAULT => black
+		}; break;
+		case anumBackgroundTheme: {
+			// This one we override so we have control over their default value.
+			// Once we figure out how we can set default values for build-in properties we can remove this override
+
+			mBKTheme = pNewValue.getLong();
 			WNDinvalidateRect(mHWnd, NULL);
-        
+
 			return true;
-            return false; // let Omnis do its internal thing also though I think we do enough for this not to matter
-        }; break;
-        default: {
-            // Pass through...
-            return oBaseComponent::setProperty(pPropID, pNewValue, pECI);
-        }; break;
-    };
+			return false; // let Omnis do its internal thing also though I think we do enough for this not to matter
+		}; break;
+		default: {
+			// Pass through...
+			return oBaseComponent::setProperty(pPropID, pNewValue, pECI);
+		}; break;
+	};
 };
 
 // get the value of a property
-qbool oBaseVisComponent::getProperty(qlong pPropID,EXTfldval &pGetValue,EXTCompInfo* pECI) {
-    switch (pPropID) {
-        case anumBorderColor: {
-            pGetValue.setLong(mBorderColor);
+qbool oBaseVisComponent::getProperty(qlong pPropID, EXTfldval &pGetValue, EXTCompInfo *pECI) {
+	switch (pPropID) {
+		case anumBorderColor: {
+			pGetValue.setLong(mBorderColor);
 			return true;
-        }; break;
-        case anumBackgroundTheme: {
-            pGetValue.setLong(mBKTheme);
+		}; break;
+		case anumBackgroundTheme: {
+			pGetValue.setLong(mBKTheme);
 			return true;
-        }; break;
-        default: {
-            // Pass through...
-            return oBaseComponent::getProperty(pPropID, pGetValue, pECI);
-        }; break;
-    };
+		}; break;
+		default: {
+			// Pass through...
+			return oBaseComponent::getProperty(pPropID, pGetValue, pECI);
+		}; break;
+	};
 };
 
 ////////////////////////////////////////////////////////////////
@@ -147,57 +147,57 @@ qbool oBaseVisComponent::getProperty(qlong pPropID,EXTfldval &pGetValue,EXTCompI
 ////////////////////////////////////////////////////////////////
 
 // Get list variable used for $dataname
-EXTqlist *	oBaseVisComponent::getDataList(EXTCompInfo* pECI) {
-	EXTfldval	dataNameFld;
-	str255		dataName;
-	ffttype		datatype;
-	qshort		datasubtype;
-	
+EXTqlist *oBaseVisComponent::getDataList(EXTCompInfo *pECI) {
+	EXTfldval dataNameFld;
+	str255 dataName;
+	ffttype datatype;
+	qshort datasubtype;
+
 	/* get the value of $dataname, i.e. "ivList" */
 	ECOgetProperty(mHWnd, anumFieldname, dataNameFld);
 	dataName = dataNameFld.getChar();
-	
+
 	/* and now get the field related to this.. */
-	EXTfldval	dataField(dataName, qfalse, pECI->mLocLocp);
-	
+	EXTfldval dataField(dataName, qfalse, pECI->mLocLocp);
+
 	/* check the type of our variable */
 	dataField.getType(datatype, &datasubtype);
-	if (datatype==fftItemref) {
+	if (datatype == fftItemref) {
 		/* this is an item reference, lets parse the item reference, thanks to TL tech support */
-		EXTfldval	calc, result;
-		
+		EXTfldval calc, result;
+
 		/* Add .$fullname to our reference */
 		dataName.concat(str255(QTEXT(".$fullname")));
-		
+
 		/* execute this as a calculation to get the name of the variable our reference points at */
 		calc.setCalculation(pECI->mInstLocp, ctyCalculation, &dataName[1], dataName[0]);
 		calc.evalCalculation(result, pECI->mInstLocp);
 		dataName = result.getChar(); /* this will return something like $root.$iwindows.myWindow.$objs.mySubWindow.$ivars.ivList */
-		
+
 		/* now our variable could be an instance variable for a subwindow. Our $fullname reference actually doesn't work then.. So lets check for this situation.. */
 		qshort ivarspos = dataName.pos(str255(QTEXT(".$ivars.")));
 		qshort objspos = dataName.pos(str255(QTEXT(".$objs.")));
-		if ((ivarspos!=0) && (objspos!=0)) {
+		if ((ivarspos != 0) && (objspos != 0)) {
 			/*
 			 if we're dealing with an instance variable and we have $objs in our dataname this must be a subwindow, we need to add $subinst..
 			 
 			 so it becomes $root.$iwindows.myWindow.$objs.mySubWindow.$subinst().$ivars.ivList
 			 */
-			
+
 			dataName.insert(str255(QTEXT(".$subinst()")), ivarspos);
 		};
-		
+
 		/* and now get our real data variable */
-		EXTfldval	referencedField(dataName, qfalse, pECI->mLocLocp);
+		EXTfldval referencedField(dataName, qfalse, pECI->mLocLocp);
 		referencedField.getType(datatype, &datasubtype);
-		if ((datatype==fftList) || (datatype==fftRow)) {
+		if ((datatype == fftList) || (datatype == fftRow)) {
 			/* list or row? return the list */
 			return referencedField.getList(qfalse);
 		} else {
 			addToTraceLog("Item reference isn't a list or row");
 			return NULL;
-		};		
-	} else if ((datatype==fftList) || (datatype==fftRow)) {
+		};
+	} else if ((datatype == fftList) || (datatype == fftRow)) {
 		/* list or row? return the list */
 		return dataField.getList(qfalse);
 	} else {
@@ -207,42 +207,42 @@ EXTqlist *	oBaseVisComponent::getDataList(EXTCompInfo* pECI) {
 };
 
 // check if our field is enabled
-bool    oBaseVisComponent::isEnabled() {
-    // !BAS! this checks just our own setting, it doesn't check if any container is inactive. Some day we need to improve this...
-	EXTfldval	enabledFld;
+bool oBaseVisComponent::isEnabled() {
+	// !BAS! this checks just our own setting, it doesn't check if any container is inactive. Some day we need to improve this...
+	EXTfldval enabledFld;
 
 	ECOgetProperty(mHWnd, anumEnabled, enabledFld);
 	return enabledFld.getBool() == 2;
 };
 
 // check if our field is active
-bool    oBaseVisComponent::isActive() {
-    // !BAS! this checks just our own setting, it doesn't check if any container is inactive. Some day we need to improve this...
-	EXTfldval	activeFld;
+bool oBaseVisComponent::isActive() {
+	// !BAS! this checks just our own setting, it doesn't check if any container is inactive. Some day we need to improve this...
+	EXTfldval activeFld;
 
 	ECOgetProperty(mHWnd, anumActive, activeFld);
 	return activeFld.getBool() == 2;
 };
 
 // Do we use our primary data logic? If we return false we do not story a copy of the primary data
-qbool   oBaseVisComponent::enablePrimaryData() {
-    // Override and set to qtrue to support primary data
-    return qfalse;
+qbool oBaseVisComponent::enablePrimaryData() {
+	// Override and set to qtrue to support primary data
+	return qfalse;
 };
 
 // Changes our primary data
-qbool	oBaseVisComponent::setPrimaryData(EXTfldval &pNewValue) {
+qbool oBaseVisComponent::setPrimaryData(EXTfldval &pNewValue) {
 	return copyFldVal(pNewValue, mPrimaryData);
 };
 
 // Retrieves our primary data
-qbool	oBaseVisComponent::getPrimaryData(EXTfldval &pGetValue) {
+qbool oBaseVisComponent::getPrimaryData(EXTfldval &pGetValue) {
 	return copyFldVal(mPrimaryData, pGetValue);
 };
 
 // Compare with our primary data, return DATA_CMPDATA_SAME if same, DATA_CMPDATA_DIFFER if different
-qlong	oBaseVisComponent::cmpPrimaryData(EXTfldval &pWithValue) {
-	if (pWithValue.compare(mPrimaryData)==0) {
+qlong oBaseVisComponent::cmpPrimaryData(EXTfldval &pWithValue) {
+	if (pWithValue.compare(mPrimaryData) == 0) {
 		return DATA_CMPDATA_SAME;
 	} else {
 		return DATA_CMPDATA_DIFFER;
@@ -250,12 +250,12 @@ qlong	oBaseVisComponent::cmpPrimaryData(EXTfldval &pWithValue) {
 };
 
 // Get our primary data size
-qlong	oBaseVisComponent::getPrimaryDataLen() {
+qlong oBaseVisComponent::getPrimaryDataLen() {
 	ffttype valuetype;
-	qshort  valuesubtype;
-	
+	qshort valuesubtype;
+
 	mPrimaryData.getType(valuetype, &valuesubtype);
-	
+
 	switch (valuetype) {
 		case fftInteger:
 			return sizeof(qlong);
@@ -273,7 +273,7 @@ qlong	oBaseVisComponent::getPrimaryDataLen() {
 		case fftRow:
 		case fftList:
 			return mPrimaryData.getBinLen(); // not sure if this makes sense...
-			break;			
+			break;
 		default:
 			return 0;
 			break;
@@ -290,25 +290,25 @@ void oBaseVisComponent::primaryDataHasChanged() {
 // Methods and events
 ////////////////////////////////////////////////////////////////
 
-qMethods * oBaseVisComponent::methods(void) {
-	qMethods * lvMethods = oBaseComponent::methods();
-	
+qMethods *oBaseVisComponent::methods(void) {
+	qMethods *lvMethods = oBaseComponent::methods();
+
 	// our visual class has not methods, we still need to implement this...
-	
+
 	return lvMethods;
 };
 
 // Add events for visual component
-qEvents *	oBaseVisComponent::events(void) {
-	qEvents * lvEvents = oBaseComponent::events();
-	
+qEvents *oBaseVisComponent::events(void) {
+	qEvents *lvEvents = oBaseComponent::events();
+
 	// our visual class has no events
-	
+
 	return lvEvents;
 };
 
-void	oBaseVisComponent::resized() {
-	//	WNDinvalidateRect(mHWnd, NULL);	
+void oBaseVisComponent::resized(){
+	//	WNDinvalidateRect(mHWnd, NULL);
 };
 
 ////////////////////////////////////////////////////////////////
@@ -316,113 +316,112 @@ void	oBaseVisComponent::resized() {
 ////////////////////////////////////////////////////////////////
 
 // Do our drawing in here
-void oBaseVisComponent::doPaint(EXTCompInfo* pECI) {
+void oBaseVisComponent::doPaint(EXTCompInfo *pECI) {
 	// override to implement drawing...
-	if (!WNDdrawThemeBackground(mHWnd,mCanvas->hdc(),&mClientRect,mBKTheme==WND_BK_CONTROL ? WND_BK_PARENT : mBKTheme)) { // if control theme we'll actually draw our parent, we're expecting to draw something on top
+	if (!WNDdrawThemeBackground(mHWnd, mCanvas->hdc(), &mClientRect, mBKTheme == WND_BK_CONTROL ? WND_BK_PARENT : mBKTheme)) { // if control theme we'll actually draw our parent, we're expecting to draw something on top
 		// clear our drawing field
 		mCanvas->drawRect(mClientRect, mForecolor);
 	};
 };
 
 // Do our list content drawing here (what we see when the list is collapsed, for cObjType_DropList only)
-bool	oBaseVisComponent::drawListContents(EXTListLineInfo *pInfo, EXTCompInfo* pECI) {
+bool oBaseVisComponent::drawListContents(EXTListLineInfo *pInfo, EXTCompInfo *pECI) {
 	return false;
 };
 
 // Do our list line drawing here (for cObjType_List or cObjType_DropList)
-bool	oBaseVisComponent::drawListLine(EXTListLineInfo *pInfo, EXTCompInfo* pECI) {
+bool oBaseVisComponent::drawListLine(EXTListLineInfo *pInfo, EXTCompInfo *pECI) {
 	return false;
 };
 
-
 // Create text spec structure for our standard properties (used by setup or when drawing list lines)
-GDItextSpecStruct oBaseVisComponent::getStdTextSpec(EXTCompInfo* pECI) {
-	qshort			fontSize;
-	qsty			fontStyle;
-	qjst			fontAlign;
-	EXTfldval		fval, font; 
-	str255			fieldStyle;	
+GDItextSpecStruct oBaseVisComponent::getStdTextSpec(EXTCompInfo *pECI) {
+	qshort fontSize;
+	qsty fontStyle;
+	qjst fontAlign;
+	EXTfldval fval, font;
+	str255 fieldStyle;
 
-	GDItextSpecStruct	textSpec;
-	
+	GDItextSpecStruct textSpec;
+
 	// get all our text properties...
-	ECOgetProperty(mHWnd,anumFldStyle,fval); 
+	ECOgetProperty(mHWnd, anumFldStyle, fval);
 	fval.getChar(fieldStyle);
-	
-	ECOgetProperty(mHWnd,anumFont,font); 
+
+	ECOgetProperty(mHWnd, anumFont, font);
 	// use this as is...
-	
-	ECOgetProperty(mHWnd,anumFontsize,fval); 
-	fontSize = (qshort) fval.getLong();
-	
-	ECOgetProperty(mHWnd,anumFontstyle,fval); 
-	fontStyle = (qsty) fval.getLong();
-	
-	ECOgetProperty(mHWnd,anumAlign,fval); 
-	fontAlign = (qjst) fval.getLong();
-	
+
+	ECOgetProperty(mHWnd, anumFontsize, fval);
+	fontSize = (qshort)fval.getLong();
+
+	ECOgetProperty(mHWnd, anumFontstyle, fval);
+	fontStyle = (qsty)fval.getLong();
+
+	ECOgetProperty(mHWnd, anumAlign, fval);
+	fontAlign = (qjst)fval.getLong();
+
 	// Start with loading from our normal settings (defaults for now)
 	ECOgetFont(mHWnd, &(textSpec.mFnt), ECOgetFontIndex(mHWnd, font), fontSize);
 	textSpec.mSty = fontStyle;
 	textSpec.mJst = fontAlign;
 	textSpec.mTextColor = mTextColor;
-	
+
 	// Now see if we need to override any of these defaults with our fieldstyle...
-	if (fieldStyle[0]>0) {
-		ECOgetStyle( ECOgetApp(pECI->mInstLocp), &fieldStyle[1], fieldStyle[0], &textSpec );
-		
+	if (fieldStyle[0] > 0) {
+		ECOgetStyle(ECOgetApp(pECI->mInstLocp), &fieldStyle[1], fieldStyle[0], &textSpec);
+
 		// !BAS! need to also see if we need to get our foreground color, background color and/or background pattern from our style
 		// not sure if Omnis feeds this info back to us already
-	};	
-	
+	};
+
 	return textSpec;
 };
 
 // setup our fonts and brushes
-void oBaseVisComponent::setup(EXTCompInfo* pECI) {
-	EXTfldval		fval;
-    
-    // !BAS! need to deal with the situation where these are overriden by our field style..
-	
+void oBaseVisComponent::setup(EXTCompInfo *pECI) {
+	EXTfldval fval;
+
+	// !BAS! need to deal with the situation where these are overriden by our field style..
+
 	// Omnis is maintaining these so grab our copies
-	ECOgetProperty(mHWnd,anumForecolor,fval);
+	ECOgetProperty(mHWnd, anumForecolor, fval);
 	mForecolor = fval.getLong();
-	ECOgetProperty(mHWnd,anumBackcolor,fval);
+	ECOgetProperty(mHWnd, anumBackcolor, fval);
 	mBackcolor = fval.getLong();
-	ECOgetProperty(mHWnd,anumBackpattern,fval);
+	ECOgetProperty(mHWnd, anumBackpattern, fval);
 	mBackpattern = fval.getLong();
-	ECOgetProperty(mHWnd,anumTextColor,fval);
+	ECOgetProperty(mHWnd, anumTextColor, fval);
 	mTextColor = fval.getLong();
 
-    // for now we are managing these
-//    ECOgetProperty(mHWnd,anumBorderColor,fval);
-//    mBorderColor = fval.getLong();
-//	  ECOgetProperty(mHWnd,anumBackgroundTheme,fval);
-//    mBKTheme = fval.getLong();
-	
+	// for now we are managing these
+	//    ECOgetProperty(mHWnd,anumBorderColor,fval);
+	//    mBorderColor = fval.getLong();
+	//	  ECOgetProperty(mHWnd,anumBackgroundTheme,fval);
+	//    mBKTheme = fval.getLong();
+
 	// set background color
 	mCanvas->setBkColor(mBackcolor);
-	
+
 	// Create our pattern brush, it will be deleted at the end of drawing..
 	mCanvas->setBackpatBrush(mBackpattern);
-	
+
 	// and our standard text spec
 	mCanvas->setTextSpec(getStdTextSpec(pECI));
 };
 
 // get info about background drawing
-bool oBaseVisComponent::wm_geteraseinfo(WNDeraseInfoStruct * pInfo, EXTCompInfo * pECI) {
-    pInfo->mBackColor = mBackcolor;
-    pInfo->mForeColor = mForecolor;
-    pInfo->mFillPat = mBackpattern;
-    pInfo->mBKTheme = mBKTheme;
-    
-    return true;
+bool oBaseVisComponent::wm_geteraseinfo(WNDeraseInfoStruct *pInfo, EXTCompInfo *pECI) {
+	pInfo->mBackColor = mBackcolor;
+	pInfo->mForeColor = mForecolor;
+	pInfo->mFillPat = mBackpattern;
+	pInfo->mBKTheme = mBKTheme;
+
+	return true;
 };
 
 // erase our background message
-bool	oBaseVisComponent::wm_erasebkgnd(EXTCompInfo* pECI) {
-	if ((mObjType==cObjType_List) || (mObjType==cObjType_DropList)) {
+bool oBaseVisComponent::wm_erasebkgnd(EXTCompInfo *pECI) {
+	if ((mObjType == cObjType_List) || (mObjType == cObjType_DropList)) {
 		// We're going to be handling this through ECM_PAINTCONTENTS
 		return false;
 	} else {
@@ -437,97 +436,96 @@ bool	oBaseVisComponent::wm_erasebkgnd(EXTCompInfo* pECI) {
 
 		 So we're going to cheat here, and ignore the erase background.. ;)
 		*/
-		
-		return true;		
+
+		return true;
 	};
-	
 };
 
 // paint message
-bool oBaseVisComponent::wm_paint(EXTCompInfo* pECI) {
-	if ((mObjType==cObjType_List) || (mObjType==cObjType_DropList)) {
+bool oBaseVisComponent::wm_paint(EXTCompInfo *pECI) {
+	if ((mObjType == cObjType_List) || (mObjType == cObjType_DropList)) {
 		// We're going to be handling this through ECM_PAINTCONTENTS
 		return false;
 	} else {
-		oDrawingCanvas *	lvWasCanvas = mCanvas; // this should be NULL but not taking any chances...
-		HDC					lvHDC;
-		WNDpaintStruct		lvPaintStruct;
-		qrect				lvUpdateRect;
-		void *				lvOffScreenPaint;
-			
+		oDrawingCanvas *lvWasCanvas = mCanvas; // this should be NULL but not taking any chances...
+		HDC lvHDC;
+		WNDpaintStruct lvPaintStruct;
+		qrect lvUpdateRect;
+		void *lvOffScreenPaint;
+
 		// get current size info
 		WNDgetClientRect(mHWnd, &mClientRect);
-		
+
 		if (mDrawBuffer) {
 			// create our paint structure
-			WNDbeginPaint( mHWnd, &lvPaintStruct );
-			
+			WNDbeginPaint(mHWnd, &lvPaintStruct);
+
 			lvUpdateRect = lvPaintStruct.rcPaint;
 			lvHDC = lvPaintStruct.hdc;
-						
+
 			// On windows this will do a double buffer trick, on Mac OSX the OS already does the offscreen painting:)
 			// note that mHDC and mClienRect may be altered as a result of this call which is good!
 			lvOffScreenPaint = GDIoffscreenPaintBegin(NULL, lvHDC, mClientRect, lvUpdateRect);
 			if (lvOffScreenPaint) {
 				mCanvas = new oDrawingCanvas(mApp, lvHDC, mClientRect);
-				if (mCanvas!=NULL) {
+				if (mCanvas != NULL) {
 					setup(pECI);
-					
+
 					// do our real drawing
 					doPaint(pECI);
-					
+
 					// If in design mode, then call drawDesignName, drawNumber & drawMultiKnobs to draw design
 					// name, numbers and multiknobs, if required.
-					if ( ECOisDesign(mHWnd) ) {
-						if (mShowName) ECOdrawDesignName(mHWnd,lvHDC);
-						ECOdrawNumber(mHWnd,lvHDC);
-						ECOdrawMultiKnobs(mHWnd,lvHDC);
+					if (ECOisDesign(mHWnd)) {
+						if (mShowName) ECOdrawDesignName(mHWnd, lvHDC);
+						ECOdrawNumber(mHWnd, lvHDC);
+						ECOdrawMultiKnobs(mHWnd, lvHDC);
 					}
-					
+
 					// delete our canvas, we no longer need it.
 					delete mCanvas;
-					
+
 					GDIoffscreenPaintEnd(lvOffScreenPaint);
-				};	
+				};
 			};
-			
+
 			// And finish paint...
-			WNDendPaint( mHWnd, &lvPaintStruct );	
-		} else {		
+			WNDendPaint(mHWnd, &lvPaintStruct);
+		} else {
 			// component must fully implement and is responsible for setting up our context...
 			mCanvas = NULL;
 			doPaint(pECI);
 		}
-		
+
 		return true;
 	};
 };
 
 // Draw cObjType_DropList content
-bool	oBaseVisComponent::ecm_paintcontents(EXTListLineInfo *pInfo, EXTCompInfo* pECI) {
-	oDrawingCanvas *	lvWasCanvas = mCanvas;	// this should be NULL but just in case
-	bool				retval = false;
-	
+bool oBaseVisComponent::ecm_paintcontents(EXTListLineInfo *pInfo, EXTCompInfo *pECI) {
+	oDrawingCanvas *lvWasCanvas = mCanvas; // this should be NULL but just in case
+	bool retval = false;
+
 	// setup our drawing info
 	mCanvas = new oDrawingCanvas(mApp, pInfo->mHdc, pInfo->mLineRect);
 	if (mCanvas != NULL) {
 		setup(pECI);
-		
+
 		retval = this->drawListContents(pInfo, pECI);
-		
+
 		delete mCanvas;
 	};
-	
+
 	mCanvas = lvWasCanvas;
-	
+
 	return retval;
 };
 
 // Draw line for cObjType_List or cObjTypeDropList
-bool	oBaseVisComponent::ecm_listdrawline(EXTListLineInfo *pInfo, EXTCompInfo* pECI) {
-	oDrawingCanvas *	lvWasCanvas = mCanvas;	// this should be NULL but just in case
-	bool				retval = false;
-	
+bool oBaseVisComponent::ecm_listdrawline(EXTListLineInfo *pInfo, EXTCompInfo *pECI) {
+	oDrawingCanvas *lvWasCanvas = mCanvas; // this should be NULL but just in case
+	bool retval = false;
+
 	// setup our drawing info
 	mCanvas = new oDrawingCanvas(mApp, pInfo->mHdc, pInfo->mLineRect);
 	if (mCanvas != NULL) {
@@ -535,13 +533,13 @@ bool	oBaseVisComponent::ecm_listdrawline(EXTListLineInfo *pInfo, EXTCompInfo* pE
 
 #ifdef iswin32
 		// On windows we need to draw our background, on Mac it is drawn for us though maybe only if kBGThemeControl is used..
-		HBRUSH brush = GDIcreateBrush( patFill );
+		HBRUSH brush = GDIcreateBrush(patFill);
 		GDIsetTextColor(pInfo->mHdc, mForecolor);
-		GDIfillRect(pInfo->mHdc,&pInfo->mLineRect,brush);
+		GDIfillRect(pInfo->mHdc, &pInfo->mLineRect, brush);
 		GDIdeleteObject(brush);
 
 		// start hiliting
-        GDItextSpecStruct   textSpec = mCanvas->textSpec();
+		GDItextSpecStruct textSpec = mCanvas->textSpec();
 		if (pInfo->mSelected) {
 
 			GDIhiliteTextStart(pInfo->mHdc, &pInfo->mLineRect, textSpec.mTextColor);
@@ -550,11 +548,11 @@ bool	oBaseVisComponent::ecm_listdrawline(EXTListLineInfo *pInfo, EXTCompInfo* pE
 		};
 #endif
 
-		retval = this->drawListLine(pInfo, pECI);	
-	
+		retval = this->drawListLine(pInfo, pECI);
+
 #ifdef iswin32
 		if (pInfo->mSelected) {
-			GDIhiliteTextEnd( pInfo->mHdc, &pInfo->mLineRect, textSpec.mTextColor);
+			GDIhiliteTextEnd(pInfo->mHdc, &pInfo->mLineRect, textSpec.mTextColor);
 		};
 #endif
 
@@ -566,18 +564,17 @@ bool	oBaseVisComponent::ecm_listdrawline(EXTListLineInfo *pInfo, EXTCompInfo* pE
 
 		delete mCanvas;
 	};
-	
+
 	mCanvas = lvWasCanvas;
-	
+
 	return retval;
 };
 
-
 // Component resize/repos message
-#if OMNISSDK>=70
-void	oBaseVisComponent::wm_windowposchanged(EXTCompInfo* pECI, WNDsetWindowPosStruct * pPos) {
+#if OMNISSDK >= 70
+void oBaseVisComponent::wm_windowposchanged(EXTCompInfo *pECI, WNDsetWindowPosStruct *pPos) {
 #else
-void	oBaseVisComponent::wm_windowposchanged(EXTCompInfo* pECI, WNDwindowPosStruct * pPos) {
+void oBaseVisComponent::wm_windowposchanged(EXTCompInfo *pECI, WNDwindowPosStruct *pPos) {
 #endif
 	resized();
 };
@@ -587,44 +584,43 @@ void	oBaseVisComponent::wm_windowposchanged(EXTCompInfo* pECI, WNDwindowPosStruc
 ////////////////////////////////////////////////////////////////////////////////////////
 
 // get our horizontal step size
-qdim	oBaseVisComponent::getHorzStepSize(void) {
+qdim oBaseVisComponent::getHorzStepSize(void) {
 	return 8;
 };
 
 // get our vertical step size
-qdim	oBaseVisComponent::getVertStepSize(void) {
-	return 8;	
+qdim oBaseVisComponent::getVertStepSize(void) {
+	return 8;
 };
 
 // window was scrolled
-void	oBaseVisComponent::evWindowScrolled(qdim pNewX, qdim pNewY) {
-	if ((mHorzScrollPos!=pNewX) || (mVertScrollPos!=pNewY)) {
-		WNDsetScrollPos(mHWnd, SB_HORZ, pNewX, qfalse); 
+void oBaseVisComponent::evWindowScrolled(qdim pNewX, qdim pNewY) {
+	if ((mHorzScrollPos != pNewX) || (mVertScrollPos != pNewY)) {
+		WNDsetScrollPos(mHWnd, SB_HORZ, pNewX, qfalse);
 		WNDsetScrollPos(mHWnd, SB_VERT, pNewY, qfalse);
-		
+
 		// we may not need to do this..
-		WNDscrollWindow(mHWnd, mHorzScrollPos - pNewX, mVertScrollPos-pNewY);
+		WNDscrollWindow(mHWnd, mHorzScrollPos - pNewX, mVertScrollPos - pNewY);
 
 		// redraw the whole thing...
 		WNDinvalidateRect(mHWnd, NULL);
 
 		if (mMouseLButtonDown) {
-			mMouseDownAt.h += pNewX-mHorzScrollPos;
-			mMouseDownAt.v += pNewY-mVertScrollPos;
-		};	
+			mMouseDownAt.h += pNewX - mHorzScrollPos;
+			mMouseDownAt.v += pNewY - mVertScrollPos;
+		};
 
 		mHorzScrollPos = pNewX;
 		mVertScrollPos = pNewY;
 	};
 };
 
-
 ////////////////////////////////////////////////////////////////////////////////////////
 // mouse related functions
 ////////////////////////////////////////////////////////////////////////////////////////
 
 // return the mouse cursor we should show
-HCURSOR	oBaseVisComponent::getCursor(qpoint pAt, qword2 pHitTest) {
+HCURSOR oBaseVisComponent::getCursor(qpoint pAt, qword2 pHitTest) {
 	// We return WND_CURS_DEFAULT which will cause our framework to let Omnis override this with any user setting or else use the default cursor.
 	// If you override this and return anything but WND_CURS_DEFAULT what you return will be used.
 	return WND_CURS_DEFAULT;
@@ -632,72 +628,72 @@ HCURSOR	oBaseVisComponent::getCursor(qpoint pAt, qword2 pHitTest) {
 
 // returns true if the mouse is over our object
 DEPRECATED bool oBaseVisComponent::mouseIsOver() {
-    return mMouseOver;
+	return mMouseOver;
 };
 
 // mouse moved over our object
-DEPRECATED void oBaseVisComponent::evMouseEnter() {
-    // stub
+DEPRECATED void oBaseVisComponent::evMouseEnter(){
+	// stub
 };
 
 // mouse moved away from our object
-DEPRECATED void oBaseVisComponent::evMouseLeave() {
-    // stub
+DEPRECATED void oBaseVisComponent::evMouseLeave(){
+	// stub
 };
 
 // mouse left button pressed down (return true if we finished handling this, false if we want Omnis internal logic)
-bool	oBaseVisComponent::evMouseLDown(qpoint pDownAt) {
+bool oBaseVisComponent::evMouseLDown(qpoint pDownAt) {
 	// stub
-	
+
 	return true;
 };
 
 // mouse left button released (return true if we finished handling this, false if we want Omnis internal logic)
-bool	oBaseVisComponent::evMouseLUp(qpoint pDownAt) {
+bool oBaseVisComponent::evMouseLUp(qpoint pDownAt) {
 	// stub
 
 	return true;
 };
 
 // mouse left button double clicked (return true if we finished handling this, false if we want Omnis internal logic)
-bool	oBaseVisComponent::evDoubleClick(qpoint pAt, EXTCompInfo* pECI) {
+bool oBaseVisComponent::evDoubleClick(qpoint pAt, EXTCompInfo *pECI) {
 	// stub
 	return false;
 };
 
 // mouse right button pressed down (return true if we finished handling this, false if we want Omnis internal logic)
-bool	oBaseVisComponent::evMouseRDown(qpoint pDownAt, EXTCompInfo* pECI) {
+bool oBaseVisComponent::evMouseRDown(qpoint pDownAt, EXTCompInfo *pECI) {
 	// stub
-	return false;	
+	return false;
 };
 
 // mouse right button released (return true if we finished handling this, false if we want Omnis internal logic)
-bool	oBaseVisComponent::evMouseRUp(qpoint pUpAt, EXTCompInfo* pECI) {
+bool oBaseVisComponent::evMouseRUp(qpoint pUpAt, EXTCompInfo *pECI) {
 	// stub
 	return false;
 };
 
 // mouse moved to this location while we are not dragging
-void	oBaseVisComponent::evMouseMoved(qpoint pAt) {
-	// stub	
+void oBaseVisComponent::evMouseMoved(qpoint pAt){
+	// stub
 };
 
 // mouse click at this location
-void	oBaseVisComponent::evClick(qpoint pAt, EXTCompInfo* pECI) {
+void oBaseVisComponent::evClick(qpoint pAt, EXTCompInfo *pECI){
 	// stub
-};	
+};
 
 // left mouse up/down (return true if we finished handling this, false if we want Omnis internal logic)
-bool	oBaseVisComponent::wm_lbutton(qpoint pAt, bool pDown, EXTCompInfo* pECI) {
+bool oBaseVisComponent::wm_lbutton(qpoint pAt, bool pDown, EXTCompInfo *pECI) {
 	mMouseAt = pAt; /* store a copy of our mouse location */
-	
+
 	if (pDown) {
 		// addToTraceLog("Mouse down");
-		
+
 		mMouseLButtonDown = true;
 		mMouseDragging = false;
 		mMouseDownAt = pAt;
-		
+
 		return this->evMouseLDown(pAt);
 	} else if (mMouseLButtonDown) {
 		mMouseLButtonDown = false;
@@ -708,19 +704,18 @@ bool	oBaseVisComponent::wm_lbutton(qpoint pAt, bool pDown, EXTCompInfo* pECI) {
 		};
 		return this->evMouseLUp(pAt);
 	} else {
-        // mouse didn't go down on this so...
-        return false;
-    };
+		// mouse didn't go down on this so...
+		return false;
+	};
 };
 
 // left mouse button double click (return true if we finished handling this, false if we want Omnis internal logic)
-bool	oBaseVisComponent::wm_lbDblClick(qpoint pAt, EXTCompInfo* pECI) {
+bool oBaseVisComponent::wm_lbDblClick(qpoint pAt, EXTCompInfo *pECI) {
 	return this->evDoubleClick(pAt, pECI);
 };
 
-
 // right mouse button (return true if we finished handling this, false if we want Omnis internal logic)
-bool	oBaseVisComponent::wm_rbutton(qpoint pAt, bool pDown, EXTCompInfo* pECI) {
+bool oBaseVisComponent::wm_rbutton(qpoint pAt, bool pDown, EXTCompInfo *pECI) {
 	if (pDown) {
 		return this->evMouseRDown(pAt, pECI);
 	} else {
@@ -728,9 +723,9 @@ bool	oBaseVisComponent::wm_rbutton(qpoint pAt, bool pDown, EXTCompInfo* pECI) {
 	};
 };
 
-void	oBaseVisComponent::wm_mousemove(qpoint pMovedTo, EXTCompInfo* pECI, bool IsOver) {
+void oBaseVisComponent::wm_mousemove(qpoint pMovedTo, EXTCompInfo *pECI, bool IsOver) {
 	mMouseAt = pMovedTo; /* store a copy of our mouse location */
-	
+
 	/** disabled for now, we no longer get an event once we're no longer over our field...
     if (IsOver) {
         if (!mMouseOver) {
@@ -750,12 +745,12 @@ void	oBaseVisComponent::wm_mousemove(qpoint pMovedTo, EXTCompInfo* pECI, bool Is
     };
 	**/
 
-    if (IsOver) {
-	    if (mMouseDragging) {
-            // for now we ignore this...
-        } else {
-            this->evMouseMoved(mMouseAt);
-        };
+	if (IsOver) {
+		if (mMouseDragging) {
+			// for now we ignore this...
+		} else {
+			this->evMouseMoved(mMouseAt);
+		};
 	};
 };
 
@@ -764,7 +759,7 @@ void	oBaseVisComponent::wm_mousemove(qpoint pMovedTo, EXTCompInfo* pECI, bool Is
 ////////////////////////////////////////////////////////////////////////////////////////
 
 // let us know a key was pressed. Return true if Omnis should not do anything with this keypress
-bool	oBaseVisComponent::evKeyPressed(qkey *pKey, bool pDown, EXTCompInfo* pECI) {
+bool oBaseVisComponent::evKeyPressed(qkey *pKey, bool pDown, EXTCompInfo *pECI) {
 	// stub
 	return false;
 };
@@ -774,52 +769,52 @@ bool	oBaseVisComponent::evKeyPressed(qkey *pKey, bool pDown, EXTCompInfo* pECI) 
 ////////////////////////////////////////////////////////////////////////////////////////
 
 // Can we drag from this location? Return false if we can't
-bool	oBaseVisComponent::canDrag(qpoint pFrom) {	// stub
+bool oBaseVisComponent::canDrag(qpoint pFrom) { // stub
 	return true;
 };
 
 // started dragged, return -1 if we leave it up to Omnis to handle this
-qlong	oBaseVisComponent::evStartDrag(FLDdragDrop * pDragInfo) {
+qlong oBaseVisComponent::evStartDrag(FLDdragDrop *pDragInfo) {
 	// stub
 
 	return false;
 };
 
 // mouse dragged from - to, return -1 if we leave it up to Omnis to handle this
-qlong	oBaseVisComponent::evEndDrag(FLDdragDrop * pDragInfo) {
-	// stub	
-	
+qlong oBaseVisComponent::evEndDrag(FLDdragDrop *pDragInfo) {
+	// stub
+
 	return -1;
 };
 
 // Set drag value, update the pDragInfo structure with information about what we are dragging, return -1 if we leave it up to Omnis to handle this
-qlong	oBaseVisComponent::evSetDragValue(FLDdragDrop *pDragInfo, EXTCompInfo* pECI) {
+qlong oBaseVisComponent::evSetDragValue(FLDdragDrop *pDragInfo, EXTCompInfo *pECI) {
 	// stub
-	
+
 	return -1;
 };
 
 // drag and drop handling, return -1 if we're not handling this and want default omnis logic to run
-qlong	oBaseVisComponent::wm_dragdrop(WPARAM wParam, LPARAM lParam, EXTCompInfo* pECI) {
+qlong oBaseVisComponent::wm_dragdrop(WPARAM wParam, LPARAM lParam, EXTCompInfo *pECI) {
 	switch (wParam) {
-		// DD_CANDRAG_ON_DOWN - Enquiry on whether dragging can be started by a mouse button down action. 
-		// Return true or false, or simply ignore the message. LParam will contain a pointer to a qpoint structure which will contain the mouse position. 
+		// DD_CANDRAG_ON_DOWN - Enquiry on whether dragging can be started by a mouse button down action.
+		// Return true or false, or simply ignore the message. LParam will contain a pointer to a qpoint structure which will contain the mouse position.
 		// The point is local to the client area of the window which receives these messages.
 		case DD_CANDRAG_ON_DOWN: {
 			// need to move before we start dragging, we may implement this differently some day if we make a control that requires to drag right away...
-			
-/*			qpoint pt = *((qpoint *)lParam);
+
+			/*			qpoint pt = *((qpoint *)lParam);
 			if (this->canDrag(pt)) {
 				return qtrue;
 			} else {
 				return qfalse;
 			}; */
-			
+
 			return qfalse;
 		}; break;
-			
-		// DD_CANDRAG_ON_MOVE -	Enquiry on whether dragging can be started by a mouse move action. 
-		// Return true or false, or simply ignore the message. LParam will contain a pointer to a qpoint structure which will contain the mouse position. 
+
+		// DD_CANDRAG_ON_MOVE -	Enquiry on whether dragging can be started by a mouse move action.
+		// Return true or false, or simply ignore the message. LParam will contain a pointer to a qpoint structure which will contain the mouse position.
 		// The point is local to the client area of the window which receives these messages.
 		case DD_CANDRAG_ON_MOVE: {
 			qpoint pt = *((qpoint *)lParam);
@@ -829,33 +824,33 @@ qlong	oBaseVisComponent::wm_dragdrop(WPARAM wParam, LPARAM lParam, EXTCompInfo* 
 				return qfalse;
 			};
 		}; break;
-			
-		// DD_STARTDRAG - Indicates that the drag process is starting. Normally this message is ignored. 
+
+		// DD_STARTDRAG - Indicates that the drag process is starting. Normally this message is ignored.
 		// LParam will contain a pointer to the FLDdragDrop structure.
 		case DD_STARTDRAG: {
-			FLDdragDrop *	dragInfo = (FLDdragDrop *)lParam;
+			FLDdragDrop *dragInfo = (FLDdragDrop *)lParam;
 			return this->evStartDrag(dragInfo);
 		}; break;
-			
-		// DD_ENDDRAG - Indicates that the drag process is finishing. Normally this message is ignored. 
+
+		// DD_ENDDRAG - Indicates that the drag process is finishing. Normally this message is ignored.
 		// LParam will contain a pointer to the FLDdragDrop structure.
 		case DD_ENDDRAG: {
-			FLDdragDrop *	dragInfo = (FLDdragDrop *)lParam;
-			return this->evEndDrag(dragInfo);			
+			FLDdragDrop *dragInfo = (FLDdragDrop *)lParam;
+			return this->evEndDrag(dragInfo);
 		}; break;
-	
+
 		// DD_SETDRAGVALUE
-		// Request for control to set the drag value and can be used, for example, 
-		// to set the drag value to a selection of text. LParam will contain a pointer to the FLDdragDrop structure.	
+		// Request for control to set the drag value and can be used, for example,
+		// to set the drag value to a selection of text. LParam will contain a pointer to the FLDdragDrop structure.
 		case DD_SETDRAGVALUE: {
-			FLDdragDrop *	dragInfo = (FLDdragDrop *)lParam;
+			FLDdragDrop *dragInfo = (FLDdragDrop *)lParam;
 			return this->evSetDragValue(dragInfo, pECI);
 		}; break;
 
 		// we'll implement more soon, here is the info from the SDK for the messages we receive here:
-			
+
 		// DD_CHILD_STARTDRAG - Indicates that the drag process is starting. Sent to the parent of the dragging window. LParam will contain a pointer to the FLDdragDrop structure.
-		// DD_CHILD_ENDDRAG - Indicates that the drag process is finishing. Sent to the parent of the dragging window. LParam will contain a pointer to the FLDdragDrop structure.	
+		// DD_CHILD_ENDDRAG - Indicates that the drag process is finishing. Sent to the parent of the dragging window. LParam will contain a pointer to the FLDdragDrop structure.
 		// DD_CANDROP - Sent to the drop control and it can return qtrue if drop action is allowed. LParam will contain a pointer to the FLDdragDrop structure and member mDropPoint may be used to establish drop position.
 		// DD_CANDROP_OVER - Sent to the drop control and it can return qtrue if dropping is allowed. LParam will contain a pointer to the FLDdragDrop structure and member mDropPoint may be used to establish mouse position.
 		// DD_CANDROPPARENT - Sent to the parent of the drop control and it can return qtrue if dropping is allowed. LParam will contain a pointer to the FLDdragDrop structure and member mDropPoint may be used to establish mouse position.
@@ -876,4 +871,3 @@ qlong	oBaseVisComponent::wm_dragdrop(WPARAM wParam, LPARAM lParam, EXTCompInfo* 
 			break;
 	};
 };
-

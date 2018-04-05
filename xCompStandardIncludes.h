@@ -38,18 +38,18 @@ typedef unsigned int uint;
 #include <dmconst.he>
 #include <extcomp.he>
 #include <extfval.he>
-#include <hwnd.he>
 #include <gdi.he>
+#include <hwnd.he>
 
 // add in some useful standard libraries
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include <math.h>
+#include <algorithm>
+#include <map>
 #include <string>
 #include <vector>
-#include <map>
-#include <algorithm>
 
 #define PI 3.14159265
 
