@@ -18,12 +18,11 @@
 
 class oUTF8 {
 public:
-	static std::string	convertToUTF8(const qchar * pString);
-	static std::string	convertToUTF8(const char * pString, bool pSkipNewLines = false);
-	static std::string	convertFromUTF8(const char * pString);
+	static std::string convertToUTF8(const qchar *pString);
+	static std::string convertToUTF8(const char *pString, bool pSkipNewLines = false);
+	static std::string convertFromUTF8(const char *pString);
 	// may add this one later:
 	// static	qString		convertFromUTF8(const char * pString);
 };
-
 
 #endif

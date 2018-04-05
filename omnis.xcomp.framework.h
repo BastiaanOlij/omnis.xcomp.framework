@@ -25,14 +25,14 @@
 #include "xCompStandardIncludes.h"
 
 // add in our framework header files
-#include "oUTF8.h"
-#include "qArray.h"
-#include "qString.h"
 #include "oBaseComponent.h"
 #include "oBaseNVComponent.h"
-#include "oRGBAImage.h"
-#include "oDrawingCanvas.h"
 #include "oBaseVisComponent.h"
+#include "oDrawingCanvas.h"
+#include "oRGBAImage.h"
+#include "oUTF8.h"
 #include "oXCompLib.h"
+#include "qArray.h"
+#include "qString.h"
 
 #endif
