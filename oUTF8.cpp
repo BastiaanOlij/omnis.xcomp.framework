@@ -53,7 +53,11 @@ std::string	oUTF8::convertToUTF8(const qchar *pString) {
 		char	tmpCharacter[10]; // Multi byte UTF 8 character
 		
 		// Convert input to output..
+#if OMNISSDK>=81
+        tmpLen = CHRunicode::charToUtf8((qchar *) &pString[tmpIdx], 1, (qbyte *)tmpCharacter);
+#else
 		tmpLen = CHRunicode::charToEncodedCharacters(qtrue, (qchar *) &pString[tmpIdx], 1, (qbyte *)tmpCharacter);
+#endif
 		tmpCharacter[tmpLen]= '\0';
 		tmpUTF8 += tmpCharacter;
 		
