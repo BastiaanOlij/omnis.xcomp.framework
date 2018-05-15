@@ -415,6 +415,45 @@ char *oBaseComponent::newCStringFromParam(int pParamNo, EXTCompInfo *pECI, char 
 	return result;
 };
 
+const std::string oBaseComponent::getStringFromParam(int pParamNo, EXTCompInfo *pECI) {
+	std::string new_string;
+
+	if (ECOgetParamCount(pECI) >= pParamNo) {
+		EXTParamInfo *param_info = ECOfindParamNum(pECI, pParamNo);
+		EXTfldval fld_val((qfldval)param_info->mData);
+
+		qlong len = fld_val.getCharLen();
+		if (len > 0) {
+			// resize our string so we don't get to many reallocs, we assume there won't be many higher character that take up more then 1 character.
+			new_string.reserve(len + 15);
+
+			// create a big enough buffer to hold our data
+			qchar *omnis_string = (qchar *)MEMmalloc(sizeof(qchar) * (len + 15));
+			if (omnis_string != NULL) {
+				char utf8[15];
+
+				qlong real_len;
+				fld_val.getChar(len + 1, omnis_string, real_len);
+				omnis_string[real_len] = 0;
+
+				for (long i = 0; i < real_len; i++) {
+#if OMNISSDK >= 81
+					len = CHRunicode::charToUtf8(&omnis_string[i], 1, (qbyte *)utf8);
+#else
+					len = CHRunicode::charToEncodedCharacters(qtrue, &omnis_string[i], 1, (qbyte *)utf8);
+#endif
+					utf8[len] = 0;
+					new_string += utf8;
+				}
+
+				MEMfree(omnis_string);
+			}
+		}
+	}
+
+	return new_string;
+}
+
 // get string from parameter, call needs to delete returned object
 qstring *oBaseComponent::newStringFromParam(int pParamNo, EXTCompInfo *pECI) {
 	if (ECOgetParamCount(pECI) >= pParamNo) {
