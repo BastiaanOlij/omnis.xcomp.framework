@@ -1,6 +1,0 @@
-This folder should contain a copy of the libraries found here: https://github.com/nothings/stb
-I'm not including it into this repository as it is an external source and if you wish to compile these externals it is a simple step to grab the latest version.
-
-These are a number of files that can be included into projects that take care of a bunch of awesomeness such as loading/saving image files, working with truetype files, doing parsing, etc..
-
-It was written by Sean T Barett and he was kind enough to donate this to the public domain.
