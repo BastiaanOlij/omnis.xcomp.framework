@@ -20,7 +20,7 @@
 #endif
 
 #ifdef iswin32
-typedef unsigned int uint;
+#define uint unsigned int
 #endif
 
 // make sure we can mark functions as deprecated
