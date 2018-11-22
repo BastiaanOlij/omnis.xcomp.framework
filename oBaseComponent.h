@@ -45,6 +45,7 @@ protected:
 	/*** Parameters ***/
 	char *newCStringFromParam(int pParamNo, EXTCompInfo *pECI, char *pBuffer = NULL, int pBufLen = 0); // get string from parameter, if no buffer is given we limit our return value to 1024 bytes
 	const std::string getStringFromParam(int pParamNo, EXTCompInfo *pECI); // get standard string from parameter
+	const std::vector<qbyte> getBinaryFromParam(int pParamNo, EXTCompInfo *pECI); // get binary buffer from parameter
 	qstring *newStringFromParam(int pParamNo, EXTCompInfo *pECI); // get string from parameter, call needs to delete returned object
 	long getLongFromParam(int pParamNo, EXTCompInfo *pECI); // get long from parameter
 	bool getBoolFromParam(int pParamNo, EXTCompInfo *pECI); // get boolean from parameter

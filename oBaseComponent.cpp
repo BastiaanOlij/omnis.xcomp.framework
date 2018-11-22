@@ -454,6 +454,24 @@ const std::string oBaseComponent::getStringFromParam(int pParamNo, EXTCompInfo *
 	return new_string;
 }
 
+const std::vector<qbyte> oBaseComponent::getBinaryFromParam(int pParamNo, EXTCompInfo *pECI) {
+	std::vector<qbyte> data;
+
+	if (ECOgetParamCount(pECI) >= pParamNo) {
+		EXTParamInfo *param_info = ECOfindParamNum(pECI, pParamNo);
+		EXTfldval fld_val((qfldval)param_info->mData);
+
+		qlong len = fld_val.getBinLen();
+		if (len > 0) {
+			data.resize(len);
+
+			fld_val.getBinary(len, data.data(), len);
+		}
+	}
+
+	return data;
+}
+
 // get string from parameter, call needs to delete returned object
 qstring *oBaseComponent::newStringFromParam(int pParamNo, EXTCompInfo *pECI) {
 	if (ECOgetParamCount(pECI) >= pParamNo) {

@@ -16,10 +16,17 @@ Directories are setup relative and assume the framework is installed within the 
  - omnis.xcomp.framework
  - ...
 
+Or you can submodule it:) 
+
 Dependencies
 ============
 There are support libraries you need to download separately to compile these sources and I've added placeholders for these libraries in the source tree. 
 So far this is limited to STB
+
+Hooks
+=====
+The subfolder hooks contains a few git hooks you can copy into the ```.git/hooks``` subfolder. This ensures clang-format is run on any changed file before committing the changes to the repository.
+You do need to have clang-format installed. 
 
 License
 =======
