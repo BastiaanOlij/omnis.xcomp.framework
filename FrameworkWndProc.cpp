@@ -359,7 +359,7 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg, WPARAM w
 
 		// ECM_METHODCALL: Call a method on an instance
 		case ECM_METHODCALL: {
-			qlong lvResult;
+            qlong lvResult = 1L;
 			qlong methodID = ECOgetId(pECI);
 
 			oBaseComponent *lvObject;
