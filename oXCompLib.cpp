@@ -84,7 +84,7 @@ void oXCompLib::addComponent(OXFcomponent pAdd) {
 		mECOobjects.push(lvNVObject);
 	} else {
 		// We just need to map it as Omnis does not expect our visual components to be mixed with our non-visual ones.
-		mVisIndex.push(mComponents.numberOfElements()); // as we're about to add our component but our index is 0 based, this works fine:)
+		mVisIndex.push((uint)mComponents.numberOfElements()); // as we're about to add our component but our index is 0 based, this works fine:)
 	};
 
 	mComponents.push(pAdd);
@@ -242,3 +242,20 @@ int oXCompLib::invokeMethod(qlong pMethodId, EXTCompInfo *pECI) {
 
 	return 1L;
 };
+
+mainlib *mainlib::singleton = NULL;
+
+mainlib *mainlib::get_singleton() {
+	if (mainlib::singleton == NULL) {
+		mainlib::singleton = new mainlib();
+	}
+
+	return mainlib::singleton;
+}
+
+void mainlib::cleanup() {
+	if (mainlib::singleton != NULL) {
+		delete mainlib::singleton;
+		mainlib::singleton = NULL;
+	}
+}

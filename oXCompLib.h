@@ -93,7 +93,14 @@ public:
 // This class must be implemented in your library (on windows its not enough to just have a class definition...)
 // An instance of this class is created to manage your library.
 class mainlib : public oXCompLib {
+private:
+	static mainlib *singleton;
+
 public:
+	static mainlib *get_singleton();
+	static void cleanup();
+
+	// implement these methods
 	virtual qshort major(); // get major version number
 	virtual qshort minor(); // get minor version number
 

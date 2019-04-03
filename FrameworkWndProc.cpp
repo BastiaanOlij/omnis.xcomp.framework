@@ -18,12 +18,12 @@
 // Include our framework files
 #include "omnis.xcomp.framework.h"
 
-mainlib *gXCompLib = NULL;
-
 // Component library entry point (name as declared in resource 31000 )
 extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg, WPARAM wParam, LPARAM lParam, EXTCompInfo *pECI) {
 	// Initialize callback tables - THIS MUST BE DONE
 	ECOsetupCallbacks(pHWND, pECI);
+
+	mainlib *xcomplib = mainlib::get_singleton();
 
 	switch (pMsg) {
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -36,10 +36,7 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg, WPARAM w
 		//
 		// For most components this can be removed - see other BLYTH component examples
 		case ECM_CONNECT: {
-			// instantiate our library
-			gXCompLib = new mainlib();
-
-			return gXCompLib->ecm_connect(); // Return external flags
+			return xcomplib->ecm_connect(); // Return external flags
 		} break;
 
 		// ECM_DISCONNECT - this message is sent only once when the OMNIS session is ending and should not be confused
@@ -48,29 +45,27 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg, WPARAM w
 		//
 		// For most components this can be removed - see other BLYTH component examples
 		case ECM_DISCONNECT: {
-			qbool lvResult = gXCompLib->ecm_disconnect();
-
-			// and we no longer need our library...
-			delete gXCompLib;
+			qbool lvResult = xcomplib->ecm_disconnect();
+			mainlib::cleanup();
 			return lvResult;
 		} break;
 
 		// ECM_GETOBJECT - this is sent by OMNIS to find out which non-visual objects are part of our library
 		case ECM_GETOBJECT: {
-			qECOobjects *lvObject = gXCompLib->objects();
+			qECOobjects *lvObject = xcomplib->objects();
 
 			return ECOreturnObjects(gInstLib, pECI, (ECOobject *)lvObject->getArray(), (qshort)lvObject->numberOfElements());
 		} break;
 
 		// ECM_GETSTATICOBJECT - this is sent by OMNIS to find out about our static methods
 		case ECM_GETSTATICOBJECT: {
-			return ECOreturnMethods(gInstLib, pECI, gXCompLib->staticMethods(), (qshort)gXCompLib->numberOfStaticMethods());
+			return ECOreturnMethods(gInstLib, pECI, xcomplib->staticMethods(), (qshort)xcomplib->numberOfStaticMethods());
 		};
 
 		// ECM_GETCOMPLIBINFO - this is sent by OMNIS to find out the name of the library, and
 		// the number of components this library supports
 		case ECM_GETCOMPLIBINFO: {
-			return ECOreturnCompInfo(gInstLib, pECI, gXCompLib->getResourceID(), (qshort)gXCompLib->numberOfvisComps());
+			return ECOreturnCompInfo(gInstLib, pECI, xcomplib->getResourceID(), (qshort)xcomplib->numberOfvisComps());
 		} break;
 
 		// ECM_GETCOMPID - this message is sent by OMNIS to get information about each component in this library
@@ -83,7 +78,7 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg, WPARAM w
 		//										cRepObjType_Basic	- a basic report object.
 		//										There are others 	- see BLYTH examples and headers
 		case ECM_GETCOMPID: {
-			OXFcomponent lvComponent = gXCompLib->visCompByIndex(wParam - 1);
+			OXFcomponent lvComponent = xcomplib->visCompByIndex(wParam - 1);
 			if (lvComponent.componentType != 0) {
 				return ECOreturnCompID(gInstLib, pECI, lvComponent.componentID, lvComponent.componentType);
 			}
@@ -94,7 +89,7 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg, WPARAM w
 		case ECM_GETCOMPICON: {
 			// OMNIS will call you once per component for an icon.
 			// GENERIC_ICON is defined in the header and included in the resource file
-			OXFcomponent lvComponent = gXCompLib->componentByID(pECI->mCompId);
+			OXFcomponent lvComponent = xcomplib->componentByID(pECI->mCompId);
 			if (lvComponent.componentType != 0) {
 				return ECOreturnIcon(gInstLib, pECI, lvComponent.bitmapID);
 			}
@@ -103,8 +98,8 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg, WPARAM w
 		} break;
 
 		case ECM_GETVERSION: {
-			qshort major = gXCompLib->major();
-			qshort minor = gXCompLib->minor();
+			qshort major = xcomplib->major();
+			qshort minor = xcomplib->minor();
 
 			return ECOreturnVersion(major, minor);
 		} break;
@@ -127,7 +122,7 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg, WPARAM w
 			};
 
 			// instantiate our component
-			lvObject = gXCompLib->instantiateComponent(pECI->mCompId, pECI, pHWND, lParam);
+			lvObject = xcomplib->instantiateComponent(pECI->mCompId, pECI, pHWND, lParam);
 			if (lvObject != NULL) {
 				return qtrue;
 			};
@@ -164,7 +159,7 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg, WPARAM w
 			if (lvSourceObj != NULL) {
 				oBaseNVComponent *lvDestObj = (oBaseNVComponent *)ECOfindNVObject(pECI->mOmnisInstance, lvCopyInfo->mDestinationObject);
 				if (lvDestObj == NULL) {
-					lvDestObj = (oBaseNVComponent *)gXCompLib->instantiateComponent(pECI->mCompId, pECI, pHWND, lvCopyInfo->mDestinationObject); // hopefully we can trust mCompID here..
+					lvDestObj = (oBaseNVComponent *)xcomplib->instantiateComponent(pECI->mCompId, pECI, pHWND, lvCopyInfo->mDestinationObject); // hopefully we can trust mCompID here..
 				};
 				if (lvDestObj != NULL) {
 					lvDestObj->copyObject(lvSourceObj);
@@ -186,7 +181,7 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg, WPARAM w
 
 		// ECM_GETPROPNAME - this message is sent by OMNIS to get information about the properties of an object
 		case ECM_GETPROPNAME: {
-			qProperties *lvProperties = gXCompLib->properties(pECI->mCompId);
+			qProperties *lvProperties = xcomplib->properties(pECI->mCompId);
 			if (lvProperties != NULL) {
 				qlong retVal = ECOreturnProperties(gInstLib, pECI, (ECOproperty *)lvProperties->getArray(), (qshort)lvProperties->numberOfElements());
 
@@ -349,7 +344,7 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg, WPARAM w
 
 		// ECM_GETMETHODNAME: Return method names for class
 		case ECM_GETMETHODNAME: {
-			qMethods *lvMethods = gXCompLib->methods(pECI->mCompId);
+			qMethods *lvMethods = xcomplib->methods(pECI->mCompId);
 			if (lvMethods != NULL) {
 				qlong retVal = ECOreturnMethods(gInstLib, pECI, (ECOmethodEvent *)lvMethods->getArray(), (qshort)lvMethods->numberOfElements());
 
@@ -359,13 +354,13 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg, WPARAM w
 
 		// ECM_METHODCALL: Call a method on an instance
 		case ECM_METHODCALL: {
-            qlong lvResult = 1L;
+			qlong lvResult = 1L;
 			qlong methodID = ECOgetId(pECI);
 
 			oBaseComponent *lvObject;
 			if ((pHWND == 0) && (lParam == 0) && (wParam == 0)) {
 				// must be static method call, need to test this
-				lvResult = gXCompLib->invokeMethod(methodID, pECI);
+				lvResult = xcomplib->invokeMethod(methodID, pECI);
 			} else {
 				if (pHWND == 0) {
 					lvObject = (oBaseComponent *)ECOfindNVObject(pECI->mOmnisInstance, lParam); // first try and see if this is an NV object
@@ -392,7 +387,7 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg, WPARAM w
 
 		// ECM_GETEVENTMETHOD: Return events supported by classes
 		case ECM_GETEVENTMETHOD: {
-			unsigned int lvID = gXCompLib->eventMethodID(pECI->mCompId);
+			unsigned int lvID = xcomplib->eventMethodID(pECI->mCompId);
 			if (lvID > 0) {
 				return ECOreturnEventMethod(gInstLib, pECI, lvID);
 			};
@@ -400,7 +395,7 @@ extern "C" qlong OMNISWNDPROC FrameworkWndProc(HWND pHWND, LPARAM pMsg, WPARAM w
 
 		// ECM_GETEVENTNAME: Return event names
 		case ECM_GETEVENTNAME: {
-			qEvents *lvEvents = gXCompLib->events(pECI->mCompId);
+			qEvents *lvEvents = xcomplib->events(pECI->mCompId);
 			if (lvEvents != NULL) {
 				qlong retVal = ECOreturnEvents(gInstLib, pECI, (ECOmethodEvent *)lvEvents->getArray(), (qshort)lvEvents->numberOfElements());
 
