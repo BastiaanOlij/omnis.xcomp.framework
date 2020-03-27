@@ -596,8 +596,8 @@ qdim oBaseVisComponent::getVertStepSize(void) {
 // window was scrolled
 void oBaseVisComponent::evWindowScrolled(qdim pNewX, qdim pNewY) {
 	if ((mHorzScrollPos != pNewX) || (mVertScrollPos != pNewY)) {
-		WNDsetScrollPos(mHWnd, SB_HORZ, pNewX, qfalse);
-		WNDsetScrollPos(mHWnd, SB_VERT, pNewY, qfalse);
+		WNDsetScrollPos(mHWnd, SB_HORZ, pNewX, qtrue);
+		WNDsetScrollPos(mHWnd, SB_VERT, pNewY, qtrue);
 
 		// we may not need to do this..
 		WNDscrollWindow(mHWnd, mHorzScrollPos - pNewX, mVertScrollPos - pNewY);

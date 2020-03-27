@@ -98,7 +98,7 @@ void oDrawingCanvas::setTextSpec(GDItextSpecStruct pSpec) {
 	HFONT lvOldFont = GDIselectObject(mHDC, lvNewFont);
 
 	if (mTextFont != 0) {
-		// save to delete the old selected font now that we've created a new one
+		// safe to delete the old selected font now that we've created a new one
 		GDIdeleteObject(mTextFont);
 	}
 	mTextFont = lvNewFont;
@@ -663,6 +663,8 @@ void oDrawingCanvas::drawLine(qpoint pFrom, qpoint pTo, qdim pWidth, qcol pCol, 
 
 	GDIsetTextColor(mHDC, oldCol);
 	GDIselectObject(mHDC, oldPen);
+
+	GDIdeleteObject(newPen); // and clean up...
 };
 
 // fills a rectangle using our standard pattern brush
