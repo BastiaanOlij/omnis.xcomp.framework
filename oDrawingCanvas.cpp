@@ -367,20 +367,22 @@ qstring oDrawingCanvas::wrapText(const qchar *pText, qdim pMaxWidth) {
 	} else {
 		while (pText[pos] != 0) {
 			if (pText[pos] == (qchar)'\r') {
-				width = addWord(retval, word, prefix, width, pMaxWidth);
+				addWord(retval, word, prefix, width, pMaxWidth);
 				word = "";
 				prefix = "";
 
 				retval += (qchar)'\n'; // prevent expensive UTF-8 => UTF-32 conversion
+				width = 0; // we are on a new line, so reset width
 			} else if (pText[pos] == (qchar)'\n') {
 				if (pText[pos + 1] == (qchar)'\r') { // windows newline?
 					pos++;
 				};
-				width = addWord(retval, word, prefix, width, pMaxWidth);
+				addWord(retval, word, prefix, width, pMaxWidth);
 				word = "";
 				prefix = "";
 
 				retval += (qchar)'\n'; // prevent expensive UTF-8 => UTF-32 conversion
+				width = 0; // we are on a new line, so reset width
 			} else if (pText[pos] == (qchar)' ') {
 				if (word.length() > 0) {
 					width = addWord(retval, word, prefix, width, pMaxWidth);
