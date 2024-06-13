@@ -663,9 +663,9 @@ qstring &qstring::appendStyle(qchar pStyle, qulong pValue) {
 		mBuffer[len] = txtEsc;
 		mBuffer[len + 1] = pStyle;
 
-		register qchar lookup[16] = { '0', '1', '2', '3', '4', '5', '6', '7',
+		qchar lookup[16] = { '0', '1', '2', '3', '4', '5', '6', '7',
 			'8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
-		register qchar *add = &mBuffer[len + 9];
+		qchar *add = &mBuffer[len + 9];
 		for (qlong cnt = 1; cnt <= 8; cnt++) {
 			*add = lookup[pValue & 0x0000000F];
 			add--;
